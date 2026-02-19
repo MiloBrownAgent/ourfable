@@ -263,6 +263,46 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Physical Book Showcase */}
+      <section className="px-4 pb-20">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+              A real book they&apos;ll treasure forever
+            </h2>
+            <p className="text-brand-ink-muted text-base font-body max-w-lg mx-auto">
+              Premium hardcover with thick glossy pages. Printed and shipped to your door.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="rounded-2xl overflow-hidden shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/samples/book-mockup-open.png" alt="Open storybook showing beautiful watercolor illustrations" className="w-full h-64 object-cover" />
+              <div className="bg-white p-4">
+                <p className="font-display text-sm font-bold text-brand-ink">Beautiful inside and out</p>
+                <p className="text-xs text-brand-ink-muted font-body mt-1">Thick glossy pages with vivid watercolor illustrations</p>
+              </div>
+            </div>
+            <div className="rounded-2xl overflow-hidden shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/samples/book-mockup-stack.png" alt="Stack of personalized storybooks wrapped as gift" className="w-full h-64 object-cover" />
+              <div className="bg-white p-4">
+                <p className="font-display text-sm font-bold text-brand-ink">The perfect gift</p>
+                <p className="text-xs text-brand-ink-muted font-body mt-1">Birthdays, holidays, or just because — they&apos;ll love it</p>
+              </div>
+            </div>
+            <div className="rounded-2xl overflow-hidden shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/samples/book-mockup-reading.png" alt="Child reading their personalized storybook" className="w-full h-64 object-cover" />
+              <div className="bg-white p-4">
+                <p className="font-display text-sm font-bold text-brand-ink">Watch their face light up</p>
+                <p className="text-xs text-brand-ink-muted font-body mt-1">The moment they see themselves as the hero of their story</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Social Proof Bar */}
       <section className="border-y border-brand-border bg-brand-bg-warm">
         <div className="max-w-3xl mx-auto px-4 py-5 flex flex-wrap justify-center gap-x-10 gap-y-3">
