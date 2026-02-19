@@ -45,13 +45,14 @@ function PrintInterestBanner({ bookId }: { bookId: string }) {
     >
       <div className="text-2xl mb-2">📬</div>
       <p className="text-sm font-semibold text-brand-ink mb-1">Want this as a printed hardcover?</p>
-      <p className="text-xs text-brand-ink-muted mb-3">Premium quality, shipped to your door</p>
+      <p className="text-xs text-brand-ink-muted mb-2">Premium quality, thick glossy pages, shipped to your door</p>
+      <p className="text-lg font-bold text-brand-ink mb-3">$34.99 <span className="text-xs font-normal text-brand-ink-muted">+ free shipping</span></p>
       <button
         onClick={handleClick}
         disabled={clicked}
         className="bg-gradient-to-r from-brand-coral to-brand-coral-dark text-white text-sm font-bold py-2.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
-        {clicked ? '✨ Saving...' : '🙋 Yes, let me know!'}
+        {clicked ? '✨ Saving...' : '🙋 Yes, I\'d buy this!'}
       </button>
     </motion.div>
   );
