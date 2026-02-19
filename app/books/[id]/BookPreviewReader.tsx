@@ -4,6 +4,59 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
+function PrintInterestBanner({ bookId }: { bookId: string }) {
+  const [clicked, setClicked] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleClick = async () => {
+    setClicked(true);
+    try {
+      await fetch('/api/print-interest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId }),
+      });
+      setSaved(true);
+    } catch {
+      setSaved(true); // Don't block UX on failure
+    }
+  };
+
+  if (saved) {
+    return (
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="mx-auto max-w-md mb-6 bg-gradient-to-r from-brand-teal-light to-brand-coral-light rounded-2xl p-5 text-center border border-brand-border"
+      >
+        <div className="text-2xl mb-2">💛</div>
+        <p className="text-sm font-semibold text-brand-ink">Noted! We&apos;ll let you know when hardcovers are ready.</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.5 }}
+      className="mx-auto max-w-md mb-6 bg-white rounded-2xl p-5 text-center border-2 border-dashed border-brand-coral/30 hover:border-brand-coral/60 transition-colors cursor-pointer"
+      onClick={handleClick}
+    >
+      <div className="text-2xl mb-2">📬</div>
+      <p className="text-sm font-semibold text-brand-ink mb-1">Want this as a printed hardcover?</p>
+      <p className="text-xs text-brand-ink-muted mb-3">Premium quality, shipped to your door</p>
+      <button
+        onClick={handleClick}
+        disabled={clicked}
+        className="bg-gradient-to-r from-brand-coral to-brand-coral-dark text-white text-sm font-bold py-2.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+      >
+        {clicked ? '✨ Saving...' : '🙋 Yes, let me know!'}
+      </button>
+    </motion.div>
+  );
+}
+
 type PageEntry = {
   text: string;
   imagePrompt?: string;
@@ -339,6 +392,9 @@ export default function BookPreviewReader({
           Next →
         </button>
       </div>
+
+      {/* Print interest gauge */}
+      <PrintInterestBanner bookId={bookId} />
 
       {/* Share section */}
       <div className="relative flex justify-center">
