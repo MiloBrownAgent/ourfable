@@ -9,13 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@react-email/components": "^1.0.8",
     "@stripe/stripe-js": "^4.8.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.47.0",
     "next": "^14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-email": "^5.2.8",
     "replicate": "^1.4.0",
+    "resend": "^6.9.2",
     "sharp": "^0.33.5",
     "stripe": "^17.3.0",
     "uuid": "^10.0.0",

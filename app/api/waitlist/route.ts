@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendWaitlistWelcome } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,9 @@ export async function POST(request: NextRequest) {
       console.error('Waitlist insert error:', error);
       return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
     }
+
+    // Fire-and-forget — don't delay the response
+    sendWaitlistWelcome(email.toLowerCase().trim());
 
     return NextResponse.json({ message: 'Successfully joined the waitlist!' }, { status: 201 });
   } catch {

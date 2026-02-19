@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateStory } from "@/lib/story-gen";
 import { generateBookIllustrations } from "@/lib/replicate";
+import { sendBookReady, sendBookFailed } from "@/lib/email";
 
 export const maxDuration = 300; // Allow up to 5 minutes for story + images
 
@@ -209,6 +210,17 @@ Return ONLY this JSON (no markdown fences, no extra text):
         .eq("id", bookId)
         .single();
 
+      // Notify user their book is ready
+      if (user.email) {
+        sendBookReady(
+          user.email,
+          story.title,
+          book.character_name,
+          bookId,
+          firstImage?.imageUrl ?? undefined
+        );
+      }
+
       return NextResponse.json({ book: finalBook });
 
     } catch (genError: unknown) {
@@ -217,6 +229,11 @@ Return ONLY this JSON (no markdown fences, no extra text):
         .from("books")
         .update({ status: "failed" })
         .eq("id", bookId);
+
+      // Notify user about the failure
+      if (user.email) {
+        sendBookFailed(user.email, bookId);
+      }
 
       console.error("Generation error:", genError);
 
