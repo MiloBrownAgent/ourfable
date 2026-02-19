@@ -1,21 +1,17 @@
 // app/api/generate/route.ts
-// Triggers AI story generation via Claude
+// Triggers AI story generation via Replicate LLM + illustration generation
 // Generates page text + image prompts for each page
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { generateStory } from "@/lib/story-gen";
 import { generateBookIllustrations } from "@/lib/replicate";
 
 export const maxDuration = 300; // Allow up to 5 minutes for story + images
 
-// Fallback when book has no character photo — use a public image so illustrations still run
+// Fallback when book has no character photo
 const FALLBACK_CHARACTER_IMAGE_URL =
   "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=800&fit=crop";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
 
 // Map art style slugs to descriptive image prompts
 const ART_STYLE_PROMPTS: Record<string, string> = {
@@ -74,7 +70,7 @@ export async function POST(req: NextRequest) {
       .eq("id", bookId);
 
     try {
-      // ── Generate story via Claude ──────────────────────────
+      // ── Generate story via Replicate LLM ──────────────────────────
       const artStyleDesc = ART_STYLE_PROMPTS[book.art_style] || ART_STYLE_PROMPTS.watercolor;
       const inclusions = (book.included_elements || []) as string[];
 
@@ -114,15 +110,9 @@ Return ONLY this JSON (no markdown fences, no extra text):
   ]
 }`;
 
-      const message = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
-        max_tokens: 4096,
-        messages: [{ role: "user", content: prompt }],
-      });
+      console.log("[Generate] Starting story generation via Replicate LLM...");
+      const responseText = await generateStory(prompt);
 
-      const firstBlock = message.content?.[0];
-      const responseText =
-        firstBlock && firstBlock.type === "text" ? firstBlock.text : "";
       if (!responseText.trim()) {
         throw new Error("No story text in AI response");
       }
@@ -139,29 +129,25 @@ Return ONLY this JSON (no markdown fences, no extra text):
         throw new Error("Invalid story structure from AI");
       }
 
+      console.log(`[Generate] Story created: "${story.title}" with ${story.pages.length} pages`);
+
       // Update book with generated content
-      const { data: updatedBook, error: updateError } = await supabase
+      await supabase
         .from("books")
         .update({
           title: story.title,
           pages: story.pages,
           status: "ready",
         })
-        .eq("id", bookId)
-        .select()
-        .single();
+        .eq("id", bookId);
 
-      if (updateError) throw updateError;
-
-      // ── Generate illustrations via Replicate + Ideogram Character ──
+      // ── Generate illustrations via Replicate Flux Kontext ──
       const characterPhotoUrl =
         book.character_photo_url?.trim() || FALLBACK_CHARACTER_IMAGE_URL;
       if (!book.character_photo_url?.trim()) {
-        console.log(
-          "Using fallback character image (no character_photo_url set). Illustrations will still run."
-        );
+        console.log("Using fallback character image (no character_photo_url set).");
       }
-      console.log("Starting illustration generation...");
+      console.log("[Generate] Starting illustration generation...");
 
       const pagesForReplicate = story.pages.map(
         (p: { text: string; imagePrompt?: string; image_prompt?: string }, i: number) => ({
@@ -236,15 +222,11 @@ Return ONLY this JSON (no markdown fences, no extra text):
 
       const err = genError as { response?: { status?: number }; message?: string };
       const msg = String(err?.message ?? "");
-      // Only show credit message when Replicate actually returned HTTP 402
       const is402 = err?.response?.status === 402;
 
       if (is402) {
         return NextResponse.json(
-          {
-            error:
-              "Replicate account has insufficient credit. Add credit at https://replicate.com/account/billing then try again.",
-          },
+          { error: "Replicate account has insufficient credit. Add credit at https://replicate.com/account/billing then try again." },
           { status: 402 }
         );
       }
