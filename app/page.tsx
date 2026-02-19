@@ -209,13 +209,12 @@ export default function Home() {
             {/* Left card */}
             <div className="flex-1 max-w-xs mx-auto sm:mx-0">
               <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden transition-transform hover:-translate-y-1">
-                <div className="h-52 bg-gradient-to-br from-brand-teal-light via-white to-brand-coral-light relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full bg-white/80 flex items-center justify-center text-3xl shadow-sm">🏰</div>
-                  </div>
+                <div className="h-64 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/samples/underwater-kingdom.png" alt="Underwater Kingdom storybook illustration" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-4">
-                  <div className="font-display text-sm font-bold text-brand-ink mb-2">The Castle Adventure</div>
+                  <div className="font-display text-sm font-bold text-brand-ink mb-2">The Ocean Secret</div>
                   <div className="space-y-1.5">
                     <div className="h-1.5 bg-gray-100 rounded-full w-full" />
                     <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
@@ -227,10 +226,9 @@ export default function Home() {
             {/* Middle card (highlighted) */}
             <div className="flex-1 max-w-xs mx-auto sm:mx-0 sm:scale-110 sm:z-10">
               <div className="bg-white rounded-2xl shadow-xl border-2 border-brand-coral/20 overflow-hidden transition-transform hover:-translate-y-1">
-                <div className="h-52 bg-gradient-to-br from-brand-coral-light via-white to-brand-teal-light relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full bg-white/80 flex items-center justify-center text-3xl shadow-sm">🚀</div>
-                  </div>
+                <div className="h-64 overflow-hidden relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/samples/space-adventure.png" alt="Space Adventure storybook illustration" className="w-full h-full object-cover" />
                   <div className="absolute top-3 right-3 bg-brand-coral text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-body">POPULAR</div>
                 </div>
                 <div className="p-4">
@@ -247,13 +245,12 @@ export default function Home() {
             {/* Right card */}
             <div className="flex-1 max-w-xs mx-auto sm:mx-0">
               <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden transition-transform hover:-translate-y-1">
-                <div className="h-52 bg-gradient-to-br from-brand-teal-light via-brand-coral-light to-white relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full bg-white/80 flex items-center justify-center text-3xl shadow-sm">🌊</div>
-                  </div>
+                <div className="h-64 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/samples/dragon-quest.png" alt="Dragon Quest storybook illustration" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-4">
-                  <div className="font-display text-sm font-bold text-brand-ink mb-2">The Ocean Secret</div>
+                  <div className="font-display text-sm font-bold text-brand-ink mb-2">The Dragon&apos;s Friend</div>
                   <div className="space-y-1.5">
                     <div className="h-1.5 bg-gray-100 rounded-full w-full" />
                     <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
