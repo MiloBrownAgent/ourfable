@@ -2,11 +2,16 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-type ProgressStep = 'writing' | 'illustrations';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PLACEHOLDER_PHOTO_URL =
   'https://placehold.co/800x1000/FFE4F1/E24E8A?text=Your+Storybook+Cover';
+
+const PROGRESS_STEPS = [
+  { emoji: '📝', label: 'Writing your story...', desc: 'Our AI author is crafting a unique adventure', duration: 25 },
+  { emoji: '🎨', label: 'Painting the illustrations...', desc: 'Creating beautiful artwork for every page', duration: 40 },
+  { emoji: '📚', label: 'Binding the pages...', desc: 'Putting it all together into a magical book', duration: 60 },
+];
 
 export default function StoryCreatorForm() {
   const router = useRouter();
@@ -24,18 +29,57 @@ export default function StoryCreatorForm() {
   const [isDragging, setIsDragging] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [progressStep, setProgressStep] = useState<ProgressStep>('writing');
   const [error, setError] = useState<string | null>(null);
+
+  // Progress screen state
+  const [showProgress, setShowProgress] = useState(false);
+  const [progressBookId, setProgressBookId] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [progressComplete, setProgressComplete] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Cycle progress message while waiting for generate API
+  // Step progression timer
   useEffect(() => {
-    if (!isSubmitting) return;
-    setProgressStep('writing');
-    const t = setTimeout(() => setProgressStep('illustrations'), 6000);
-    return () => clearTimeout(t);
-  }, [isSubmitting]);
+    if (!showProgress || progressComplete) return;
+    const t1 = setTimeout(() => setCurrentStep(1), PROGRESS_STEPS[0].duration * 1000);
+    const t2 = setTimeout(() => setCurrentStep(2), (PROGRESS_STEPS[0].duration + PROGRESS_STEPS[1].duration) * 1000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [showProgress, progressComplete]);
+
+  // Poll book status
+  useEffect(() => {
+    if (!showProgress || !progressBookId) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/books/${progressBookId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.book?.status === 'ready') {
+          clearInterval(interval);
+          setProgressComplete(true);
+          // Fire confetti
+          const confettiModule = await import('canvas-confetti');
+          const confetti = confettiModule.default;
+          confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+          setTimeout(() => {
+            router.push(`/books/${progressBookId}`);
+            router.refresh();
+          }, 2000);
+        } else if (data.book?.status === 'failed') {
+          clearInterval(interval);
+          setShowProgress(false);
+          setIsSubmitting(false);
+          setError('Generation failed. You can try again from the book page.');
+          router.push(`/books/${progressBookId}`);
+          router.refresh();
+        }
+      } catch {
+        // Ignore polling errors
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [showProgress, progressBookId, router]);
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -88,7 +132,6 @@ export default function StoryCreatorForm() {
       e.preventDefault();
       addTagFromInput();
     } else if (e.key === 'Backspace' && tagInput === '' && tags.length > 0) {
-      // Quick remove last tag
       setTags((prev) => prev.slice(0, -1));
     }
   };
@@ -168,20 +211,92 @@ export default function StoryCreatorForm() {
       });
 
       if (!resGen.ok) {
-        // We still redirect, but surface a gentle message in console
         console.error('Story generation failed', await resGen.json().catch(() => ({})));
       }
 
-      // 3) Redirect to book preview (or dashboard if not ready)
-      const targetPath = book?.id ? `/books/${book.id}` : '/dashboard';
-      router.push(targetPath);
-      router.refresh();
-    } catch (err: any) {
+      // 3) Show progress screen instead of redirecting
+      setProgressBookId(book.id);
+      setCurrentStep(0);
+      setProgressComplete(false);
+      setShowProgress(true);
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Something went wrong while creating your story.');
-    } finally {
+      setError(err instanceof Error ? err.message : 'Something went wrong while creating your story.');
       setIsSubmitting(false);
     }
+  }
+
+  // Progress screen overlay
+  if (showProgress) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
+        <div className="max-w-md mx-auto px-8 text-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={progressComplete ? 'done' : currentStep}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', duration: 0.5 }}
+              className="text-6xl mb-6"
+            >
+              {progressComplete ? '🎉' : PROGRESS_STEPS[currentStep].emoji}
+            </motion.div>
+          </AnimatePresence>
+
+          <h2 className="font-display text-2xl font-bold text-brand-ink mb-2">
+            {progressComplete ? 'Your book is ready!' : PROGRESS_STEPS[currentStep].label}
+          </h2>
+          <p className="text-brand-ink-muted font-body mb-10 text-sm">
+            {progressComplete
+              ? 'Taking you to your storybook now...'
+              : PROGRESS_STEPS[currentStep].desc}
+          </p>
+
+          {/* Step indicators */}
+          <div className="space-y-4 text-left max-w-xs mx-auto">
+            {PROGRESS_STEPS.map((step, i) => {
+              const isActive = currentStep === i && !progressComplete;
+              const isDone = currentStep > i || progressComplete;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <motion.div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 transition-colors duration-300 ${
+                      isDone
+                        ? 'bg-brand-teal-light text-brand-teal'
+                        : isActive
+                        ? 'bg-brand-teal text-white'
+                        : 'bg-gray-100 text-gray-400'
+                    }`}
+                    animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+                    transition={isActive ? { duration: 1.5, repeat: Infinity } : {}}
+                  >
+                    {isDone ? '✓' : step.emoji}
+                  </motion.div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold truncate ${
+                      isDone || isActive ? 'text-brand-ink' : 'text-brand-ink-muted'
+                    }`}>
+                      {step.label}
+                    </p>
+                    {isActive && (
+                      <div className="h-1.5 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
+                        <motion.div
+                          className="h-full bg-brand-teal rounded-full"
+                          initial={{ width: '0%' }}
+                          animate={{ width: '100%' }}
+                          transition={{ duration: step.duration, ease: 'linear' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -348,12 +463,16 @@ export default function StoryCreatorForm() {
           disabled={isSubmitting}
           className="btn-primary w-full sm:w-auto justify-center disabled:opacity-60"
         >
-          {!isSubmitting && '📚 Create & generate story'}
-          {isSubmitting && progressStep === 'writing' && '✨ Writing your story...'}
-          {isSubmitting && progressStep === 'illustrations' && '🎨 Generating illustrations...'}
+          {isSubmitting ? (
+            <>
+              <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden />
+              Creating...
+            </>
+          ) : (
+            '📚 Create & generate story'
+          )}
         </button>
       </div>
     </form>
   );
 }
-

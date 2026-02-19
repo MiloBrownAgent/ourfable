@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 
 function EmailCapture({ source = 'landing' }: { source?: string }) {
   const [email, setEmail] = useState('');
@@ -168,29 +169,118 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-0.5, 0.5], [5, -5]);
+  const rotateY = useTransform(x, [-0.5, 0.5], [-5, 5]);
+
+  return (
+    <motion.div
+      className={className}
+      style={{ rotateX, rotateY, transformPerspective: 1000 }}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        x.set((e.clientX - rect.left) / rect.width - 0.5);
+        y.set((e.clientY - rect.top) / rect.height - 0.5);
+      }}
+      onMouseLeave={() => { x.set(0); y.set(0); }}
+      transition={{ type: 'spring', stiffness: 150, damping: 15 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function SparkleParticles() {
+  const particles = [
+    { left: '10%', top: '20%', size: 4, delay: 0, color: '#F5A623' },
+    { left: '88%', top: '25%', size: 3, delay: 0.7, color: '#0EA5A5' },
+    { left: '22%', top: '75%', size: 5, delay: 1.4, color: '#F5A623' },
+    { left: '78%', top: '65%', size: 3, delay: 2.1, color: '#0EA5A5' },
+    { left: '50%', top: '12%', size: 4, delay: 0.35, color: '#F5A623' },
+  ];
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{ left: p.left, top: p.top, width: p.size, height: p.size, backgroundColor: p.color }}
+          animate={{ y: [0, -15, 0], opacity: [0.4, 1, 0.4], scale: [1, 1.3, 1] }}
+          transition={{ duration: 3, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function SampleBookPreview() {
   const [page, setPage] = useState(0);
-  const current = SAMPLE_PAGES[page];
+  const [direction, setDirection] = useState(0);
+
+  const paginate = (newPage: number) => {
+    if (newPage === page) return;
+    setDirection(newPage > page ? 1 : -1);
+    setPage(newPage);
+  };
+
+  const slideVariants = {
+    enter: (dir: number) => ({ x: dir > 0 ? 150 : -150, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? -150 : 150, opacity: 0 }),
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-brand-border overflow-hidden">
-      <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={current.image}
-          alt={`Sample story page ${page + 1}`}
-          className="w-full aspect-[4/3] object-cover"
-        />
+    <motion.div
+      className="bg-white rounded-2xl shadow-xl border border-brand-border overflow-hidden"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="relative overflow-hidden">
+        <AnimatePresence initial={false} custom={direction} mode="wait">
+          <motion.div
+            key={page}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={SAMPLE_PAGES[page].image}
+              alt={`Sample story page ${page + 1}`}
+              className="w-full aspect-[4/3] object-cover"
+            />
+            {/* Page curl shadow */}
+            <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/[0.06] to-transparent pointer-events-none" />
+          </motion.div>
+        </AnimatePresence>
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-brand-ink text-xs font-bold px-3 py-1 rounded-full font-body shadow-sm">
           Page {page + 1} of {SAMPLE_PAGES.length}
         </div>
       </div>
       <div className="p-6 sm:p-8">
-        <p className="font-body text-brand-ink text-base sm:text-lg leading-relaxed italic">
-          &ldquo;{current.text}&rdquo;
-        </p>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={page}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="font-body text-brand-ink text-base sm:text-lg leading-relaxed italic"
+          >
+            &ldquo;{SAMPLE_PAGES[page].text}&rdquo;
+          </motion.p>
+        </AnimatePresence>
         <div className="flex items-center justify-between mt-6">
           <button
-            onClick={() => setPage(Math.max(0, page - 1))}
+            onClick={() => paginate(Math.max(0, page - 1))}
             disabled={page === 0}
             className="btn-secondary text-sm disabled:opacity-40"
           >
@@ -200,13 +290,13 @@ function SampleBookPreview() {
             {SAMPLE_PAGES.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setPage(i)}
+                onClick={() => paginate(i)}
                 className={`w-2 h-2 rounded-full transition-all ${i === page ? 'bg-brand-teal w-6' : 'bg-gray-200 hover:bg-gray-300'}`}
               />
             ))}
           </div>
           <button
-            onClick={() => setPage(Math.min(SAMPLE_PAGES.length - 1, page + 1))}
+            onClick={() => paginate(Math.min(SAMPLE_PAGES.length - 1, page + 1))}
             disabled={page === SAMPLE_PAGES.length - 1}
             className="btn-secondary text-sm disabled:opacity-40"
           >
@@ -214,9 +304,15 @@ function SampleBookPreview() {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
+
+const PHYSICAL_BOOKS = [
+  { src: '/samples/book-mockup-open.jpg', alt: 'Open storybook showing beautiful watercolor illustrations', title: 'Beautiful inside and out', desc: 'Thick glossy pages with vivid watercolor illustrations' },
+  { src: '/samples/book-mockup-stack.jpg', alt: 'Stack of personalized storybooks wrapped as gift', title: 'The perfect gift', desc: "Birthdays, holidays, or just because — they'll love it" },
+  { src: '/samples/book-mockup-reading.jpg', alt: 'Child reading their personalized storybook', title: 'Watch their face light up', desc: 'The moment they see themselves as the hero of their story' },
+];
 
 export default function Home() {
   return (
@@ -238,24 +334,51 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="px-4 pt-20 pb-16 sm:pt-28 sm:pb-20">
+      <section className="hero-gradient px-4 pt-20 pb-16 sm:pt-28 sm:pb-20">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal-dark px-4 py-1.5 rounded-full font-bold text-xs tracking-wide uppercase mb-6 font-body">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-teal animate-pulse" />
-            Now in Early Access
-          </div>
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold text-brand-ink leading-[1.1] mb-5">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal-dark px-4 py-1.5 rounded-full font-bold text-xs tracking-wide uppercase mb-6 font-body">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-teal animate-pulse" />
+              Now in Early Access
+            </div>
+          </motion.div>
+          <motion.h1
+            className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold text-brand-ink leading-[1.1] mb-5"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
             Turn your child into the
             <span className="text-brand-teal"> hero</span> of their own
             <span className="text-brand-coral"> storybook</span>
-          </h1>
-          <p className="text-brand-ink-light text-lg sm:text-xl max-w-lg mx-auto mb-10 leading-relaxed font-body">
+          </motion.h1>
+          <motion.p
+            className="text-brand-ink-light text-lg sm:text-xl max-w-lg mx-auto mb-10 leading-relaxed font-body"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             Upload one photo and our AI creates a beautifully illustrated, personalized 12-page storybook in under 3 minutes.
-          </p>
-          <EmailCapture source="hero" />
-          <p className="text-brand-ink-muted text-xs mt-4 font-body">
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.45 }}
+          >
+            <EmailCapture source="hero" />
+          </motion.div>
+          <motion.p
+            className="text-brand-ink-muted text-xs mt-4 font-body"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
             Free to join. No credit card required.
-          </p>
+          </motion.p>
         </div>
       </section>
 
@@ -264,58 +387,86 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="relative flex flex-col sm:flex-row sm:justify-center sm:items-end gap-4 sm:gap-6">
             {/* Left card */}
-            <div className="flex-1 max-w-xs mx-auto sm:mx-0">
-              <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden transition-transform hover:-translate-y-1">
-                <div className="h-64 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/samples/underwater-kingdom.jpg" alt="Underwater Kingdom storybook illustration" className="w-full h-full object-cover" />
-                </div>
-                <div className="p-4">
-                  <div className="font-display text-sm font-bold text-brand-ink mb-2">The Ocean Secret</div>
-                  <div className="space-y-1.5">
-                    <div className="h-1.5 bg-gray-100 rounded-full w-full" />
-                    <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
-                    <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
+            <motion.div
+              className="flex-1 max-w-xs mx-auto sm:mx-0"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <TiltCard className="animate-float-1">
+                <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden">
+                  <div className="h-64 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/samples/underwater-kingdom.jpg" alt="Underwater Kingdom storybook illustration" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-4">
+                    <div className="font-display text-sm font-bold text-brand-ink mb-2">The Ocean Secret</div>
+                    <div className="space-y-1.5">
+                      <div className="h-1.5 bg-gray-100 rounded-full w-full" />
+                      <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
+                      <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </TiltCard>
+            </motion.div>
             {/* Middle card (highlighted) */}
-            <div className="flex-1 max-w-xs mx-auto sm:mx-0 sm:scale-110 sm:z-10">
-              <div className="bg-white rounded-2xl shadow-xl border-2 border-brand-coral/20 overflow-hidden transition-transform hover:-translate-y-1">
-                <div className="h-64 overflow-hidden relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/samples/space-adventure.jpg" alt="Space Adventure storybook illustration" className="w-full h-full object-cover" />
-                  <div className="absolute top-3 right-3 bg-brand-coral text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-body">POPULAR</div>
-                </div>
-                <div className="p-4">
-                  <div className="font-display text-sm font-bold text-brand-ink mb-2">Journey to the Stars</div>
-                  <div className="space-y-1.5">
-                    <div className="h-1.5 bg-gray-100 rounded-full w-full" />
-                    <div className="h-1.5 bg-gray-100 rounded-full w-4/5" />
-                    <div className="h-1.5 bg-gray-100 rounded-full w-3/4" />
-                    <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
+            <motion.div
+              className="flex-1 max-w-xs mx-auto sm:mx-0 sm:scale-110 sm:z-10"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+            >
+              <TiltCard className="animate-float-2">
+                <div className="bg-white rounded-2xl shadow-xl border-2 border-brand-coral/20 overflow-hidden relative">
+                  <div className="h-64 overflow-hidden relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/samples/space-adventure.jpg" alt="Space Adventure storybook illustration" className="w-full h-full object-cover" />
+                    <div className="absolute top-3 right-3 bg-brand-coral text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-body">POPULAR</div>
+                  </div>
+                  <div className="p-4">
+                    <div className="font-display text-sm font-bold text-brand-ink mb-2">Journey to the Stars</div>
+                    <div className="space-y-1.5">
+                      <div className="h-1.5 bg-gray-100 rounded-full w-full" />
+                      <div className="h-1.5 bg-gray-100 rounded-full w-4/5" />
+                      <div className="h-1.5 bg-gray-100 rounded-full w-3/4" />
+                      <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
+                    </div>
+                  </div>
+                  {/* Shimmer overlay */}
+                  <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                    <div className="shimmer-overlay" />
                   </div>
                 </div>
-              </div>
-            </div>
+              </TiltCard>
+            </motion.div>
             {/* Right card */}
-            <div className="flex-1 max-w-xs mx-auto sm:mx-0">
-              <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden transition-transform hover:-translate-y-1">
-                <div className="h-64 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/samples/dragon-quest.jpg" alt="Dragon Quest storybook illustration" className="w-full h-full object-cover" />
-                </div>
-                <div className="p-4">
-                  <div className="font-display text-sm font-bold text-brand-ink mb-2">The Dragon&apos;s Friend</div>
-                  <div className="space-y-1.5">
-                    <div className="h-1.5 bg-gray-100 rounded-full w-full" />
-                    <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
-                    <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
+            <motion.div
+              className="flex-1 max-w-xs mx-auto sm:mx-0"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <TiltCard className="animate-float-3">
+                <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden">
+                  <div className="h-64 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/samples/dragon-quest.jpg" alt="Dragon Quest storybook illustration" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-4">
+                    <div className="font-display text-sm font-bold text-brand-ink mb-2">The Dragon&apos;s Friend</div>
+                    <div className="space-y-1.5">
+                      <div className="h-1.5 bg-gray-100 rounded-full w-full" />
+                      <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
+                      <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </TiltCard>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -323,39 +474,39 @@ export default function Home() {
       {/* Physical Book Showcase */}
       <section className="px-4 pb-20">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
+          <motion.div
+            className="text-center mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
               A real book they&apos;ll treasure forever
             </h2>
             <p className="text-brand-ink-muted text-base font-body max-w-lg mx-auto">
               Premium hardcover with thick glossy pages. Printed and shipped to your door.
             </p>
-          </div>
+          </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl overflow-hidden shadow-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/samples/book-mockup-open.jpg" alt="Open storybook showing beautiful watercolor illustrations" className="w-full h-64 object-cover" />
-              <div className="bg-white p-4">
-                <p className="font-display text-sm font-bold text-brand-ink">Beautiful inside and out</p>
-                <p className="text-xs text-brand-ink-muted font-body mt-1">Thick glossy pages with vivid watercolor illustrations</p>
-              </div>
-            </div>
-            <div className="rounded-2xl overflow-hidden shadow-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/samples/book-mockup-stack.jpg" alt="Stack of personalized storybooks wrapped as gift" className="w-full h-64 object-cover" />
-              <div className="bg-white p-4">
-                <p className="font-display text-sm font-bold text-brand-ink">The perfect gift</p>
-                <p className="text-xs text-brand-ink-muted font-body mt-1">Birthdays, holidays, or just because — they&apos;ll love it</p>
-              </div>
-            </div>
-            <div className="rounded-2xl overflow-hidden shadow-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/samples/book-mockup-reading.jpg" alt="Child reading their personalized storybook" className="w-full h-64 object-cover" />
-              <div className="bg-white p-4">
-                <p className="font-display text-sm font-bold text-brand-ink">Watch their face light up</p>
-                <p className="text-xs text-brand-ink-muted font-body mt-1">The moment they see themselves as the hero of their story</p>
-              </div>
-            </div>
+            {PHYSICAL_BOOKS.map((book, i) => (
+              <motion.div
+                key={i}
+                className="rounded-2xl overflow-hidden shadow-lg"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.15 }}
+                whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={book.src} alt={book.alt} className="w-full h-64 object-cover" />
+                <div className="bg-white p-4">
+                  <p className="font-display text-sm font-bold text-brand-ink">{book.title}</p>
+                  <p className="text-xs text-brand-ink-muted font-body mt-1">{book.desc}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -380,23 +531,42 @@ export default function Home() {
 
       {/* How It Works */}
       <section className="px-4 py-20 max-w-4xl mx-auto">
-        <div className="text-center mb-14">
+        <motion.div
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
             How it works
           </h2>
           <p className="text-brand-ink-muted text-base font-body">
             Three simple steps. No artistic skills needed.
           </p>
-        </div>
+        </motion.div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
-          {STEPS.map((step) => (
-            <div key={step.num} className="text-center">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5 ${step.color === 'teal' ? 'bg-brand-teal-light' : 'bg-brand-coral-light'}`}>
+          {STEPS.map((step, i) => (
+            <motion.div
+              key={step.num}
+              className="text-center"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.2 }}
+            >
+              <motion.div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5 ${step.color === 'teal' ? 'bg-brand-teal-light' : 'bg-brand-coral-light'}`}
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.2 + 0.1, type: 'spring', stiffness: 300, damping: 15 }}
+              >
                 <span className={`font-display text-xl font-extrabold ${step.color === 'teal' ? 'text-brand-teal' : 'text-brand-coral'}`}>{step.num}</span>
-              </div>
+              </motion.div>
               <h3 className="font-display text-lg font-bold text-brand-ink mb-2">{step.title}</h3>
               <p className="text-brand-ink-muted text-sm leading-relaxed font-body">{step.desc}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -404,14 +574,20 @@ export default function Home() {
       {/* Sample Story Preview */}
       <section className="px-4 py-20 bg-brand-bg-warm border-y border-brand-border">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10">
+          <motion.div
+            className="text-center mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
               Preview a sample story
             </h2>
             <p className="text-brand-ink-muted text-base font-body">
               Every book is unique. Here&apos;s a peek at what yours could look like.
             </p>
-          </div>
+          </motion.div>
           <SampleBookPreview />
         </div>
       </section>
@@ -419,17 +595,30 @@ export default function Home() {
       {/* Testimonials */}
       <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-20">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
+          <motion.div
+            className="text-center mb-14"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
               Parents love OurFable
             </h2>
             <div className="flex items-center justify-center gap-1 text-brand-gold text-2xl font-display">
               ★★★★★
             </div>
-          </div>
+          </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="card">
+            {TESTIMONIALS.map((t, i) => (
+              <motion.div
+                key={t.name}
+                className="card"
+                initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.15 }}
+              >
                 <div className="flex gap-1 text-brand-gold text-sm mb-3">★★★★★</div>
                 <p className="text-brand-ink text-sm leading-relaxed font-body mb-4">
                   &ldquo;{t.quote}&rdquo;
@@ -438,7 +627,7 @@ export default function Home() {
                   <p className="font-display text-sm font-bold text-brand-ink">{t.name}</p>
                   <p className="text-brand-ink-muted text-xs font-body">{t.detail}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -446,21 +635,34 @@ export default function Home() {
 
       {/* Features */}
       <section className="px-4 py-20 max-w-4xl mx-auto">
-        <div className="text-center mb-14">
+        <motion.div
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
             Every book is one of a kind
           </h2>
           <p className="text-brand-ink-muted text-base font-body max-w-lg mx-auto">
             Powered by the same AI behind the world&apos;s best creative tools, each book is a unique masterpiece.
           </p>
-        </div>
+        </motion.div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="card text-center sm:text-left">
+          {FEATURES.map((f, i) => (
+            <motion.div
+              key={f.title}
+              className="card text-center sm:text-left"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: i * 0.1 }}
+            >
               <div className="text-3xl mb-3">{f.icon}</div>
               <h3 className="font-display text-base font-bold text-brand-ink mb-1">{f.title}</h3>
               <p className="text-brand-ink-muted text-sm leading-relaxed font-body">{f.desc}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -468,17 +670,30 @@ export default function Home() {
       {/* Pricing */}
       <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-20">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-14">
+          <motion.div
+            className="text-center mb-14"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
               Simple, transparent pricing
             </h2>
             <p className="text-brand-ink-muted text-base font-body">
               No subscriptions. Pay only when you love what you see.
             </p>
-          </div>
+          </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
             {/* Digital */}
-            <div className="card text-center">
+            <motion.div
+              className="card text-center"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)', transition: { duration: 0.2 } }}
+            >
               <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal px-3 py-1 rounded-full font-bold text-xs uppercase mb-4 font-body">
                 Digital
               </div>
@@ -505,9 +720,17 @@ export default function Home() {
               <Link href="/auth/signup" className="btn-secondary w-full text-sm">
                 Get Started
               </Link>
-            </div>
+            </motion.div>
             {/* Hardcover */}
-            <div className="card text-center relative border-2 border-brand-coral/20">
+            <motion.div
+              className="card text-center relative animate-border-pulse"
+              style={{ borderWidth: '2px' }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)', transition: { duration: 0.2 } }}
+            >
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-coral text-white px-3 py-0.5 rounded-full font-bold text-xs uppercase font-body">
                 Best Value
               </div>
@@ -537,18 +760,24 @@ export default function Home() {
               <Link href="/auth/signup" className="btn-primary w-full text-sm">
                 Get Started
               </Link>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
       <section className="px-4 py-20 max-w-2xl mx-auto">
-        <div className="text-center mb-14">
+        <motion.div
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
             Frequently asked questions
           </h2>
-        </div>
+        </motion.div>
         <div>
           {FAQS.map((faq) => (
             <FAQItem key={faq.q} q={faq.q} a={faq.a} />
@@ -557,15 +786,35 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="bg-brand-teal px-4 py-20">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-white mb-4">
+      <section className="bg-brand-teal px-4 py-20 relative overflow-hidden">
+        <SparkleParticles />
+        <div className="max-w-2xl mx-auto text-center relative z-10">
+          <motion.h2
+            className="font-display text-3xl sm:text-4xl font-bold text-white mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
             Ready to create something magical?
-          </h2>
-          <p className="text-white/80 text-lg font-body mb-8 max-w-md mx-auto">
+          </motion.h2>
+          <motion.p
+            className="text-white/80 text-lg font-body mb-8 max-w-md mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
             Join thousands of parents making bedtime unforgettable. Get early access today.
-          </p>
-          <EmailCapture source="footer_cta" />
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <EmailCapture source="footer_cta" />
+          </motion.div>
         </div>
       </section>
 
@@ -585,6 +834,8 @@ export default function Home() {
             <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm font-body">
               <Link href="/auth/signup" className="text-brand-ink-light hover:text-brand-teal transition-colors">Create a Book</Link>
               <Link href="/auth/login" className="text-brand-ink-light hover:text-brand-teal transition-colors">Sign In</Link>
+              <Link href="/privacy" className="text-brand-ink-light hover:text-brand-teal transition-colors">Privacy</Link>
+              <Link href="/terms" className="text-brand-ink-light hover:text-brand-teal transition-colors">Terms</Link>
             </div>
           </div>
           <div className="border-t border-brand-border mt-8 pt-8 text-center">

@@ -43,8 +43,8 @@
   }
   .input-field:focus {
     border-color: #0EA5A5;
-    box-shadow: 0 0 0 3px rgba(14, 165, 165, 0.12);
     background: white;
+    animation: glow-pulse 2s ease-in-out infinite;
   }
 
   .card {
@@ -52,4 +52,80 @@
     border: 1px solid #E8E8EE;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
   }
+}
+
+/* Animation keyframes */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(14, 165, 165, 0.12); }
+  50% { box-shadow: 0 0 0 3px rgba(14, 165, 165, 0.12), 0 0 20px rgba(14, 165, 165, 0.18); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes border-pulse {
+  0%, 100% { border-color: rgba(255, 107, 90, 0.2); }
+  50% { border-color: rgba(255, 107, 90, 0.5); }
+}
+
+@keyframes btn-shimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* Float animation variants with offsets */
+.animate-float-1 { animation: float 3s ease-in-out infinite; }
+.animate-float-2 { animation: float 3s ease-in-out 1s infinite; }
+.animate-float-3 { animation: float 3s ease-in-out 2s infinite; }
+
+/* Shimmer overlay for POPULAR card */
+.shimmer-overlay {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Hero gradient background */
+.hero-gradient {
+  background: linear-gradient(135deg, #ffffff, #E6F7F7, #FFF0EE, #ffffff);
+  background-size: 400% 400%;
+  animation: gradient-shift 10s ease infinite;
+}
+
+/* Popular pricing card border pulse */
+.animate-border-pulse {
+  animation: border-pulse 3s ease-in-out infinite;
+}
+
+/* Button shimmer effect */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: btn-shimmer 3s ease-in-out infinite;
 }

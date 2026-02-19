@@ -34,44 +34,74 @@ export default function BookReadyEmail({
       </Preview>
       <Body style={main}>
         <Container style={container}>
-          <Section style={header}>
-            <Text style={logo}>OurFable.ai</Text>
-            <Hr style={accentLine} />
-          </Section>
-          <Section style={content}>
-            <Text style={heading}>Your storybook is ready!</Text>
-            <Text style={paragraph}>
-              <strong>&quot;{bookTitle}&quot;</strong> starring{" "}
-              <strong>{characterName}</strong> has been created and is waiting
-              for you.
-            </Text>
-            {coverImageUrl && (
-              <Section style={imageContainer}>
-                <Img
-                  src={coverImageUrl}
-                  alt={`Cover of "${bookTitle}"`}
-                  width="280"
-                  style={coverImage}
-                />
-              </Section>
-            )}
-            <Section style={buttonContainer}>
-              <Button
-                style={ctaButton}
-                href={`${appUrl}/books/${bookId}`}
-              >
-                Read Your Book
-              </Button>
+          <Section style={card}>
+            {/* Header */}
+            <Section style={headerSection}>
+              <Text style={emojiHeader}>&#127881;</Text>
+              <Text style={logo}>
+                OurFable<span style={logoSuffix}>.ai</span>
+              </Text>
             </Section>
-            <Text style={tip}>
-              Love it? Order a premium hardcover to keep forever.
-            </Text>
-          </Section>
-          <Section style={footer}>
-            <Text style={footerText}>
-              &copy; 2026 OurFable.ai &middot; You received this because you
-              created a book on OurFable.
-            </Text>
+
+            {/* Body */}
+            <Section style={bodySection}>
+              <Section
+                style={{
+                  textAlign: "center" as const,
+                  marginBottom: "16px",
+                }}
+              >
+                <Text style={badge}>&#128214; STORY COMPLETE</Text>
+              </Section>
+
+              <Text style={heading}>Your storybook is ready!</Text>
+              <Text style={paragraph}>
+                <strong style={{ color: "#FF6B5A" }}>
+                  &quot;{bookTitle}&quot;
+                </strong>{" "}
+                starring{" "}
+                <strong style={{ color: "#0EA5A5" }}>{characterName}</strong> is
+                waiting for you &#10024;
+              </Text>
+
+              {/* Cover image */}
+              {coverImageUrl && (
+                <Section style={imageContainer}>
+                  <Img
+                    src={coverImageUrl}
+                    alt={`Cover of "${bookTitle}"`}
+                    width="260"
+                    style={coverImage}
+                  />
+                </Section>
+              )}
+
+              <Section style={buttonContainer}>
+                <Button
+                  style={ctaButtonTeal}
+                  href={`${appUrl}/books/${bookId}`}
+                >
+                  &#128214; Read Your Book
+                </Button>
+              </Section>
+
+              <Section style={upsellBox}>
+                <Text style={upsellEmoji}>&#127873;</Text>
+                <Text style={upsellText}>
+                  <strong>Love it?</strong> Turn it into a premium hardcover
+                  book they&apos;ll treasure forever!
+                </Text>
+              </Section>
+            </Section>
+
+            {/* Footer */}
+            <Hr style={dashedDivider} />
+            <Section style={footerSection}>
+              <Text style={footerText}>
+                &copy; 2026 OurFable.ai &middot; Made with &#10084;&#65039; for
+                parents and kids everywhere
+              </Text>
+            </Section>
           </Section>
         </Container>
       </Body>
@@ -80,8 +110,11 @@ export default function BookReadyEmail({
 }
 
 const main = {
-  backgroundColor: "#f8f8f8",
-  fontFamily: "Helvetica, Arial, sans-serif",
+  background:
+    "linear-gradient(135deg, #E6F7F7 0%, #FFF0EE 50%, #E6F7F7 100%)",
+  fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  padding: "0",
+  margin: "0",
 };
 
 const container = {
@@ -90,89 +123,132 @@ const container = {
   padding: "40px 20px",
 };
 
-const header = {
+const card = {
   backgroundColor: "#ffffff",
-  borderRadius: "8px 8px 0 0",
-  padding: "32px 40px 0",
+  borderRadius: "24px",
+  overflow: "hidden" as const,
+  boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+};
+
+const headerSection = {
+  background: "linear-gradient(135deg, #0EA5A5 0%, #0C8C8C 100%)",
+  padding: "40px 40px 32px",
   textAlign: "center" as const,
 };
 
-const logo = {
-  fontSize: "24px",
-  fontWeight: "700" as const,
-  color: "#0EA5A5",
-  margin: "0 0 16px",
+const emojiHeader = {
+  fontSize: "48px",
+  margin: "0 0 8px",
+  lineHeight: "1",
 };
 
-const accentLine = {
-  borderColor: "#0EA5A5",
-  borderWidth: "2px",
+const logo = {
+  fontSize: "28px",
+  fontWeight: "800" as const,
+  color: "#ffffff",
   margin: "0",
 };
 
-const content = {
-  backgroundColor: "#ffffff",
-  padding: "32px 40px",
+const logoSuffix = {
+  fontWeight: "400" as const,
+  fontSize: "16px",
+  opacity: 0.8,
+};
+
+const bodySection = {
+  padding: "40px 40px 16px",
+};
+
+const badge = {
+  display: "inline-block" as const,
+  background: "linear-gradient(135deg, #E6F7F7, #FFF0EE)",
+  color: "#0EA5A5",
+  fontSize: "13px",
+  fontWeight: "700" as const,
+  padding: "6px 16px",
+  borderRadius: "20px",
+  letterSpacing: "0.5px",
+  margin: "0",
 };
 
 const heading = {
-  fontSize: "22px",
-  fontWeight: "600" as const,
-  color: "#1a1a1a",
-  margin: "0 0 16px",
+  fontSize: "28px",
+  fontWeight: "800" as const,
+  color: "#1A1A2E",
+  textAlign: "center" as const,
+  margin: "0 0 8px",
+  lineHeight: "1.3",
 };
 
 const paragraph = {
   fontSize: "16px",
-  lineHeight: "1.6",
-  color: "#444444",
-  margin: "0 0 16px",
+  color: "#4A4A5E",
+  textAlign: "center" as const,
+  margin: "0 0 24px",
 };
 
 const imageContainer = {
   textAlign: "center" as const,
-  margin: "16px 0",
+  margin: "0 0 24px",
 };
 
 const coverImage = {
-  borderRadius: "8px",
-  border: "1px solid #eeeeee",
+  borderRadius: "16px",
+  border: "3px solid #E8E8EE",
+  boxShadow: "0 8px 25px rgba(0,0,0,0.12)",
+  display: "block" as const,
+  margin: "0 auto",
 };
 
 const buttonContainer = {
   textAlign: "center" as const,
-  margin: "24px 0",
+  margin: "0 0 24px",
 };
 
-const ctaButton = {
-  backgroundColor: "#0EA5A5",
+const ctaButtonTeal = {
+  background: "linear-gradient(135deg, #0EA5A5 0%, #0C8C8C 100%)",
   color: "#ffffff",
-  fontSize: "16px",
-  fontWeight: "600" as const,
-  padding: "14px 32px",
-  borderRadius: "8px",
+  fontSize: "18px",
+  fontWeight: "700" as const,
+  padding: "16px 40px",
+  borderRadius: "50px",
   textDecoration: "none",
+  display: "inline-block" as const,
+  boxShadow: "0 4px 15px rgba(14,165,165,0.3)",
 };
 
-const tip = {
-  fontSize: "14px",
-  lineHeight: "1.5",
-  color: "#777777",
-  fontStyle: "italic" as const,
+const upsellBox = {
+  background: "linear-gradient(135deg, #FFF0EE, #FFF8F0)",
+  borderRadius: "16px",
+  padding: "20px",
   textAlign: "center" as const,
+  border: "2px solid #FFE0DB",
+};
+
+const upsellEmoji = {
+  fontSize: "24px",
+  margin: "0 0 8px",
+};
+
+const upsellText = {
+  fontSize: "15px",
+  color: "#1A1A2E",
   margin: "0",
 };
 
-const footer = {
-  backgroundColor: "#ffffff",
-  borderRadius: "0 0 8px 8px",
-  padding: "0 40px 32px",
-  borderTop: "1px solid #eeeeee",
+const dashedDivider = {
+  borderTop: "2px dashed #E8E8EE",
+  borderBottom: "none" as const,
+  margin: "0 24px",
+};
+
+const footerSection = {
+  padding: "20px 40px 32px",
+  textAlign: "center" as const,
 };
 
 const footerText = {
-  fontSize: "13px",
-  color: "#999999",
-  textAlign: "center" as const,
+  fontSize: "12px",
+  color: "#8888A0",
   margin: "16px 0 0",
 };

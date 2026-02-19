@@ -16,32 +16,53 @@ export default function WaitlistWelcome() {
       <Preview>You&apos;re on the OurFable.ai early access list!</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Section style={header}>
-            <Text style={logo}>OurFable.ai</Text>
-            <Hr style={accentLine} />
-          </Section>
-          <Section style={content}>
-            <Text style={heading}>You&apos;re on the list!</Text>
-            <Text style={paragraph}>
-              Thanks for signing up for early access to OurFable.ai! We&apos;re
-              building something special — personalized storybooks where your
-              child is the hero, brought to life with beautiful AI illustrations.
-            </Text>
-            <Text style={paragraph}>
-              Upload one photo, pick a theme, and in minutes you&apos;ll have a
-              gorgeous 12-page storybook. Digital or premium hardcover — it&apos;s
-              magic.
-            </Text>
-            <Text style={paragraph}>
-              We&apos;ll let you know as soon as you can create your first book.
-              It&apos;s going to be worth the wait.
-            </Text>
-          </Section>
-          <Section style={footer}>
-            <Text style={footerText}>
-              &copy; 2026 OurFable.ai &middot; You received this because you
-              joined our waitlist.
-            </Text>
+          <Section style={card}>
+            {/* Header */}
+            <Section style={headerSection}>
+              <Text style={emojiHeader}>&#10024;&#128218;&#10024;</Text>
+              <Text style={logo}>
+                OurFable<span style={logoSuffix}>.ai</span>
+              </Text>
+            </Section>
+
+            {/* Body */}
+            <Section style={bodySection}>
+              <Section style={{ textAlign: "center" as const, marginBottom: "24px" }}>
+                <Text style={badge}>&#127881; YOU&apos;RE IN!</Text>
+              </Section>
+
+              <Text style={heading}>You&apos;re on the early access list!</Text>
+
+              <Text style={paragraph}>
+                We&apos;re building something magical — personalized storybooks
+                where{" "}
+                <strong style={{ color: "#0EA5A5" }}>
+                  your child becomes the hero
+                </strong>{" "}
+                of their very own adventure. &#10024;
+              </Text>
+
+              {/* Feature pills */}
+              <Section style={pillContainer}>
+                <Text style={pillTeal}>&#128248; One photo</Text>
+                <Text style={pillCoral}>&#127912; AI illustrations</Text>
+                <Text style={pillTeal}>&#9889; Under 3 min</Text>
+              </Section>
+
+              <Text style={paragraph}>
+                We&apos;ll email you the moment you can create your first book.{" "}
+                <strong>It&apos;s going to be worth the wait.</strong> &#129668;
+              </Text>
+            </Section>
+
+            {/* Footer */}
+            <Hr style={dashedDivider} />
+            <Section style={footerSection}>
+              <Text style={footerText}>
+                &copy; 2026 OurFable.ai &middot; Made with &#10084;&#65039; for
+                parents and kids everywhere
+              </Text>
+            </Section>
           </Section>
         </Container>
       </Body>
@@ -50,8 +71,10 @@ export default function WaitlistWelcome() {
 }
 
 const main = {
-  backgroundColor: "#f8f8f8",
-  fontFamily: "Helvetica, Arial, sans-serif",
+  background: "linear-gradient(135deg, #E6F7F7 0%, #FFF0EE 50%, #E6F7F7 100%)",
+  fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  padding: "0",
+  margin: "0",
 };
 
 const container = {
@@ -60,55 +83,111 @@ const container = {
   padding: "40px 20px",
 };
 
-const header = {
+const card = {
   backgroundColor: "#ffffff",
-  borderRadius: "8px 8px 0 0",
-  padding: "32px 40px 0",
+  borderRadius: "24px",
+  overflow: "hidden" as const,
+  boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+};
+
+const headerSection = {
+  background: "linear-gradient(135deg, #0EA5A5 0%, #0C8C8C 100%)",
+  padding: "40px 40px 32px",
   textAlign: "center" as const,
 };
 
-const logo = {
-  fontSize: "24px",
-  fontWeight: "700" as const,
-  color: "#0EA5A5",
-  margin: "0 0 16px",
+const emojiHeader = {
+  fontSize: "32px",
+  margin: "0 0 8px",
+  lineHeight: "1",
 };
 
-const accentLine = {
-  borderColor: "#0EA5A5",
-  borderWidth: "2px",
+const logo = {
+  fontSize: "28px",
+  fontWeight: "800" as const,
+  color: "#ffffff",
   margin: "0",
 };
 
-const content = {
-  backgroundColor: "#ffffff",
-  padding: "32px 40px",
+const logoSuffix = {
+  fontWeight: "400" as const,
+  fontSize: "16px",
+  opacity: 0.8,
+};
+
+const bodySection = {
+  padding: "40px 40px 16px",
+};
+
+const badge = {
+  display: "inline-block" as const,
+  background: "#FFF0EE",
+  color: "#FF6B5A",
+  fontSize: "13px",
+  fontWeight: "700" as const,
+  padding: "6px 16px",
+  borderRadius: "20px",
+  letterSpacing: "0.5px",
+  margin: "0",
 };
 
 const heading = {
-  fontSize: "22px",
-  fontWeight: "600" as const,
-  color: "#1a1a1a",
-  margin: "0 0 16px",
+  fontSize: "26px",
+  fontWeight: "800" as const,
+  color: "#1A1A2E",
+  textAlign: "center" as const,
+  margin: "0 0 20px",
+  lineHeight: "1.3",
 };
 
 const paragraph = {
   fontSize: "16px",
-  lineHeight: "1.6",
-  color: "#444444",
-  margin: "0 0 16px",
+  lineHeight: "1.7",
+  color: "#4A4A5E",
+  textAlign: "center" as const,
+  margin: "0 0 24px",
 };
 
-const footer = {
-  backgroundColor: "#ffffff",
-  borderRadius: "0 0 8px 8px",
-  padding: "0 40px 32px",
-  borderTop: "1px solid #eeeeee",
+const pillContainer = {
+  textAlign: "center" as const,
+  margin: "0 0 24px",
+};
+
+const pillTeal = {
+  display: "inline-block" as const,
+  background: "#E6F7F7",
+  color: "#0EA5A5",
+  fontSize: "13px",
+  fontWeight: "600" as const,
+  padding: "8px 14px",
+  borderRadius: "20px",
+  margin: "4px",
+};
+
+const pillCoral = {
+  display: "inline-block" as const,
+  background: "#FFF0EE",
+  color: "#FF6B5A",
+  fontSize: "13px",
+  fontWeight: "600" as const,
+  padding: "8px 14px",
+  borderRadius: "20px",
+  margin: "4px",
+};
+
+const dashedDivider = {
+  borderTop: "2px dashed #E8E8EE",
+  borderBottom: "none" as const,
+  margin: "0 24px",
+};
+
+const footerSection = {
+  padding: "20px 40px 32px",
+  textAlign: "center" as const,
 };
 
 const footerText = {
-  fontSize: "13px",
-  color: "#999999",
-  textAlign: "center" as const,
+  fontSize: "12px",
+  color: "#8888A0",
   margin: "16px 0 0",
 };
