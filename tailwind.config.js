@@ -19,6 +19,11 @@ module.exports = {
           'bg-warm': '#FAFAF8',
           border: '#E8E8EE',
           'border-light': '#F2F2F6',
+          // Backwards-compat aliases (old palette → new palette)
+          pink: '#FF6B5A',       // maps to coral
+          purple: '#0EA5A5',     // maps to teal
+          sun: '#F5A623',        // maps to gold
+          'page-bg': '#FAFAF8',  // maps to bg-warm
         },
       },
       fontFamily: {
