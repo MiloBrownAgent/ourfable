@@ -84,6 +84,13 @@ const STEPS = [
   },
 ];
 
+const SAMPLE_PAGES = [
+  { image: '/samples/story/page1.jpg', text: 'One magical evening, Lily discovered a tiny glowing door at the base of the old oak tree. Her heart raced with excitement as she reached for the golden handle.' },
+  { image: '/samples/story/page2.jpg', text: 'Through the door lay a wondrous kingdom of floating islands and rainbow bridges. A fox wearing a tiny crown bowed and said, "We\'ve been waiting for you, brave one."' },
+  { image: '/samples/story/page3.jpg', text: 'The bravest part came next — crossing the Wobbly Bridge over the Sparkling River. But Lily wasn\'t afraid. The star creatures lit the way, and she knew she could do it.' },
+  { image: '/samples/story/page4.jpg', text: 'And so, surrounded by all her new friends, Lily danced in the meadow of wildflowers. She\'d found something more precious than any treasure — a place where she truly belonged.' },
+];
+
 const FEATURES = [
   { icon: '📖', title: '12 Illustrated Pages', desc: 'A complete story with a unique illustration on every page.' },
   { icon: '✨', title: 'AI-Written Story', desc: 'Powered by advanced AI that crafts engaging, age-appropriate narratives.' },
@@ -161,6 +168,56 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function SampleBookPreview() {
+  const [page, setPage] = useState(0);
+  const current = SAMPLE_PAGES[page];
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border border-brand-border overflow-hidden">
+      <div className="relative">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={current.image}
+          alt={`Sample story page ${page + 1}`}
+          className="w-full aspect-[4/3] object-cover"
+        />
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-brand-ink text-xs font-bold px-3 py-1 rounded-full font-body shadow-sm">
+          Page {page + 1} of {SAMPLE_PAGES.length}
+        </div>
+      </div>
+      <div className="p-6 sm:p-8">
+        <p className="font-body text-brand-ink text-base sm:text-lg leading-relaxed italic">
+          &ldquo;{current.text}&rdquo;
+        </p>
+        <div className="flex items-center justify-between mt-6">
+          <button
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+            className="btn-secondary text-sm disabled:opacity-40"
+          >
+            ← Previous
+          </button>
+          <div className="flex gap-1.5">
+            {SAMPLE_PAGES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={`w-2 h-2 rounded-full transition-all ${i === page ? 'bg-brand-teal w-6' : 'bg-gray-200 hover:bg-gray-300'}`}
+              />
+            ))}
+          </div>
+          <button
+            onClick={() => setPage(Math.min(SAMPLE_PAGES.length - 1, page + 1))}
+            disabled={page === SAMPLE_PAGES.length - 1}
+            className="btn-secondary text-sm disabled:opacity-40"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
@@ -211,7 +268,7 @@ export default function Home() {
               <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden transition-transform hover:-translate-y-1">
                 <div className="h-64 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/samples/underwater-kingdom.png" alt="Underwater Kingdom storybook illustration" className="w-full h-full object-cover" />
+                  <img src="/samples/underwater-kingdom.jpg" alt="Underwater Kingdom storybook illustration" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-4">
                   <div className="font-display text-sm font-bold text-brand-ink mb-2">The Ocean Secret</div>
@@ -228,7 +285,7 @@ export default function Home() {
               <div className="bg-white rounded-2xl shadow-xl border-2 border-brand-coral/20 overflow-hidden transition-transform hover:-translate-y-1">
                 <div className="h-64 overflow-hidden relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/samples/space-adventure.png" alt="Space Adventure storybook illustration" className="w-full h-full object-cover" />
+                  <img src="/samples/space-adventure.jpg" alt="Space Adventure storybook illustration" className="w-full h-full object-cover" />
                   <div className="absolute top-3 right-3 bg-brand-coral text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-body">POPULAR</div>
                 </div>
                 <div className="p-4">
@@ -247,7 +304,7 @@ export default function Home() {
               <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden transition-transform hover:-translate-y-1">
                 <div className="h-64 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/samples/dragon-quest.png" alt="Dragon Quest storybook illustration" className="w-full h-full object-cover" />
+                  <img src="/samples/dragon-quest.jpg" alt="Dragon Quest storybook illustration" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-4">
                   <div className="font-display text-sm font-bold text-brand-ink mb-2">The Dragon&apos;s Friend</div>
@@ -277,7 +334,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="rounded-2xl overflow-hidden shadow-lg">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/samples/book-mockup-open.png" alt="Open storybook showing beautiful watercolor illustrations" className="w-full h-64 object-cover" />
+              <img src="/samples/book-mockup-open.jpg" alt="Open storybook showing beautiful watercolor illustrations" className="w-full h-64 object-cover" />
               <div className="bg-white p-4">
                 <p className="font-display text-sm font-bold text-brand-ink">Beautiful inside and out</p>
                 <p className="text-xs text-brand-ink-muted font-body mt-1">Thick glossy pages with vivid watercolor illustrations</p>
@@ -285,7 +342,7 @@ export default function Home() {
             </div>
             <div className="rounded-2xl overflow-hidden shadow-lg">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/samples/book-mockup-stack.png" alt="Stack of personalized storybooks wrapped as gift" className="w-full h-64 object-cover" />
+              <img src="/samples/book-mockup-stack.jpg" alt="Stack of personalized storybooks wrapped as gift" className="w-full h-64 object-cover" />
               <div className="bg-white p-4">
                 <p className="font-display text-sm font-bold text-brand-ink">The perfect gift</p>
                 <p className="text-xs text-brand-ink-muted font-body mt-1">Birthdays, holidays, or just because — they&apos;ll love it</p>
@@ -293,7 +350,7 @@ export default function Home() {
             </div>
             <div className="rounded-2xl overflow-hidden shadow-lg">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/samples/book-mockup-reading.png" alt="Child reading their personalized storybook" className="w-full h-64 object-cover" />
+              <img src="/samples/book-mockup-reading.jpg" alt="Child reading their personalized storybook" className="w-full h-64 object-cover" />
               <div className="bg-white p-4">
                 <p className="font-display text-sm font-bold text-brand-ink">Watch their face light up</p>
                 <p className="text-xs text-brand-ink-muted font-body mt-1">The moment they see themselves as the hero of their story</p>
@@ -341,6 +398,21 @@ export default function Home() {
               <p className="text-brand-ink-muted text-sm leading-relaxed font-body">{step.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Sample Story Preview */}
+      <section className="px-4 py-20 bg-brand-bg-warm border-y border-brand-border">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+              Preview a sample story
+            </h2>
+            <p className="text-brand-ink-muted text-base font-body">
+              Every book is unique. Here&apos;s a peek at what yours could look like.
+            </p>
+          </div>
+          <SampleBookPreview />
         </div>
       </section>
 
