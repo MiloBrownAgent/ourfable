@@ -4,7 +4,15 @@ import WelcomeEmail from "@/emails/WelcomeEmail";
 import BookReadyEmail from "@/emails/BookReadyEmail";
 import BookFailedEmail from "@/emails/BookFailedEmail";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "placeholder_need_from_resend") {
+    console.warn("[Email] RESEND_API_KEY not configured — skipping email send");
+    return null;
+  }
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
 const FROM = "OurFable <onboarding@resend.dev>";
 
@@ -12,7 +20,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ourfable.ai";
 
 export async function sendWaitlistWelcome(email: string) {
   try {
-    await resend.emails.send({
+    const r = getResend(); if (!r) return; await r.emails.send({
       from: FROM,
       to: email,
       subject: "You're on the list! ✨ OurFable.ai",
@@ -25,7 +33,7 @@ export async function sendWaitlistWelcome(email: string) {
 
 export async function sendWelcomeEmail(email: string, name?: string) {
   try {
-    await resend.emails.send({
+    const r = getResend(); if (!r) return; await r.emails.send({
       from: FROM,
       to: email,
       subject: "Welcome to OurFable! Let's make some magic 📚",
@@ -44,7 +52,7 @@ export async function sendBookReady(
   coverImageUrl?: string
 ) {
   try {
-    await resend.emails.send({
+    const r = getResend(); if (!r) return; await r.emails.send({
       from: FROM,
       to: email,
       subject: "Your storybook is ready! 🎉",
@@ -63,7 +71,7 @@ export async function sendBookReady(
 
 export async function sendBookFailed(email: string, bookId: string) {
   try {
-    await resend.emails.send({
+    const r = getResend(); if (!r) return; await r.emails.send({
       from: FROM,
       to: email,
       subject: "We hit a snag with your storybook",
