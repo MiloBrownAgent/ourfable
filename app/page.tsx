@@ -80,7 +80,7 @@ const STEPS = [
   {
     num: '3',
     title: 'Watch the magic',
-    desc: 'Your animated storybook comes alive with cinematic illustrations, page-turn effects, and ambient particles. Or order a premium hardcover.',
+    desc: 'Your animated storybook comes alive with cinematic illustrations, page-turn effects, and ambient particles.',
     color: 'teal' as const,
   },
 ];
@@ -122,7 +122,7 @@ const TESTIMONIALS = [
 const FAQS = [
   {
     q: 'How long does it take to create a book?',
-    a: 'Your personalized storybook is generated in under 3 minutes. You can read it immediately as a digital book, or order a hardcover that ships in 5-7 business days.',
+    a: 'Your personalized storybook is generated in under 3 minutes. You can read it immediately on any device.',
   },
   {
     q: 'What kind of photo should I upload?',
@@ -141,8 +141,8 @@ const FAQS = [
     a: 'Yes! You can mention siblings, parents, grandparents, friends, or pets when describing your story, and they\'ll be woven into the narrative.',
   },
   {
-    q: 'What\'s the difference between digital and hardcover?',
-    a: 'The digital book ($14.99) is an animated, interactive reading experience — cinematic Ken Burns illustrations, page-turn animations, floating particle effects, and auto-play mode. It\'s like a mini movie of their story. The hardcover ($34.99) is a premium printed book with thick pages and a durable cover, shipped to your door.',
+    q: 'Can I get a printed copy?',
+    a: 'We\'re launching with our animated digital experience first — it\'s the best way to enjoy the story. After your book is created, we\'ll let you know when a premium hardcover option becomes available.',
   },
 ];
 
@@ -334,11 +334,7 @@ function SampleBookPreview() {
   );
 }
 
-const PHYSICAL_BOOKS = [
-  { src: '/samples/book-mockup-open.jpg', alt: 'Open storybook showing beautiful watercolor illustrations', title: 'Beautiful inside and out', desc: 'Thick glossy pages with vivid watercolor illustrations' },
-  { src: '/samples/book-mockup-stack.jpg', alt: 'Stack of personalized storybooks wrapped as gift', title: 'The perfect gift', desc: "Birthdays, holidays, or just because — they'll love it" },
-  { src: '/samples/book-mockup-reading.jpg', alt: 'Child reading their personalized storybook', title: 'Watch their face light up', desc: 'The moment they see themselves as the hero of their story' },
-];
+// Physical books removed — digital-only launch
 
 export default function Home() {
   return (
@@ -388,7 +384,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            Upload one photo and get a beautifully animated, interactive storybook — with cinematic illustrations, page-turn animations, and narration — in under 3 minutes.
+            Upload one photo and get a beautifully animated, interactive storybook — with cinematic illustrations and page-turn animations — in under 3 minutes.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -497,45 +493,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Physical Book Showcase */}
-      <section className="px-4 pb-12 sm:pb-20">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            className="text-center mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
-              A real book they&apos;ll treasure forever
-            </h2>
-            <p className="text-brand-ink-muted text-sm sm:text-base font-body max-w-lg mx-auto">
-              Premium hardcover with thick glossy pages. Printed and shipped to your door.
-            </p>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {PHYSICAL_BOOKS.map((book, i) => (
-              <motion.div
-                key={i}
-                className="rounded-2xl overflow-hidden shadow-lg"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.15 }}
-                whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={book.src} alt={book.alt} className="w-full h-48 sm:h-64 object-cover" />
-                <div className="bg-white p-4">
-                  <p className="font-display text-sm font-bold text-brand-ink">{book.title}</p>
-                  <p className="text-xs text-brand-ink-muted font-body mt-1">{book.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Physical Book Showcase removed — digital-only launch */}
 
       {/* Social Proof Bar */}
       <section className="border-y border-brand-border bg-brand-bg-warm">
@@ -710,10 +668,10 @@ export default function Home() {
               No subscriptions. Pay only when you love what you see.
             </p>
           </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
-            {/* Digital */}
+          <div className="max-w-sm mx-auto">
             <motion.div
-              className="card text-center"
+              className="card text-center relative animate-border-pulse"
+              style={{ borderWidth: '2px' }}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -721,7 +679,7 @@ export default function Home() {
               whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)', transition: { duration: 0.2 } }}
             >
               <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal px-3 py-1 rounded-full font-bold text-xs uppercase mb-4 font-body">
-                ✨ Animated Digital
+                ✨ Animated Digital Storybook
               </div>
               <div className="font-display text-3xl sm:text-4xl font-extrabold text-brand-ink mb-1">$14.99</div>
               <p className="text-brand-ink-muted text-xs sm:text-sm font-body mb-4 sm:mb-6">One-time purchase</p>
@@ -740,51 +698,19 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Instant delivery — read on any device
-                </li>
-              </ul>
-              <Link href="/auth/signup" className="btn-secondary w-full text-sm min-h-[44px]">
-                Get Started
-              </Link>
-            </motion.div>
-            {/* Hardcover */}
-            <motion.div
-              className="card text-center relative animate-border-pulse"
-              style={{ borderWidth: '2px' }}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.15 }}
-              whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)', transition: { duration: 0.2 } }}
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-coral text-white px-3 py-0.5 rounded-full font-bold text-xs uppercase font-body">
-                Best Value
-              </div>
-              <div className="inline-flex items-center gap-2 bg-brand-coral-light text-brand-coral px-3 py-1 rounded-full font-bold text-xs uppercase mb-4 font-body">
-                Hardcover
-              </div>
-              <div className="font-display text-3xl sm:text-4xl font-extrabold text-brand-ink mb-1">$34.99</div>
-              <p className="text-brand-ink-muted text-xs sm:text-sm font-body mb-4 sm:mb-6">One-time purchase</p>
-              <ul className="text-xs sm:text-sm text-brand-ink-light font-body space-y-2 text-left mb-4 sm:mb-6">
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-coral shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Everything in Digital, plus...
+                  6 unique art styles to choose from
                 </li>
                 <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-coral shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Premium hardcover book
+                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Ready in under 3 minutes
                 </li>
                 <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-coral shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Thick, durable pages
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-coral shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Ships in 5-7 business days
+                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Read on any device, anytime
                 </li>
               </ul>
               <Link href="/auth/signup" className="btn-primary w-full text-sm min-h-[44px]">
-                Get Started
+                Create Your Book
               </Link>
             </motion.div>
           </div>
