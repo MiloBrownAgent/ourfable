@@ -36,7 +36,7 @@ export default function WaitlistWelcome() {
               <Text style={paragraph}>
                 We&apos;re building something magical — personalized storybooks
                 where{" "}
-                <strong style={{ color: "#0EA5A5" }}>
+                <strong style={{ color: "#4A1D96" }}>
                   your child becomes the hero
                 </strong>{" "}
                 of their very own adventure. &#10024;
@@ -44,8 +44,8 @@ export default function WaitlistWelcome() {
 
               {/* Feature pills */}
               <Section style={pillContainer}>
-                <Text style={pillTeal}>&#128248; One photo</Text>
-                <Text style={pillCoral}>&#127912; AI illustrations</Text>
+                <Text style={pillPurple}>&#128248; One photo</Text>
+                <Text style={pillOrange}>&#127912; AI illustrations</Text>
                 <Text style={pillTeal}>&#9889; Under 3 min</Text>
               </Section>
 
@@ -71,7 +71,7 @@ export default function WaitlistWelcome() {
 }
 
 const main = {
-  background: "linear-gradient(135deg, #E6F7F7 0%, #FFF0EE 50%, #E6F7F7 100%)",
+  background: "linear-gradient(135deg, #F3E8FF 0%, #FFF0E6 50%, #E0F2FE 100%)",
   fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   padding: "0",
   margin: "0",
@@ -87,11 +87,11 @@ const card = {
   backgroundColor: "#ffffff",
   borderRadius: "24px",
   overflow: "hidden" as const,
-  boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+  boxShadow: "0 8px 30px rgba(74,29,150,0.12)",
 };
 
 const headerSection = {
-  background: "linear-gradient(135deg, #0EA5A5 0%, #0C8C8C 100%)",
+  background: "linear-gradient(135deg, #4A1D96 0%, #6D28D9 50%, #EC4899 100%)",
   padding: "40px 40px 32px",
   textAlign: "center" as const,
 };
@@ -121,8 +121,8 @@ const bodySection = {
 
 const badge = {
   display: "inline-block" as const,
-  background: "#FFF0EE",
-  color: "#FF6B5A",
+  background: "linear-gradient(135deg, #FCE7F3, #FFF0E6)",
+  color: "#EC4899",
   fontSize: "13px",
   fontWeight: "700" as const,
   padding: "6px 16px",
@@ -134,7 +134,7 @@ const badge = {
 const heading = {
   fontSize: "26px",
   fontWeight: "800" as const,
-  color: "#1A1A2E",
+  color: "#4A1D96",
   textAlign: "center" as const,
   margin: "0 0 20px",
   lineHeight: "1.3",
@@ -153,10 +153,10 @@ const pillContainer = {
   margin: "0 0 24px",
 };
 
-const pillTeal = {
+const pillPurple = {
   display: "inline-block" as const,
-  background: "#E6F7F7",
-  color: "#0EA5A5",
+  background: "#F3E8FF",
+  color: "#4A1D96",
   fontSize: "13px",
   fontWeight: "600" as const,
   padding: "8px 14px",
@@ -164,10 +164,21 @@ const pillTeal = {
   margin: "4px",
 };
 
-const pillCoral = {
+const pillOrange = {
   display: "inline-block" as const,
-  background: "#FFF0EE",
-  color: "#FF6B5A",
+  background: "#FFF0E6",
+  color: "#FF6B35",
+  fontSize: "13px",
+  fontWeight: "600" as const,
+  padding: "8px 14px",
+  borderRadius: "20px",
+  margin: "4px",
+};
+
+const pillTeal = {
+  display: "inline-block" as const,
+  background: "#E0F2FE",
+  color: "#0EA5E9",
   fontSize: "13px",
   fontWeight: "600" as const,
   padding: "8px 14px",
@@ -176,7 +187,7 @@ const pillCoral = {
 };
 
 const dashedDivider = {
-  borderTop: "2px dashed #E8E8EE",
+  borderTop: "2px dashed #E9D5FF",
   borderBottom: "none" as const,
   margin: "0 24px",
 };

@@ -40,13 +40,13 @@ export default function WelcomeEmail({
             <Section style={bodySection}>
               <Text style={heading}>{greeting} &#127881;</Text>
               <Text style={subtitle}>
-                Your account is ready. Let&apos;s make some magic.
+                Your account is ready. Let&apos;s make some magic &#10024;
               </Text>
 
               {/* Steps */}
               <Section style={stepsBox}>
                 <Section style={stepRow}>
-                  <Section style={stepNumberTeal}>
+                  <Section style={stepNumberPurple}>
                     <Text style={stepNumberText}>1</Text>
                   </Section>
                   <Section style={stepContent}>
@@ -58,7 +58,7 @@ export default function WelcomeEmail({
                 </Section>
 
                 <Section style={stepRow}>
-                  <Section style={stepNumberCoral}>
+                  <Section style={stepNumberOrange}>
                     <Text style={stepNumberText}>2</Text>
                   </Section>
                   <Section style={stepContent}>
@@ -70,7 +70,7 @@ export default function WelcomeEmail({
                 </Section>
 
                 <Section style={stepRow}>
-                  <Section style={stepNumberGold}>
+                  <Section style={stepNumberPink}>
                     <Text style={stepNumberText}>3</Text>
                   </Section>
                   <Section style={stepContent}>
@@ -113,7 +113,7 @@ export default function WelcomeEmail({
 
 const main = {
   background:
-    "linear-gradient(135deg, #FFF0EE 0%, #E6F7F7 50%, #FFF0EE 100%)",
+    "linear-gradient(135deg, #F3E8FF 0%, #FFF0E6 50%, #E0F2FE 100%)",
   fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   padding: "0",
   margin: "0",
@@ -129,11 +129,11 @@ const card = {
   backgroundColor: "#ffffff",
   borderRadius: "24px",
   overflow: "hidden" as const,
-  boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+  boxShadow: "0 8px 30px rgba(74,29,150,0.12)",
 };
 
 const headerSection = {
-  background: "linear-gradient(135deg, #0EA5A5 0%, #0C8C8C 100%)",
+  background: "linear-gradient(135deg, #4A1D96 0%, #6D28D9 50%, #EC4899 100%)",
   padding: "40px 40px 32px",
   textAlign: "center" as const,
 };
@@ -164,7 +164,7 @@ const bodySection = {
 const heading = {
   fontSize: "28px",
   fontWeight: "800" as const,
-  color: "#1A1A2E",
+  color: "#4A1D96",
   textAlign: "center" as const,
   margin: "0 0 8px",
   lineHeight: "1.3",
@@ -178,7 +178,7 @@ const subtitle = {
 };
 
 const stepsBox = {
-  background: "#E6F7F7",
+  background: "linear-gradient(135deg, #F3E8FF, #E0F2FE)",
   borderRadius: "16px",
   padding: "24px",
   margin: "0 0 24px",
@@ -188,8 +188,8 @@ const stepRow = {
   marginBottom: "16px",
 };
 
-const stepNumberTeal = {
-  background: "#0EA5A5",
+const stepNumberPurple = {
+  background: "#4A1D96",
   width: "32px",
   height: "32px",
   borderRadius: "50%",
@@ -198,8 +198,8 @@ const stepNumberTeal = {
   verticalAlign: "top" as const,
 };
 
-const stepNumberCoral = {
-  background: "#FF6B5A",
+const stepNumberOrange = {
+  background: "#FF6B35",
   width: "32px",
   height: "32px",
   borderRadius: "50%",
@@ -208,8 +208,8 @@ const stepNumberCoral = {
   verticalAlign: "top" as const,
 };
 
-const stepNumberGold = {
-  background: "#F5A623",
+const stepNumberPink = {
+  background: "#EC4899",
   width: "32px",
   height: "32px",
   borderRadius: "50%",
@@ -233,7 +233,7 @@ const stepContent = {
 };
 
 const stepTitle = {
-  color: "#1A1A2E",
+  color: "#4A1D96",
   fontWeight: "700" as const,
   fontSize: "15px",
   margin: "0",
@@ -251,7 +251,7 @@ const buttonContainer = {
 };
 
 const ctaButton = {
-  background: "linear-gradient(135deg, #FF6B5A 0%, #E85A4A 100%)",
+  background: "linear-gradient(135deg, #FF6B35 0%, #EC4899 100%)",
   color: "#ffffff",
   fontSize: "18px",
   fontWeight: "700" as const,
@@ -259,7 +259,7 @@ const ctaButton = {
   borderRadius: "50px",
   textDecoration: "none",
   display: "inline-block" as const,
-  boxShadow: "0 4px 15px rgba(255,107,90,0.3)",
+  boxShadow: "0 4px 15px rgba(255,107,53,0.35)",
 };
 
 const tipBox = {
@@ -267,7 +267,7 @@ const tipBox = {
   borderRadius: "12px",
   padding: "16px",
   textAlign: "center" as const,
-  border: "1px dashed #F5A623",
+  border: "1px dashed #FF6B35",
 };
 
 const tipText = {
@@ -277,7 +277,7 @@ const tipText = {
 };
 
 const dashedDivider = {
-  borderTop: "2px dashed #E8E8EE",
+  borderTop: "2px dashed #E9D5FF",
   borderBottom: "none" as const,
   margin: "0 24px",
 };
