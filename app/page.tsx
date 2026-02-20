@@ -227,10 +227,28 @@ function SampleBookPreview() {
   };
 
   const slideVariants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 150 : -150, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -150 : 150, opacity: 0 }),
+    enter: (dir: number) => ({
+      x: dir > 0 ? '15%' : '-15%',
+      rotateY: dir > 0 ? 15 : -15,
+      opacity: 0,
+      scale: 0.95,
+    }),
+    center: { x: 0, rotateY: 0, opacity: 1, scale: 1 },
+    exit: (dir: number) => ({
+      x: dir > 0 ? '-15%' : '15%',
+      rotateY: dir > 0 ? -15 : 15,
+      opacity: 0,
+      scale: 0.95,
+    }),
   };
+
+  const sampleKenBurns = [
+    { scaleEnd: 1.08, xEnd: -8, yEnd: -4 },
+    { scaleEnd: 1.07, xEnd: 8, yEnd: -4 },
+    { scaleEnd: 1.08, xEnd: -6, yEnd: 6 },
+    { scaleEnd: 1.06, xEnd: 0, yEnd: -6 },
+  ];
+  const kb = sampleKenBurns[page % sampleKenBurns.length];
 
   return (
     <motion.div
@@ -240,7 +258,7 @@ function SampleBookPreview() {
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden" style={{ perspective: 1200 }}>
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
             key={page}
@@ -249,14 +267,22 @@ function SampleBookPreview() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={SAMPLE_PAGES[page].image}
-              alt={`Sample story page ${page + 1}`}
-              className="w-full aspect-[4/3] object-cover"
-            />
+            <div className="w-full overflow-hidden">
+              <motion.div
+                initial={{ scale: 1, x: 0, y: 0 }}
+                animate={{ scale: kb.scaleEnd, x: kb.xEnd, y: kb.yEnd }}
+                transition={{ duration: 14, ease: 'linear' }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={SAMPLE_PAGES[page].image}
+                  alt={`Sample story page ${page + 1}`}
+                  className="w-full aspect-[4/3] object-cover"
+                />
+              </motion.div>
+            </div>
             {/* Page curl shadow */}
             <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/[0.06] to-transparent pointer-events-none" />
           </motion.div>

@@ -1,9 +1,110 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const AUTO_PLAY_SECONDS = 9;
+
+const KEN_BURNS_PRESETS = [
+  { scaleEnd: 1.08, xEnd: -10, yEnd: -5 },
+  { scaleEnd: 1.08, xEnd: 10, yEnd: -5 },
+  { scaleEnd: 1.07, xEnd: -8, yEnd: 8 },
+  { scaleEnd: 1.08, xEnd: 8, yEnd: -8 },
+  { scaleEnd: 1.06, xEnd: 0, yEnd: -8 },
+  { scaleEnd: 1.08, xEnd: -4, yEnd: 0 },
+  { scaleEnd: 1.07, xEnd: 5, yEnd: 5 },
+];
+
+/* ── Ambient floating particles ─────────────────────────────── */
+function AmbientParticles() {
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, i) => ({
+        id: i,
+        left: `${10 + ((i * 73 + 17) % 80)}%`,
+        top: `${20 + ((i * 47 + 31) % 60)}%`,
+        size: 2 + (i % 3),
+        delay: (i * 0.7) % 5,
+        duration: 6 + (i % 4),
+        sway: (i % 2 === 0 ? 1 : -1) * (10 + (i % 3) * 5),
+      })),
+    [],
+  );
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className={`absolute rounded-full${p.id >= 5 ? ' hidden sm:block' : ''}`}
+          style={{
+            left: p.left,
+            top: p.top,
+            width: p.size,
+            height: p.size,
+            backgroundColor: '#F5E6C8',
+          }}
+          animate={{
+            y: [0, -40, -80],
+            x: [0, p.sway, 0],
+            opacity: [0, 0.4, 0],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Typewriter text reveal ──────────────────────────────────── */
+function TypewriterText({ text }: { text: string }) {
+  const words = useMemo(() => text.split(/\s+/).filter(Boolean), [text]);
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    setVisibleCount(0);
+    let intervalId: ReturnType<typeof setInterval>;
+    const len = words.length;
+    const timeoutId = setTimeout(() => {
+      let count = 0;
+      intervalId = setInterval(() => {
+        count += 1;
+        setVisibleCount(count);
+        if (count >= len) clearInterval(intervalId);
+      }, 50);
+    }, 600);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [words]);
+
+  return (
+    <p className="font-body text-brand-ink text-lg leading-relaxed">
+      {words.map((word, i) => (
+        <span
+          key={i}
+          className="inline-block mr-[0.3em] transition-all duration-150 ease-out"
+          style={{
+            opacity: i < visibleCount ? 1 : 0,
+            transform: i < visibleCount ? 'translateY(0)' : 'translateY(6px)',
+          }}
+        >
+          {word}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+/* ── Print interest banner ───────────────────────────────────── */
 function PrintInterestBanner({ bookId }: { bookId: string }) {
   const [clicked, setClicked] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -18,7 +119,7 @@ function PrintInterestBanner({ bookId }: { bookId: string }) {
       });
       setSaved(true);
     } catch {
-      setSaved(true); // Don't block UX on failure
+      setSaved(true);
     }
   };
 
@@ -67,6 +168,28 @@ type PageEntry = {
 
 type ProgressStep = 'writing' | 'illustrations';
 
+/* ── Page turn variants (3D flip) ────────────────────────────── */
+const pageVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? '20%' : '-20%',
+    rotateY: dir > 0 ? 20 : -20,
+    opacity: 0,
+    scale: 0.95,
+  }),
+  center: {
+    x: 0,
+    rotateY: 0,
+    opacity: 1,
+    scale: 1,
+  },
+  exit: (dir: number) => ({
+    x: dir > 0 ? '-20%' : '20%',
+    rotateY: dir > 0 ? -20 : 20,
+    opacity: 0,
+    scale: 0.95,
+  }),
+};
+
 export default function BookPreviewReader({
   title,
   pages,
@@ -87,6 +210,7 @@ export default function BookPreviewReader({
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [regenerateImagesError, setRegenerateImagesError] = useState<string | null>(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const hasPagesButMissingImages =
     pages.length > 0 &&
@@ -99,14 +223,12 @@ export default function BookPreviewReader({
     return () => clearTimeout(t);
   }, [isGenerating]);
 
-  // Fire confetti if redirected from creation flow
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('confetti') === 'true') {
       import('canvas-confetti').then((mod) => {
         mod.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       });
-      // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -155,10 +277,10 @@ export default function BookPreviewReader({
 
   const total = pages.length;
   const page = total > 0 ? pages[currentIndex] : null;
-  const imageUrl = page
-    ? (page.imageUrl ?? page.image_url)
-    : null;
+  const imageUrl = page ? (page.imageUrl ?? page.image_url) : null;
   const placeholder = 'https://placehold.co/800x600/FFE4F1/E24E8A?text=Illustration';
+
+  const kenBurns = KEN_BURNS_PRESETS[currentIndex % KEN_BURNS_PRESETS.length];
 
   const shareUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/books/${bookId}`
@@ -185,6 +307,19 @@ export default function BookPreviewReader({
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [goPrev, goNext]);
+
+  /* ── Auto-play ─────────────────────────────────────────────── */
+  useEffect(() => {
+    if (!isPlaying) return;
+    const timer = setTimeout(() => {
+      if (currentIndex < total - 1) {
+        paginate(currentIndex + 1);
+      } else {
+        setIsPlaying(false);
+      }
+    }, AUTO_PLAY_SECONDS * 1000);
+    return () => clearTimeout(timer);
+  }, [isPlaying, currentIndex, total, paginate]);
 
   async function handleShare(platform: 'facebook' | 'copy' | 'native') {
     const text = `Check out "${title}" — a personalized storybook I made with OurFable.ai!`;
@@ -214,7 +349,6 @@ export default function BookPreviewReader({
         await navigator.clipboard.writeText(shareUrl);
         alert('Link copied to clipboard!');
       } catch {
-        // Fallback
         const input = document.createElement('input');
         input.value = shareUrl;
         document.body.appendChild(input);
@@ -227,12 +361,6 @@ export default function BookPreviewReader({
       return;
     }
   }
-
-  const slideVariants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 150 : -150, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -150 : 150, opacity: 0 }),
-  };
 
   if (status === 'generating' && !isGenerating) {
     return (
@@ -302,7 +430,18 @@ export default function BookPreviewReader({
     <div className="space-y-6">
       <div className="text-center">
         <h1 className="font-display text-3xl font-bold text-brand-ink">{title}</h1>
-        <p className="text-brand-ink-muted text-sm mt-1">Page {currentIndex + 1} of {total}</p>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={currentIndex}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.25 }}
+            className="text-brand-ink-muted text-sm mt-1"
+          >
+            Page {currentIndex + 1} of {total}
+          </motion.p>
+        </AnimatePresence>
       </div>
 
       {hasPagesButMissingImages && (
@@ -333,45 +472,71 @@ export default function BookPreviewReader({
       )}
 
       <div className="card overflow-hidden">
-        <div className="aspect-[4/3] sm:aspect-[3/4] max-h-[60vh] w-full bg-gray-100 rounded-2xl overflow-hidden flex items-center justify-center relative">
+        {/* Illustration area */}
+        <div
+          className="aspect-[4/3] sm:aspect-[3/4] max-h-[60vh] w-full bg-gray-100 rounded-2xl overflow-hidden relative"
+          style={{ perspective: 1200 }}
+        >
           <AnimatePresence initial={false} custom={direction} mode="wait">
             <motion.div
               key={currentIndex}
               custom={direction}
-              variants={slideVariants}
+              variants={pageVariants}
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="w-full h-full"
+              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+              className="absolute inset-0"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageUrl || placeholder}
-                alt={`Page ${currentIndex + 1}`}
-                className="w-full h-full object-contain"
-              />
+              <div className="w-full h-full overflow-hidden">
+                <motion.div
+                  initial={{ scale: 1, x: 0, y: 0 }}
+                  animate={{
+                    scale: kenBurns.scaleEnd,
+                    x: kenBurns.xEnd,
+                    y: kenBurns.yEnd,
+                  }}
+                  transition={{ duration: 14, ease: 'linear' }}
+                  className="w-full h-full"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imageUrl || placeholder}
+                    alt={`Page ${currentIndex + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                </motion.div>
+              </div>
             </motion.div>
           </AnimatePresence>
+
+          {/* Ambient particles */}
+          <AmbientParticles />
+
           {/* Page curl shadow */}
-          <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-black/[0.05] to-transparent pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-black/[0.05] to-transparent pointer-events-none z-10" />
+
+          {/* Auto-play progress bar */}
+          {isPlaying && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 z-20">
+              <motion.div
+                key={`progress-${currentIndex}`}
+                className="h-full bg-white/70"
+                initial={{ width: '0%' }}
+                animate={{ width: '100%' }}
+                transition={{ duration: AUTO_PLAY_SECONDS, ease: 'linear' }}
+              />
+            </div>
+          )}
         </div>
+
+        {/* Typewriter text */}
         <div className="mt-6 px-1">
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={currentIndex}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="font-body text-brand-ink text-lg leading-relaxed"
-            >
-              {page!.text}
-            </motion.p>
-          </AnimatePresence>
+          <TypewriterText key={currentIndex} text={page!.text} />
         </div>
       </div>
 
+      {/* Navigation controls */}
       <div className="flex items-center justify-between gap-4">
         <button
           type="button"
@@ -381,9 +546,31 @@ export default function BookPreviewReader({
         >
           ← Previous
         </button>
-        <span className="text-sm font-display font-bold text-brand-ink-muted">
-          {currentIndex + 1} / {total}
-        </span>
+
+        <div className="flex items-center gap-3">
+          {/* Auto-play toggle */}
+          <button
+            type="button"
+            onClick={() => setIsPlaying(!isPlaying)}
+            className="w-8 h-8 rounded-full bg-brand-teal/10 hover:bg-brand-teal/20 flex items-center justify-center transition-colors"
+            aria-label={isPlaying ? 'Pause auto-play' : 'Play auto-play'}
+          >
+            {isPlaying ? (
+              <svg className="w-3.5 h-3.5 text-brand-teal" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5 text-brand-teal ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </button>
+
+          <span className="text-sm font-display font-bold text-brand-ink-muted">
+            {currentIndex + 1} / {total}
+          </span>
+        </div>
+
         <button
           type="button"
           onClick={goNext}
@@ -402,7 +589,6 @@ export default function BookPreviewReader({
         <button
           type="button"
           onClick={() => {
-            // Try native share first on mobile
             if (typeof navigator.share === "function") {
               handleShare('native');
             } else {
