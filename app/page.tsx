@@ -152,9 +152,9 @@ function FAQItem({ q, a }: { q: string; a: string }) {
     <div className="border-b border-brand-border last:border-b-0">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-5 text-left gap-4"
+        className="w-full flex items-center justify-between py-4 text-left gap-3 min-h-[48px]"
       >
-        <span className="font-display text-base sm:text-lg font-bold text-brand-ink">{q}</span>
+        <span className="font-display text-sm sm:text-lg font-bold text-brand-ink">{q}</span>
         <svg
           className={`w-5 h-5 text-brand-ink-muted shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -291,7 +291,7 @@ function SampleBookPreview() {
           Page {page + 1} of {SAMPLE_PAGES.length}
         </div>
       </div>
-      <div className="p-6 sm:p-8">
+      <div className="p-4 sm:p-8">
         <AnimatePresence mode="wait">
           <motion.p
             key={page}
@@ -299,34 +299,34 @@ function SampleBookPreview() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="font-body text-brand-ink text-base sm:text-lg leading-relaxed italic"
+            className="font-body text-brand-ink text-sm sm:text-lg leading-relaxed italic"
           >
             &ldquo;{SAMPLE_PAGES[page].text}&rdquo;
           </motion.p>
         </AnimatePresence>
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex items-center justify-between mt-4 sm:mt-6">
           <button
             onClick={() => paginate(Math.max(0, page - 1))}
             disabled={page === 0}
-            className="btn-secondary text-sm disabled:opacity-40"
+            className="btn-secondary text-xs sm:text-sm disabled:opacity-40 min-h-[44px] min-w-[44px] px-3 sm:px-6"
           >
-            ← Previous
+            ← <span className="hidden sm:inline">Previous</span>
           </button>
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             {SAMPLE_PAGES.map((_, i) => (
               <button
                 key={i}
                 onClick={() => paginate(i)}
-                className={`w-2 h-2 rounded-full transition-all ${i === page ? 'bg-brand-teal w-6' : 'bg-gray-200 hover:bg-gray-300'}`}
+                className={`h-3 rounded-full transition-all min-w-[12px] ${i === page ? 'bg-brand-teal w-6' : 'bg-gray-200 hover:bg-gray-300 w-3'}`}
               />
             ))}
           </div>
           <button
             onClick={() => paginate(Math.min(SAMPLE_PAGES.length - 1, page + 1))}
             disabled={page === SAMPLE_PAGES.length - 1}
-            className="btn-secondary text-sm disabled:opacity-40"
+            className="btn-secondary text-xs sm:text-sm disabled:opacity-40 min-h-[44px] min-w-[44px] px-3 sm:px-6"
           >
-            Next →
+            <span className="hidden sm:inline">Next </span>→
           </button>
         </div>
       </div>
@@ -342,38 +342,38 @@ const PHYSICAL_BOOKS = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white overflow-x-hidden">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 flex justify-between items-center px-6 py-4 bg-white/90 backdrop-blur-xl border-b border-brand-border">
-        <Link href="/" className="font-display text-2xl font-extrabold text-brand-ink">
+      <nav className="sticky top-0 z-50 flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 bg-white/90 backdrop-blur-xl border-b border-brand-border">
+        <Link href="/" className="font-display text-xl sm:text-2xl font-extrabold text-brand-ink shrink-0">
           Our<span className="text-brand-teal">Fable</span>
-          <span className="text-brand-ink-muted text-sm font-body">.ai</span>
+          <span className="text-brand-ink-muted text-xs sm:text-sm font-body">.ai</span>
         </Link>
-        <div className="flex items-center gap-3">
-          <Link href="/auth/login" className="btn-secondary text-sm py-2 px-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/auth/login" className="btn-secondary text-xs sm:text-sm py-2 px-3 sm:px-4 min-h-[44px]">
             Sign In
           </Link>
-          <Link href="/auth/signup" className="btn-primary text-sm py-2 px-4">
+          <Link href="/auth/signup" className="btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4 min-h-[44px]">
             Get Started
           </Link>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="hero-gradient px-4 pt-20 pb-16 sm:pt-28 sm:pb-20">
+      <section className="hero-gradient px-4 pt-14 pb-12 sm:pt-28 sm:pb-20">
         <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal-dark px-4 py-1.5 rounded-full font-bold text-xs tracking-wide uppercase mb-6 font-body">
+            <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal-dark px-4 py-1.5 rounded-full font-bold text-xs tracking-wide uppercase mb-4 sm:mb-6 font-body">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-teal animate-pulse" />
               Now in Early Access
             </div>
           </motion.div>
           <motion.h1
-            className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold text-brand-ink leading-[1.1] mb-5"
+            className="font-display text-[1.75rem] sm:text-5xl lg:text-6xl font-extrabold text-brand-ink leading-[1.15] sm:leading-[1.1] mb-4 sm:mb-5"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
@@ -383,7 +383,7 @@ export default function Home() {
             <span className="text-brand-coral"> storybook</span>
           </motion.h1>
           <motion.p
-            className="text-brand-ink-light text-lg sm:text-xl max-w-lg mx-auto mb-10 leading-relaxed font-body"
+            className="text-brand-ink-light text-base sm:text-xl max-w-lg mx-auto mb-8 sm:mb-10 leading-relaxed font-body"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
@@ -409,7 +409,7 @@ export default function Home() {
       </section>
 
       {/* Book Mockups */}
-      <section className="px-4 pb-20">
+      <section className="px-4 pb-12 sm:pb-20">
         <div className="max-w-4xl mx-auto">
           <div className="relative flex flex-col sm:flex-row sm:justify-center sm:items-end gap-4 sm:gap-6">
             {/* Left card */}
@@ -422,7 +422,7 @@ export default function Home() {
             >
               <TiltCard className="animate-float-1">
                 <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden">
-                  <div className="h-64 overflow-hidden">
+                  <div className="h-48 sm:h-64 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/samples/underwater-kingdom.jpg" alt="Underwater Kingdom storybook illustration" className="w-full h-full object-cover" />
                   </div>
@@ -447,7 +447,7 @@ export default function Home() {
             >
               <TiltCard className="animate-float-2">
                 <div className="bg-white rounded-2xl shadow-xl border-2 border-brand-coral/20 overflow-hidden relative">
-                  <div className="h-64 overflow-hidden relative">
+                  <div className="h-48 sm:h-64 overflow-hidden relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/samples/space-adventure.jpg" alt="Space Adventure storybook illustration" className="w-full h-full object-cover" />
                     <div className="absolute top-3 right-3 bg-brand-coral text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-body">POPULAR</div>
@@ -478,7 +478,7 @@ export default function Home() {
             >
               <TiltCard className="animate-float-3">
                 <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden">
-                  <div className="h-64 overflow-hidden">
+                  <div className="h-48 sm:h-64 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/samples/dragon-quest.jpg" alt="Dragon Quest storybook illustration" className="w-full h-full object-cover" />
                   </div>
@@ -498,7 +498,7 @@ export default function Home() {
       </section>
 
       {/* Physical Book Showcase */}
-      <section className="px-4 pb-20">
+      <section className="px-4 pb-12 sm:pb-20">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-10"
@@ -507,14 +507,14 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+            <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
               A real book they&apos;ll treasure forever
             </h2>
-            <p className="text-brand-ink-muted text-base font-body max-w-lg mx-auto">
+            <p className="text-brand-ink-muted text-sm sm:text-base font-body max-w-lg mx-auto">
               Premium hardcover with thick glossy pages. Printed and shipped to your door.
             </p>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {PHYSICAL_BOOKS.map((book, i) => (
               <motion.div
                 key={i}
@@ -526,7 +526,7 @@ export default function Home() {
                 whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={book.src} alt={book.alt} className="w-full h-64 object-cover" />
+                <img src={book.src} alt={book.alt} className="w-full h-48 sm:h-64 object-cover" />
                 <div className="bg-white p-4">
                   <p className="font-display text-sm font-bold text-brand-ink">{book.title}</p>
                   <p className="text-xs text-brand-ink-muted font-body mt-1">{book.desc}</p>
@@ -539,16 +539,16 @@ export default function Home() {
 
       {/* Social Proof Bar */}
       <section className="border-y border-brand-border bg-brand-bg-warm">
-        <div className="max-w-3xl mx-auto px-4 py-5 flex flex-wrap justify-center gap-x-10 gap-y-3">
-          <div className="flex items-center gap-2 text-brand-ink-light text-sm font-semibold font-body">
+        <div className="max-w-3xl mx-auto px-4 py-4 sm:py-5 flex flex-wrap justify-center gap-x-6 sm:gap-x-10 gap-y-2 sm:gap-y-3">
+          <div className="flex items-center gap-2 text-brand-ink-light text-xs sm:text-sm font-semibold font-body">
             <span className="w-2 h-2 rounded-full bg-brand-teal shrink-0" />
             Animated digital experience
           </div>
-          <div className="flex items-center gap-2 text-brand-ink-light text-sm font-semibold font-body">
+          <div className="flex items-center gap-2 text-brand-ink-light text-xs sm:text-sm font-semibold font-body">
             <span className="w-2 h-2 rounded-full bg-brand-coral shrink-0" />
             Unique illustrations every time
           </div>
-          <div className="flex items-center gap-2 text-brand-ink-light text-sm font-semibold font-body">
+          <div className="flex items-center gap-2 text-brand-ink-light text-xs sm:text-sm font-semibold font-body">
             <span className="w-2 h-2 rounded-full bg-brand-gold shrink-0" />
             Photos kept private &amp; secure
           </div>
@@ -556,22 +556,22 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="px-4 py-20 max-w-4xl mx-auto">
+      <section className="px-4 py-12 sm:py-20 max-w-4xl mx-auto">
         <motion.div
-          className="text-center mb-14"
+          className="text-center mb-8 sm:mb-14"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+          <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
             How it works
           </h2>
-          <p className="text-brand-ink-muted text-base font-body">
+          <p className="text-brand-ink-muted text-sm sm:text-base font-body">
             Three simple steps. No artistic skills needed.
           </p>
         </motion.div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
           {STEPS.map((step, i) => (
             <motion.div
               key={step.num}
@@ -598,19 +598,19 @@ export default function Home() {
       </section>
 
       {/* Sample Story Preview */}
-      <section className="px-4 py-20 bg-brand-bg-warm border-y border-brand-border">
+      <section className="px-4 py-12 sm:py-20 bg-brand-bg-warm border-y border-brand-border">
         <div className="max-w-3xl mx-auto">
           <motion.div
-            className="text-center mb-10"
+            className="text-center mb-8 sm:mb-10"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+            <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
               Preview a sample story
             </h2>
-            <p className="text-brand-ink-muted text-base font-body">
+            <p className="text-brand-ink-muted text-sm sm:text-base font-body">
               Every book is unique — and animated. Here&apos;s a peek at what yours could look like.
             </p>
           </motion.div>
@@ -619,23 +619,23 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-20">
+      <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-12 sm:py-20">
         <div className="max-w-5xl mx-auto">
           <motion.div
-            className="text-center mb-14"
+            className="text-center mb-8 sm:mb-14"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+            <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
               Parents love OurFable
             </h2>
             <div className="flex items-center justify-center gap-1 text-brand-gold text-2xl font-display">
               ★★★★★
             </div>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {TESTIMONIALS.map((t, i) => (
               <motion.div
                 key={t.name}
@@ -660,22 +660,22 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section className="px-4 py-20 max-w-4xl mx-auto">
+      <section className="px-4 py-12 sm:py-20 max-w-4xl mx-auto">
         <motion.div
-          className="text-center mb-14"
+          className="text-center mb-8 sm:mb-14"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+          <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
             Every book is one of a kind
           </h2>
-          <p className="text-brand-ink-muted text-base font-body max-w-lg mx-auto">
+          <p className="text-brand-ink-muted text-sm sm:text-base font-body max-w-lg mx-auto">
             Powered by the same AI behind the world&apos;s best creative tools, each book is a unique masterpiece.
           </p>
         </motion.div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {FEATURES.map((f, i) => (
             <motion.div
               key={f.title}
@@ -685,32 +685,32 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.3, delay: i * 0.1 }}
             >
-              <div className="text-3xl mb-3">{f.icon}</div>
-              <h3 className="font-display text-base font-bold text-brand-ink mb-1">{f.title}</h3>
-              <p className="text-brand-ink-muted text-sm leading-relaxed font-body">{f.desc}</p>
+              <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">{f.icon}</div>
+              <h3 className="font-display text-sm sm:text-base font-bold text-brand-ink mb-1">{f.title}</h3>
+              <p className="text-brand-ink-muted text-xs sm:text-sm leading-relaxed font-body">{f.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* Pricing */}
-      <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-20">
+      <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-12 sm:py-20">
         <div className="max-w-3xl mx-auto">
           <motion.div
-            className="text-center mb-14"
+            className="text-center mb-8 sm:mb-14"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+            <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
               Simple, transparent pricing
             </h2>
-            <p className="text-brand-ink-muted text-base font-body">
+            <p className="text-brand-ink-muted text-sm sm:text-base font-body">
               No subscriptions. Pay only when you love what you see.
             </p>
           </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
             {/* Digital */}
             <motion.div
               className="card text-center"
@@ -723,9 +723,9 @@ export default function Home() {
               <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal px-3 py-1 rounded-full font-bold text-xs uppercase mb-4 font-body">
                 ✨ Animated Digital
               </div>
-              <div className="font-display text-4xl font-extrabold text-brand-ink mb-1">$14.99</div>
-              <p className="text-brand-ink-muted text-sm font-body mb-6">One-time purchase</p>
-              <ul className="text-sm text-brand-ink-light font-body space-y-2 text-left mb-6">
+              <div className="font-display text-3xl sm:text-4xl font-extrabold text-brand-ink mb-1">$14.99</div>
+              <p className="text-brand-ink-muted text-xs sm:text-sm font-body mb-4 sm:mb-6">One-time purchase</p>
+              <ul className="text-xs sm:text-sm text-brand-ink-light font-body space-y-2 text-left mb-4 sm:mb-6">
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   12-page animated storybook
@@ -743,7 +743,7 @@ export default function Home() {
                   Instant delivery — read on any device
                 </li>
               </ul>
-              <Link href="/auth/signup" className="btn-secondary w-full text-sm">
+              <Link href="/auth/signup" className="btn-secondary w-full text-sm min-h-[44px]">
                 Get Started
               </Link>
             </motion.div>
@@ -763,9 +763,9 @@ export default function Home() {
               <div className="inline-flex items-center gap-2 bg-brand-coral-light text-brand-coral px-3 py-1 rounded-full font-bold text-xs uppercase mb-4 font-body">
                 Hardcover
               </div>
-              <div className="font-display text-4xl font-extrabold text-brand-ink mb-1">$34.99</div>
-              <p className="text-brand-ink-muted text-sm font-body mb-6">One-time purchase</p>
-              <ul className="text-sm text-brand-ink-light font-body space-y-2 text-left mb-6">
+              <div className="font-display text-3xl sm:text-4xl font-extrabold text-brand-ink mb-1">$34.99</div>
+              <p className="text-brand-ink-muted text-xs sm:text-sm font-body mb-4 sm:mb-6">One-time purchase</p>
+              <ul className="text-xs sm:text-sm text-brand-ink-light font-body space-y-2 text-left mb-4 sm:mb-6">
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-brand-coral shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   Everything in Digital, plus...
@@ -783,7 +783,7 @@ export default function Home() {
                   Ships in 5-7 business days
                 </li>
               </ul>
-              <Link href="/auth/signup" className="btn-primary w-full text-sm">
+              <Link href="/auth/signup" className="btn-primary w-full text-sm min-h-[44px]">
                 Get Started
               </Link>
             </motion.div>
@@ -792,15 +792,15 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="px-4 py-20 max-w-2xl mx-auto">
+      <section className="px-4 py-12 sm:py-20 max-w-2xl mx-auto">
         <motion.div
-          className="text-center mb-14"
+          className="text-center mb-8 sm:mb-14"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-brand-ink mb-3">
+          <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
             Frequently asked questions
           </h2>
         </motion.div>
@@ -812,11 +812,11 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="bg-brand-teal px-4 py-20 relative overflow-hidden">
+      <section className="bg-brand-teal px-4 py-12 sm:py-20 relative overflow-hidden">
         <SparkleParticles />
         <div className="max-w-2xl mx-auto text-center relative z-10">
           <motion.h2
-            className="font-display text-3xl sm:text-4xl font-bold text-white mb-4"
+            className="font-display text-2xl sm:text-4xl font-bold text-white mb-4"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -825,7 +825,7 @@ export default function Home() {
             Ready to create something magical?
           </motion.h2>
           <motion.p
-            className="text-white/80 text-lg font-body mb-8 max-w-md mx-auto"
+            className="text-white/80 text-base sm:text-lg font-body mb-8 max-w-md mx-auto"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -846,26 +846,26 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-brand-border bg-white">
-        <div className="max-w-5xl mx-auto px-4 py-12">
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
+        <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+          <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-6 sm:gap-8 text-center sm:text-left">
             <div>
               <Link href="/" className="font-display text-xl font-extrabold text-brand-ink">
                 Our<span className="text-brand-teal">Fable</span>
                 <span className="text-brand-ink-muted text-sm font-body">.ai</span>
               </Link>
-              <p className="text-brand-ink-muted text-sm font-body mt-2 max-w-xs">
+              <p className="text-brand-ink-muted text-xs sm:text-sm font-body mt-2 max-w-xs">
                 Animated, AI-powered storybooks that make your child the hero of their own adventure.
               </p>
             </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm font-body">
-              <Link href="/auth/signup" className="text-brand-ink-light hover:text-brand-teal transition-colors">Create a Book</Link>
-              <Link href="/auth/login" className="text-brand-ink-light hover:text-brand-teal transition-colors">Sign In</Link>
-              <Link href="/privacy" className="text-brand-ink-light hover:text-brand-teal transition-colors">Privacy</Link>
-              <Link href="/terms" className="text-brand-ink-light hover:text-brand-teal transition-colors">Terms</Link>
+            <div className="flex flex-wrap justify-center sm:justify-end gap-x-6 sm:gap-x-8 gap-y-3 text-sm font-body">
+              <Link href="/auth/signup" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Create a Book</Link>
+              <Link href="/auth/login" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Sign In</Link>
+              <Link href="/privacy" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Privacy</Link>
+              <Link href="/terms" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Terms</Link>
             </div>
           </div>
-          <div className="border-t border-brand-border mt-8 pt-8 text-center">
-            <p className="text-brand-ink-muted text-sm font-body">
+          <div className="border-t border-brand-border mt-6 sm:mt-8 pt-6 sm:pt-8 text-center">
+            <p className="text-brand-ink-muted text-xs sm:text-sm font-body">
               &copy; 2026 OurFable.ai. All rights reserved.
             </p>
           </div>

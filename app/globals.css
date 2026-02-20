@@ -12,7 +12,8 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-all duration-200 cursor-pointer border-none text-sm;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-white transition-all duration-200 cursor-pointer border-none text-sm;
+    min-height: 44px;
     background: linear-gradient(135deg, #FF7A6B, #FF6B5A);
     box-shadow: 0 2px 8px rgba(255, 107, 90, 0.3);
   }
@@ -26,7 +27,8 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-brand-ink bg-white transition-all duration-200 cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-brand-ink bg-white transition-all duration-200 cursor-pointer;
+    min-height: 44px;
     border: 2px solid #E8E8EE;
   }
   .btn-secondary:hover {
@@ -38,6 +40,7 @@
 
   .input-field {
     @apply w-full px-4 py-3 rounded-xl text-brand-ink font-body text-sm transition-all duration-200 outline-none;
+    min-height: 44px;
     border: 2px solid #E8E8EE;
     background: #FAFAF8;
   }
@@ -48,7 +51,7 @@
   }
 
   .card {
-    @apply bg-white rounded-2xl p-6 sm:p-8 relative;
+    @apply bg-white rounded-2xl p-5 sm:p-8 relative;
     border: 1px solid #E8E8EE;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
   }
