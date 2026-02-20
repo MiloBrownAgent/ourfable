@@ -79,8 +79,8 @@ const STEPS = [
   },
   {
     num: '3',
-    title: 'Get your book',
-    desc: 'Download a beautiful 12-page digital storybook instantly, or order a premium hardcover.',
+    title: 'Watch the magic',
+    desc: 'Your animated storybook comes alive with cinematic illustrations, page-turn effects, and ambient particles. Or order a premium hardcover.',
     color: 'teal' as const,
   },
 ];
@@ -142,7 +142,7 @@ const FAQS = [
   },
   {
     q: 'What\'s the difference between digital and hardcover?',
-    a: 'The digital book ($14.99) is available instantly as a beautiful page-by-page reader. The hardcover ($34.99) is a premium printed book with thick pages and a durable cover, shipped to your door.',
+    a: 'The digital book ($14.99) is an animated, interactive reading experience — cinematic Ken Burns illustrations, page-turn animations, floating particle effects, and auto-play mode. It\'s like a mini movie of their story. The hardcover ($34.99) is a premium printed book with thick pages and a durable cover, shipped to your door.',
   },
 ];
 
@@ -388,7 +388,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            Upload one photo and our AI creates a beautifully illustrated, personalized 12-page storybook in under 3 minutes.
+            Upload one photo and get a beautifully animated, interactive storybook — with cinematic illustrations, page-turn animations, and narration — in under 3 minutes.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -542,7 +542,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto px-4 py-5 flex flex-wrap justify-center gap-x-10 gap-y-3">
           <div className="flex items-center gap-2 text-brand-ink-light text-sm font-semibold font-body">
             <span className="w-2 h-2 rounded-full bg-brand-teal shrink-0" />
-            Ready in under 3 minutes
+            Animated digital experience
           </div>
           <div className="flex items-center gap-2 text-brand-ink-light text-sm font-semibold font-body">
             <span className="w-2 h-2 rounded-full bg-brand-coral shrink-0" />
@@ -611,7 +611,7 @@ export default function Home() {
               Preview a sample story
             </h2>
             <p className="text-brand-ink-muted text-base font-body">
-              Every book is unique. Here&apos;s a peek at what yours could look like.
+              Every book is unique — and animated. Here&apos;s a peek at what yours could look like.
             </p>
           </motion.div>
           <SampleBookPreview />
@@ -721,26 +721,26 @@ export default function Home() {
               whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)', transition: { duration: 0.2 } }}
             >
               <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal px-3 py-1 rounded-full font-bold text-xs uppercase mb-4 font-body">
-                Digital
+                ✨ Animated Digital
               </div>
               <div className="font-display text-4xl font-extrabold text-brand-ink mb-1">$14.99</div>
               <p className="text-brand-ink-muted text-sm font-body mb-6">One-time purchase</p>
               <ul className="text-sm text-brand-ink-light font-body space-y-2 text-left mb-6">
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  12-page personalized storybook
+                  12-page animated storybook
                 </li>
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Unique AI illustrations
+                  Cinematic Ken Burns illustrations
                 </li>
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Instant digital delivery
+                  Page-turn animations & ambient effects
                 </li>
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Read on any device
+                  Instant delivery — read on any device
                 </li>
               </ul>
               <Link href="/auth/signup" className="btn-secondary w-full text-sm">
@@ -854,7 +854,7 @@ export default function Home() {
                 <span className="text-brand-ink-muted text-sm font-body">.ai</span>
               </Link>
               <p className="text-brand-ink-muted text-sm font-body mt-2 max-w-xs">
-                AI-powered personalized storybooks that make your child the hero of their own adventure.
+                Animated, AI-powered storybooks that make your child the hero of their own adventure.
               </p>
             </div>
             <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm font-body">
