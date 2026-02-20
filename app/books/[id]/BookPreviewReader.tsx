@@ -211,6 +211,7 @@ export default function BookPreviewReader({
   const [regenerateImagesError, setRegenerateImagesError] = useState<string | null>(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
 
   const hasPagesButMissingImages =
     pages.length > 0 &&
@@ -491,11 +492,11 @@ export default function BookPreviewReader({
               <div className="w-full h-full overflow-hidden">
                 <motion.div
                   initial={{ scale: 1, x: 0, y: 0 }}
-                  animate={{
+                  animate={animationsEnabled ? {
                     scale: kenBurns.scaleEnd,
                     x: kenBurns.xEnd,
                     y: kenBurns.yEnd,
-                  }}
+                  } : { scale: 1, x: 0, y: 0 }}
                   transition={{ duration: 14, ease: 'linear' }}
                   className="w-full h-full"
                 >
@@ -511,7 +512,7 @@ export default function BookPreviewReader({
           </AnimatePresence>
 
           {/* Ambient particles */}
-          <AmbientParticles />
+          {animationsEnabled && <AmbientParticles />}
 
           {/* Page curl shadow */}
           <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-black/[0.05] to-transparent pointer-events-none z-10" />
@@ -532,7 +533,11 @@ export default function BookPreviewReader({
 
         {/* Typewriter text */}
         <div className="mt-6 px-1">
-          <TypewriterText key={currentIndex} text={page!.text} />
+          {animationsEnabled ? (
+            <TypewriterText key={currentIndex} text={page!.text} />
+          ) : (
+            <p className="font-body text-brand-ink text-lg leading-relaxed">{page!.text}</p>
+          )}
         </div>
       </div>
 
@@ -548,6 +553,20 @@ export default function BookPreviewReader({
         </button>
 
         <div className="flex items-center gap-3">
+          {/* Animation toggle */}
+          <button
+            type="button"
+            onClick={() => setAnimationsEnabled(!animationsEnabled)}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${animationsEnabled ? 'bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral' : 'bg-gray-100 hover:bg-gray-200 text-gray-400'}`}
+            aria-label={animationsEnabled ? 'Disable animations' : 'Enable animations'}
+            title={animationsEnabled ? 'Animations on' : 'Animations off'}
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" style={{ display: animationsEnabled ? 'none' : 'block' }} />
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" style={{ display: animationsEnabled ? 'block' : 'none' }} />
+            </svg>
+          </button>
+
           {/* Auto-play toggle */}
           <button
             type="button"
