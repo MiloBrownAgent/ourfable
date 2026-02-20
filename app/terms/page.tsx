@@ -2,8 +2,9 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — OurFable.ai',
-  description: 'OurFable.ai terms of service. Read about our terms, digital product delivery, and refund policies.',
+  title: 'Terms of Service',
+  description: 'OurFable.ai terms of service. Read about our terms, digital storybook delivery, and refund policies.',
+  alternates: { canonical: 'https://ourfable.ai/terms' },
 };
 
 export default function TermsPage() {

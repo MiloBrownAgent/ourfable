@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /create
+Disallow: /auth/
+Disallow: /api/
+Disallow: /books/
+
+Sitemap: https://ourfable.ai/sitemap.xml

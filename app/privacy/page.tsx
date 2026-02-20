@@ -2,8 +2,9 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — OurFable.ai',
-  description: 'OurFable.ai privacy policy. Learn how we collect, use, and protect your data.',
+  title: 'Privacy Policy',
+  description: 'OurFable.ai privacy policy. Learn how we collect, use, and protect your personal data and children\'s photos.',
+  alternates: { canonical: 'https://ourfable.ai/privacy' },
 };
 
 export default function PrivacyPage() {
