@@ -84,7 +84,7 @@ export default function BookFailedEmail({
 
 const main = {
   background:
-    "linear-gradient(135deg, #E6F7F7 0%, #FFF0EE 50%, #E6F7F7 100%)",
+    "linear-gradient(135deg, #F3E8FF 0%, #FFF0E6 50%, #E0F2FE 100%)",
   fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   padding: "0",
   margin: "0",
@@ -100,11 +100,11 @@ const card = {
   backgroundColor: "#ffffff",
   borderRadius: "24px",
   overflow: "hidden" as const,
-  boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+  boxShadow: "0 8px 30px rgba(74,29,150,0.12)",
 };
 
 const headerSection = {
-  background: "linear-gradient(135deg, #0EA5A5 0%, #0C8C8C 100%)",
+  background: "linear-gradient(135deg, #4A1D96 0%, #6D28D9 100%)",
   padding: "40px 40px 32px",
   textAlign: "center" as const,
 };
@@ -135,7 +135,7 @@ const bodySection = {
 const heading = {
   fontSize: "24px",
   fontWeight: "800" as const,
-  color: "#1A1A2E",
+  color: "#4A1D96",
   textAlign: "center" as const,
   margin: "0 0 16px",
   lineHeight: "1.3",
@@ -150,7 +150,7 @@ const paragraph = {
 };
 
 const reassureBox = {
-  background: "#E6F7F7",
+  background: "linear-gradient(135deg, #E0F2FE, #F3E8FF)",
   borderRadius: "16px",
   padding: "20px",
   textAlign: "center" as const,
@@ -159,7 +159,7 @@ const reassureBox = {
 
 const reassureText = {
   fontSize: "15px",
-  color: "#0EA5A5",
+  color: "#0EA5E9",
   margin: "0",
 };
 
@@ -169,7 +169,7 @@ const buttonContainer = {
 };
 
 const ctaButton = {
-  background: "linear-gradient(135deg, #FF6B5A 0%, #E85A4A 100%)",
+  background: "linear-gradient(135deg, #FF6B35 0%, #EC4899 100%)",
   color: "#ffffff",
   fontSize: "18px",
   fontWeight: "700" as const,
@@ -177,7 +177,7 @@ const ctaButton = {
   borderRadius: "50px",
   textDecoration: "none",
   display: "inline-block" as const,
-  boxShadow: "0 4px 15px rgba(255,107,90,0.3)",
+  boxShadow: "0 4px 15px rgba(255,107,53,0.35)",
 };
 
 const supportText = {
@@ -188,7 +188,7 @@ const supportText = {
 };
 
 const dashedDivider = {
-  borderTop: "2px dashed #E8E8EE",
+  borderTop: "2px dashed #E9D5FF",
   borderBottom: "none" as const,
   margin: "0 24px",
 };

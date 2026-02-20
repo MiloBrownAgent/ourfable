@@ -557,14 +557,11 @@ export default function BookPreviewReader({
           <button
             type="button"
             onClick={() => setAnimationsEnabled(!animationsEnabled)}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${animationsEnabled ? 'bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral' : 'bg-gray-100 hover:bg-gray-200 text-gray-400'}`}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors text-sm ${animationsEnabled ? 'bg-brand-coral/10 hover:bg-brand-coral/20' : 'bg-gray-100 hover:bg-gray-200 opacity-50'}`}
             aria-label={animationsEnabled ? 'Disable animations' : 'Enable animations'}
             title={animationsEnabled ? 'Animations on' : 'Animations off'}
           >
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" style={{ display: animationsEnabled ? 'none' : 'block' }} />
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" style={{ display: animationsEnabled ? 'block' : 'none' }} />
-            </svg>
+            ✨
           </button>
 
           {/* Auto-play toggle */}
