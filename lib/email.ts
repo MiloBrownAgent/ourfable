@@ -14,7 +14,7 @@ function getResend(): Resend | null {
   return _resend;
 }
 
-const FROM = "OurFable <onboarding@resend.dev>";
+const FROM = "OurFable <hello@ourfable.ai>";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ourfable.ai";
 
