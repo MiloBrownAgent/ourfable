@@ -108,9 +108,9 @@ const TESTIMONIALS = [
     detail: 'Mom of a 4-year-old',
   },
   {
-    quote: "We ordered hardcovers for grandparents as gifts. They cried happy tears. Best $35 we've ever spent.",
-    name: 'James & Priya K.',
-    detail: 'Parents of twins',
+    quote: "My granddaughter lives two states away. I read her OurFable book over FaceTime and she squealed when she saw herself on every page. I've ordered three more for her cousins.",
+    name: 'Linda R.',
+    detail: 'Grandmother of 5',
   },
   {
     quote: "The illustrations are genuinely beautiful. I was expecting generic clip-art, but these look like a real children's book.",
