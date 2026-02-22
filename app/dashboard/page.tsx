@@ -30,8 +30,9 @@ export default async function DashboardPage() {
           ✨ Our<span className="text-brand-pink">Fable</span>
           <span className="text-brand-purple text-xs">.ai</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <span className="text-sm text-brand-ink-muted hidden sm:block">Hey, {displayName}! 👋</span>
+          <Link href="/dashboard/settings" className="btn-secondary text-sm py-1.5 px-3">⚙️ Settings</Link>
           <SignOutButton />
         </div>
       </nav>
