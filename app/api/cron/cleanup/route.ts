@@ -293,7 +293,36 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Also handle GET for simple health checks (no auth needed)
-export async function GET() {
-  return NextResponse.json({ status: 'ok', jobs: ['abandoned-uploads', 'post-delivery', 'annual-cleanup'] });
+// GET handler — used by Vercel cron (sends Authorization: Bearer ${CRON_SECRET})
+// Pass the job name in the query string: ?job=abandoned-uploads
+export async function GET(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const job = url.searchParams.get('job');
+
+  const validJobs = ['abandoned-uploads', 'post-delivery', 'annual-cleanup'];
+  if (!job || !validJobs.includes(job)) {
+    return NextResponse.json(
+      { error: `Invalid job. Must be one of: ${validJobs.join(', ')}` },
+      { status: 400 }
+    );
+  }
+
+  console.log(`[cron/cleanup] Running job via GET: ${job}`);
+
+  try {
+    let result;
+    if (job === 'abandoned-uploads') result = await cleanupAbandonedUploads();
+    else if (job === 'post-delivery') result = await cleanupPostDelivery();
+    else result = await cleanupAnnual();
+
+    console.log(`[cron/cleanup] ${job} complete:`, result);
+    return NextResponse.json({ success: true, job, ...result });
+  } catch (err) {
+    console.error(`[cron/cleanup] ${job} error:`, err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
