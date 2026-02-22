@@ -119,3 +119,19 @@ create policy "Users insert own consent" on public.consent_records for insert wi
 create policy "Users update own consent" on public.consent_records for update using (auth.uid() = user_id);
 create index consent_records_user_id_idx on public.consent_records (user_id);
 create index consent_records_type_idx on public.consent_records (user_id, consent_type, revoked_at);
+
+-- ============================================================
+-- Deletion Log (added 2026-02-22 — COPPA P0 audit trail)
+-- ============================================================
+create table public.deletion_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid,
+  resource_type text not null,
+  resource_id text,
+  deleted_at timestamptz not null default now(),
+  reason text not null,
+  initiated_by text not null
+);
+create index deletion_log_user_id_idx on public.deletion_log (user_id);
+create index deletion_log_deleted_at_idx on public.deletion_log (deleted_at);
+create index deletion_log_reason_idx on public.deletion_log (reason);
