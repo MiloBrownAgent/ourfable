@@ -1,6 +1,6 @@
 # COPPA Implementation Checklist — OurFable.ai
 
-> **Last Updated:** February 2026
+> **Last Updated:** February 22, 2026 (overnight build by Milo)
 > **Priority:** P0 = Must have before launch, P1 = Should have before launch, P2 = Soon after launch
 
 ---
@@ -8,57 +8,51 @@
 ## P0 — CRITICAL: Must Complete Before Public Launch
 
 ### Parental Consent Flow
-- [ ] **Consent screen before photo upload** — Display clear notice explaining:
+- [x] **Consent screen before photo upload** — Display clear notice explaining:
   - What photos are collected
   - How they'll be used (AI processing via Replicate)
   - Who receives them (Replicate, Supabase)
   - Parent's rights (review, delete, withdraw consent)
   - Link to full privacy policy
-- [ ] **Consent checkbox** — "I am the parent/legal guardian of this child and I consent to OurFable collecting and processing my child's photos as described in the Privacy Policy"
+- [x] **Consent checkbox** — "I am the parent/legal guardian of this child and I consent to OurFable collecting and processing my child's photos as described in the Privacy Policy"
   - Must be unchecked by default
   - Must be affirmatively checked (no pre-checked boxes)
   - Store consent record: `{user_id, timestamp, ip_address, consent_version}`
-- [ ] **Credit card as VPC** — Payment flow serves as verifiable parental consent
+- [x] **Credit card as VPC** — Payment flow serves as verifiable parental consent
   - Ensure consent notice appears BEFORE payment
   - Document this as VPC method in privacy policy
-- [ ] **Block photo upload without consent** — No photos processed until consent recorded
+- [x] **Block photo upload without consent** — No photos processed until consent recorded
 
 ### Privacy Policy & Terms
-- [ ] **Publish privacy policy** at `/privacy-policy` (use `privacy-policy.md`)
-- [ ] **Publish terms of service** at `/terms` (use `terms-of-service.md`)
-- [ ] **Link privacy policy** from:
-  - Footer of every page
-  - Sign-up page
-  - Photo upload page
-  - Consent screen
-  - Order confirmation email
-- [ ] **Fill in placeholders** in both documents:
-  - `[EFFECTIVE_DATE]`
-  - `[LEGAL_ENTITY_NAME]`
-  - `[COMPANY_ADDRESS]`
-  - `[PHONE_NUMBER]`
-  - `[STATE]` (for governing law)
-  - `[CITY, STATE]` (for arbitration)
+- [x] **Publish privacy policy** at `/privacy` ✓ (page live, no unfilled placeholders)
+- [x] **Publish terms of service** at `/terms` ✓ (page live)
+- [x] **Link privacy policy** from:
+  - [x] Footer of landing page ✓
+  - [x] Sign-up page ✓
+  - [x] Photo upload page (via ConsentGate) ✓
+  - [x] Consent screen ✓
+  - [ ] Order confirmation email — TODO (needs Stripe webhook wired to email)
+- [x] **Fill in placeholders** — confirmed none remain in live pages
 
 ### Photo Deletion Pipeline
-- [ ] **Manual deletion endpoint** — API route: `DELETE /api/user/photos`
-  - Deletes from Supabase Storage
-  - Deletes database records
-  - Logs deletion event
-- [ ] **Account deletion endpoint** — API route: `DELETE /api/user/account`
-  - Deletes all photos, generated images, books
-  - Deletes auth user
+- [x] **Manual deletion endpoint** — `DELETE /api/user/photos` ✓
+  - Deletes from Supabase Storage (character-photos bucket)
+  - Clears character_photo_url from books
+  - Logs to deletion_log ✓ (via cron jobs, manual via account deletion)
+- [x] **Account deletion endpoint** — `DELETE /api/user/account` ✓
+  - Deletes all photos, generated images (book-assets), books
+  - Deletes auth user via admin.deleteUser
   - Anonymizes order records
-  - Sends confirmation email
-- [ ] **"Delete My Data" button** in account settings UI
-- [ ] **Deletion confirmation** — Email user when deletion is complete
+  - Sends confirmation email ✓
+- [x] **"Delete My Data" button** — `/dashboard/settings` ✓ (with confirmation dialog)
+- [x] **Deletion confirmation** — Email sent before auth deletion ✓
 
 ### Data Retention Automation
-- [ ] **Cron job: delete abandoned uploads** — Photos uploaded but no order placed after 30 days
-- [ ] **Cron job: delete post-delivery photos** — Original photos + generated images 90 days after book delivery
-- [ ] **Cron job: delete old book files** — 1 year after purchase
-- [ ] **Cron job: flag inactive accounts** — 2 years of inactivity → send warning email, then delete after 30 more days
-- [ ] **Deletion logging table** — Track all automated deletions for compliance audit
+- [x] **Cron job: delete abandoned uploads** — `/api/cron/cleanup?job=abandoned-uploads` · daily 3 AM UTC ✓
+- [x] **Cron job: delete post-delivery photos** — `/api/cron/cleanup?job=post-delivery` · daily 3:30 AM UTC ✓
+- [x] **Cron job: delete old book files** — `/api/cron/cleanup?job=annual-cleanup` · weekly Sunday 4 AM UTC ✓
+- [ ] **Cron job: flag inactive accounts** — TODO: build inactive account warning + deletion flow
+- [x] **Deletion logging table** — `deletion_log` table with RLS ✓ (migration 20260222000002)
 
 ### Third-Party Agreements
 - [ ] **Replicate DPA** — Obtain or verify data processing terms. CRITICAL: Confirm in writing that:
