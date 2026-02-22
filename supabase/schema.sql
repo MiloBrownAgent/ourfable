@@ -98,3 +98,24 @@ create policy "Users can view own character photos" on storage.objects for selec
 
 insert into storage.buckets (id, name, public) values ('book-assets', 'book-assets', true);
 create policy "Anyone can view book assets" on storage.objects for select using (bucket_id = 'book-assets');
+
+-- ============================================================
+-- Consent Records (added 2026-02-22 — COPPA P0)
+-- ============================================================
+create table public.consent_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  consent_type text not null,
+  consent_version text not null,
+  granted_at timestamptz not null default now(),
+  revoked_at timestamptz,
+  ip_address inet,
+  user_agent text,
+  metadata jsonb
+);
+alter table public.consent_records enable row level security;
+create policy "Users view own consent" on public.consent_records for select using (auth.uid() = user_id);
+create policy "Users insert own consent" on public.consent_records for insert with check (auth.uid() = user_id);
+create policy "Users update own consent" on public.consent_records for update using (auth.uid() = user_id);
+create index consent_records_user_id_idx on public.consent_records (user_id);
+create index consent_records_type_idx on public.consent_records (user_id, consent_type, revoked_at);

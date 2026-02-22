@@ -11,6 +11,7 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isAdult, setIsAdult] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -19,6 +20,10 @@ export default function SignUpPage() {
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+    if (!isAdult) {
+      setError('Please confirm you are 18 or older before creating an account.');
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -100,11 +105,28 @@ export default function SignUpPage() {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" className="input-field" minLength={6} required />
           </div>
 
+          {/* Age confirmation — COPPA: users must be 18+ */}
+          <label
+            className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all select-none ${
+              isAdult ? 'border-brand-teal bg-teal-50' : 'border-gray-200 bg-white hover:border-brand-teal/40'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={isAdult}
+              onChange={(e) => setIsAdult(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded accent-brand-teal shrink-0 cursor-pointer"
+            />
+            <span className="text-xs text-brand-ink leading-snug">
+              I confirm I am 18 years of age or older and am the parent or legal guardian responsible for any child whose photos I upload.
+            </span>
+          </label>
+
           {error && (
             <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 border border-red-200">{error}</div>
           )}
 
-          <button type="submit" disabled={loading} className="btn-primary w-full justify-center text-base disabled:opacity-50">
+          <button type="submit" disabled={loading || !isAdult} className="btn-primary w-full justify-center text-base disabled:opacity-50">
             {loading ? '✨ Creating account...' : '🪄 Create Account'}
           </button>
         </form>
@@ -112,6 +134,13 @@ export default function SignUpPage() {
         <p className="text-center text-sm text-brand-ink-muted mt-6">
           Already have an account?{' '}
           <Link href="/auth/login" className="text-brand-purple font-bold hover:underline">Sign in</Link>
+        </p>
+
+        <p className="text-center text-xs text-brand-ink-muted mt-4">
+          By creating an account you agree to our{' '}
+          <Link href="/terms" className="underline hover:text-brand-ink">Terms of Service</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="underline hover:text-brand-ink">Privacy Policy</Link>.
         </p>
       </div>
     </main>

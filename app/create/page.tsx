@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import StoryCreatorForm from './StoryCreatorForm';
+import ConsentGate from '@/components/consent/ConsentGate';
 
 export default async function CreatePage() {
   const supabase = await createClient();
@@ -25,14 +26,17 @@ export default async function CreatePage() {
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="card p-6 sm:p-8">
-          <div className="mb-6">
-            <h1 className="font-display text-3xl font-bold mb-2">Create a New Storybook 🪄</h1>
-            <p className="text-brand-ink-muted text-sm sm:text-base">
-              Upload a photo, describe your little hero, and we&apos;ll spin up a personalized adventure.
-            </p>
-          </div>
+          {/* ConsentGate: COPPA P0 — blocks form until parent has consented */}
+          <ConsentGate>
+            <div className="mb-6">
+              <h1 className="font-display text-3xl font-bold mb-2">Create a New Storybook 🪄</h1>
+              <p className="text-brand-ink-muted text-sm sm:text-base">
+                Upload a photo, describe your little hero, and we&apos;ll spin up a personalized adventure.
+              </p>
+            </div>
 
-          <StoryCreatorForm />
+            <StoryCreatorForm />
+          </ConsentGate>
         </div>
       </div>
     </main>
