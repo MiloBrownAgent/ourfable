@@ -3,6 +3,7 @@ import WaitlistWelcome from "@/emails/WaitlistWelcome";
 import WelcomeEmail from "@/emails/WelcomeEmail";
 import BookReadyEmail from "@/emails/BookReadyEmail";
 import BookFailedEmail from "@/emails/BookFailedEmail";
+import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 
 let _resend: Resend | null = null;
 function getResend(): Resend | null {
@@ -79,5 +80,50 @@ export async function sendBookFailed(email: string, bookId: string) {
     });
   } catch (error) {
     console.error("[Email] Failed to send book failed email:", error);
+  }
+}
+
+export async function sendOrderConfirmation({
+  email,
+  customerName,
+  bookTitle,
+  characterName,
+  format,
+  amountCents,
+  orderId,
+  bookId,
+}: {
+  email: string;
+  customerName?: string;
+  bookTitle: string;
+  characterName: string;
+  format: "digital" | "hardcover";
+  amountCents: number;
+  orderId: string;
+  bookId: string;
+}) {
+  try {
+    const r = getResend();
+    if (!r) return;
+
+    const amountDollars = `$${(amountCents / 100).toFixed(2)}`;
+
+    await r.emails.send({
+      from: FROM,
+      to: email,
+      subject: `Order confirmed! "${bookTitle}" is on its way 🎉`,
+      react: OrderConfirmationEmail({
+        customerName,
+        bookTitle,
+        characterName,
+        format,
+        amountDollars,
+        orderId,
+        bookId,
+        appUrl: APP_URL,
+      }),
+    });
+  } catch (error) {
+    console.error("[Email] Failed to send order confirmation:", error);
   }
 }

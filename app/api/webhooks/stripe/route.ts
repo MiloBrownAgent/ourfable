@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
+import { sendOrderConfirmation } from "@/lib/email";
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -77,6 +78,50 @@ export async function POST(req: NextRequest) {
             .from("orders")
             .update({ status: "processing" })
             .eq("id", orderId);
+        }
+
+        // ── Send order confirmation email ───────────────────
+        try {
+          // Fetch order + book details for email
+          const { data: orderData } = await supabase
+            .from("orders")
+            .select("id, amount_cents, book_id, books(id, title, character_name, user_id)")
+            .eq("id", orderId)
+            .single();
+
+          const customerEmail = session.customer_details?.email;
+
+          if (orderData && customerEmail) {
+            // Supabase returns the joined relation as an object (single) or array
+            const booksRaw = orderData.books as unknown;
+            const book = (Array.isArray(booksRaw) ? booksRaw[0] : booksRaw) as {
+              id: string;
+              title: string;
+              character_name: string;
+              user_id: string;
+            } | null;
+
+            // Try to get customer name from Stripe session
+            const customerName = session.customer_details?.name ?? undefined;
+
+            await sendOrderConfirmation({
+              email: customerEmail,
+              customerName: customerName || undefined,
+              bookTitle: book?.title || "Your Storybook",
+              characterName: book?.character_name || "your little one",
+              format: (format === "hardcover" ? "hardcover" : "digital") as "digital" | "hardcover",
+              amountCents: orderData.amount_cents,
+              orderId: orderData.id,
+              bookId: book?.id || orderData.book_id,
+            });
+
+            console.log(`[Webhook] Order confirmation sent to ${customerEmail} for order ${orderId}`);
+          } else {
+            console.warn(`[Webhook] Could not send order confirmation — orderData: ${!!orderData}, email: ${customerEmail}`);
+          }
+        } catch (emailErr) {
+          // Don't fail the webhook if email fails — order is already updated
+          console.error("[Webhook] Order confirmation email failed:", emailErr);
         }
 
         break;
