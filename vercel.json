@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/cleanup?job=annual-cleanup",
       "schedule": "0 4 * * 0"
+    },
+    {
+      "path": "/api/cron/questions",
+      "schedule": "0 9 1 * *"
     }
   ]
 }

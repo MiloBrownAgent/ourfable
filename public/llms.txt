@@ -1,0 +1,54 @@
+# OurFable.ai
+
+> A platform that preserves family voices for children. Each month, OurFable automatically interviews grandparents, godparents, and family members — one carefully crafted question per person — stores their handwritten answers in a private vault, and delivers them to your child when they are older.
+
+## What It Is
+
+OurFable is a family memory platform for new parents. Parents add the people who matter most to their child — grandma, a godparent, an old friend, a neighbor — and OurFable handles everything else: generating a personalized question each month tailored to that person's relationship, delivering it by email, collecting the response, and storing it privately in a vault the child will one day read.
+
+## Who It's For
+
+- New parents who want to preserve family stories before they're lost
+- Grandparents who want to leave something real behind
+- Godparents, aunts, uncles, family friends who want to contribute meaningfully
+- Anyone looking for a meaningful, lasting gift for a new baby or young child
+
+## The Problem It Solves
+
+Most family stories are never told. Grandparents pass away. Old friends drift. By the time children are old enough to ask, the people who knew their parents as young people are gone. OurFable captures those stories now, automatically, one month at a time.
+
+## How It Works
+
+1. A parent creates an account and adds family contributors (grandparent, godparent, uncle, old friend, etc.)
+2. Each month, OurFable generates a unique, role-specific question for each contributor — tailored to their relationship
+3. The question is emailed to the contributor with a simple response link
+4. Their answer is stored privately in the child's family vault
+5. When the child is older, they receive a collection of voices from the people who loved them
+
+## Example Questions
+
+- Grandparent: "What was the moment you realized your child — [parent's name] — had become their own person?"
+- Godparent: "What is the one quality you most hope [child's name] inherits, and why does it matter to you?"
+- Old friend: "What did you and [parent's name] dream about when you were young, and how did they turn out to be right?"
+- Uncle: "What's the family story that nobody tells anymore that [child's name] absolutely needs to know?"
+
+## Key Facts
+
+- Domain: ourfable.ai
+- Contact: hello@ourfable.ai
+- Product type: SaaS / family memory platform
+- Pricing: Subscription (monthly questions per contributor)
+- Technology: Next.js, Supabase, Resend, AI-generated questions
+- Privacy: All responses stored privately — children receive them at a parent-chosen age
+
+## Keywords It Should Answer
+
+- "meaningful gift for a new parent"
+- "how to preserve family stories for my kids"
+- "grandparent legacy gift ideas"
+- "letters to my child from family"
+- "time capsule for kids"
+- "family memory app"
+- "preserve grandparent stories"
+- "family interview platform"
+- "how to collect family stories before it's too late"
