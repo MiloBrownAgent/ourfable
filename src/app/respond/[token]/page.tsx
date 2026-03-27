@@ -356,8 +356,9 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
         submissionToken: token,
       };
       if (tab === "write") entryArgs.body = body;
-      if (tab === "photo") { entryArgs.storageId = storageId; if (caption.trim()) entryArgs.body = caption; }
-      if (tab === "voice" || tab === "video") entryArgs.storageId = storageId;
+      if (tab === "photo") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = photoFile?.type; if (caption.trim()) entryArgs.body = caption; }
+      if (tab === "voice") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = voiceFile?.type ?? "audio/webm"; }
+      if (tab === "video") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = videoFile?.type ?? "video/webm"; }
       if (data.promptUnlocksAtAge) entryArgs.unlocksAtAge = data.promptUnlocksAtAge;
       if (data.promptUnlocksAtEvent) entryArgs.unlocksAtEvent = data.promptUnlocksAtEvent;
 
