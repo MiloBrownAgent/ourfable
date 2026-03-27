@@ -8,7 +8,9 @@
  * Content never auto-deletes. Vault stays sealed if nobody acts within 1 year.
  */
 
-import { internalAction } from "./_generated/server";
+import { v } from "convex/values";
+import { internalAction, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 const CONVEX_URL = process.env.CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
 
@@ -370,68 +372,125 @@ export const sendAnnualRecap = internalAction({
   },
 });
 
-// ── Birthday Letter Reminder (7 days before) ───────────────────────────────
-// Emails parents a week before their child's birthday asking if they'd like
-// circle members gently reminded that the birthday is coming up.
+// ── Birthday Letter Reminder — Self-Scheduling ─────────────────────────────
+// No cron. Each family gets its own scheduler chain.
+//
+// When a family is created (or child added):
+//   → scheduleBirthdayReminder() calculates 7 days before next birthday
+//   → schedules sendBirthdayLetterReminderForFamily() at that exact time
+//
+// When the reminder fires:
+//   → sends the email
+//   → immediately schedules next year's reminder
+//   → self-perpetuating, forever
 
-export const sendBirthdayLetterReminder = internalAction({
-  args: {},
-  handler: async () => {
+export const scheduleBirthdayReminder = internalMutation({
+  args: {
+    familyId: v.string(),
+    childDob: v.string(),
+    childName: v.string(),
+    parentEmail: v.string(),
+  },
+  handler: async (ctx, { familyId, childDob, childName, parentEmail }) => {
+    const dob = new Date(childDob + "T00:00:00");
+    const now = new Date();
+
+    // Calculate next birthday
+    let nextBirthday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate(), 10, 0, 0); // 10 AM CT
+    if (nextBirthday.getTime() - 7 * 24 * 60 * 60 * 1000 <= now.getTime()) {
+      // This year's reminder window already passed — schedule for next year
+      nextBirthday.setFullYear(nextBirthday.getFullYear() + 1);
+    }
+
+    // Fire 7 days before the birthday
+    const fireAt = nextBirthday.getTime() - 7 * 24 * 60 * 60 * 1000;
+
+    await ctx.scheduler.runAt(
+      fireAt,
+      internal.ourfableDelivery.sendBirthdayLetterReminderForFamily,
+      { familyId, childDob, childName, parentEmail }
+    );
+
+    const fireDate = new Date(fireAt).toISOString().slice(0, 10);
+    console.log(`[ourfableDelivery] Birthday reminder scheduled for ${familyId} on ${fireDate}`);
+  },
+});
+
+export const sendBirthdayLetterReminderForFamily = internalAction({
+  args: {
+    familyId: v.string(),
+    childDob: v.string(),
+    childName: v.string(),
+    parentEmail: v.string(),
+  },
+  handler: async (ctx, { familyId, childDob, childName, parentEmail }) => {
     const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
     if (!RESEND_API_KEY) return;
 
-    const families = (await convexQuery("ourfable:listActiveOurFableFamilies", {})) as Array<{
-      familyId: string;
-      email: string;
+    // Verify family still exists and is active
+    const family = (await convexQuery("ourfable:getFamily", { familyId })) as {
       childName: string;
-      birthDate?: string;
-    }> | null;
-    if (!families) return;
-
-    const target = new Date();
-    target.setDate(target.getDate() + 7);
-    const targetMonth = target.getMonth();
-    const targetDay = target.getDate();
-
-    for (const family of families) {
-      if (!family.birthDate) continue;
-      const dob = new Date(family.birthDate + "T00:00:00");
-      if (dob.getMonth() !== targetMonth || dob.getDate() !== targetDay) continue;
-
-      const childFirst = family.childName.split(" ")[0];
-      const birthdayDate = target.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-
-      // Generate a one-time token for the "yes, remind them" action
-      const token = generateToken();
-      await convexMutation("ourfable:createOurFableDispatch", {
-        familyId: family.familyId,
-        type: "birthday_reminder_token",
-        content: token,
-        sentTo: family.email,
-      }).catch(() => {});
-
-      const remindUrl = `https://ourfable.ai/api/ourfable/birthday-remind?token=${token}&familyId=${family.familyId}`;
-
-      const html = emailWrapper(`
-        <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A87A;">One week away</p>
-        <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${childFirst}'s birthday is ${birthdayDate}</p>
-        <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Now's a great time to write a birthday letter for ${childFirst}. Open the Letters page in your dashboard — there's a Birthday Letters tab waiting for you.</p>
-        <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;"><tr><td style="border-radius:10px;background:#4A5E4C;">
-          <a href="https://ourfable.ai/${family.familyId}/letters" style="display:inline-block;padding:13px 28px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Write a birthday letter →</a>
-        </td></tr></table>
-        <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:24px;margin:0 0 28px;">
-          <p style="margin:0 0 12px;font-family:Georgia,serif;font-size:17px;color:#1A1A1A;">Want us to nudge the circle?</p>
-          <p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:14px;color:#6B6860;line-height:1.7;">We can send a gentle reminder to ${childFirst}'s circle members that the birthday is coming up — in case they'd like to write something too.</p>
-          <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#C8A87A;">
-            <a href="${remindUrl}" style="display:inline-block;padding:12px 24px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Yes, gently remind them →</a>
-          </td></tr></table>
-        </div>
-        <p style="margin:0;font-family:-apple-system,sans-serif;font-size:13px;color:#9A9590;line-height:1.7;font-style:italic;">No pressure — if you don't click, we won't send anything to the circle.</p>
-      `);
-
-      await sendResendEmail(RESEND_API_KEY, family.email, `${childFirst}'s birthday is one week away 🎂`, html);
-      console.log(`[ourfableDelivery] Sent birthday letter reminder for ${family.familyId}`);
+      parentEmail?: string;
+      deletedAt?: number;
+    } | null;
+    if (!family || family.deletedAt) {
+      console.log(`[ourfableDelivery] Family ${familyId} deleted/missing — not sending reminder, not rescheduling`);
+      return;
     }
+
+    // Use latest email in case it changed
+    const email = family.parentEmail ?? parentEmail;
+    const childFirst = (family.childName ?? childName).split(" ")[0];
+
+    const dob = new Date(childDob + "T00:00:00");
+    const now = new Date();
+    let nextBirthday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+    if (nextBirthday < now) nextBirthday.setFullYear(nextBirthday.getFullYear() + 1);
+    const birthdayDate = nextBirthday.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+
+    // Generate a one-time token for the "yes, remind them" action
+    const token = generateToken();
+    await convexMutation("ourfable:createOurFableDispatch", {
+      familyId,
+      type: "birthday_reminder_token",
+      content: token,
+      sentTo: email,
+    }).catch(() => {});
+
+    const remindUrl = `https://ourfable.ai/api/ourfable/birthday-remind?token=${token}&familyId=${familyId}`;
+
+    const html = emailWrapper(`
+      <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A87A;">One week away</p>
+      <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${childFirst}'s birthday is ${birthdayDate}</p>
+      <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Now's a great time to write a birthday letter for ${childFirst}. Open the Letters page in your dashboard — there's a Birthday Letters tab waiting for you.</p>
+      <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;"><tr><td style="border-radius:10px;background:#4A5E4C;">
+        <a href="https://ourfable.ai/${familyId}/letters" style="display:inline-block;padding:13px 28px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Write a birthday letter →</a>
+      </td></tr></table>
+      <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:24px;margin:0 0 28px;">
+        <p style="margin:0 0 12px;font-family:Georgia,serif;font-size:17px;color:#1A1A1A;">Want us to nudge the circle?</p>
+        <p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:14px;color:#6B6860;line-height:1.7;">We can send a gentle reminder to ${childFirst}'s circle members that the birthday is coming up — in case they'd like to write something too.</p>
+        <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#C8A87A;">
+          <a href="${remindUrl}" style="display:inline-block;padding:12px 24px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Yes, gently remind them →</a>
+        </td></tr></table>
+      </div>
+      <p style="margin:0;font-family:-apple-system,sans-serif;font-size:13px;color:#9A9590;line-height:1.7;font-style:italic;">No pressure — if you don't click, we won't send anything to the circle.</p>
+    `);
+
+    await sendResendEmail(RESEND_API_KEY, email, `${childFirst}'s birthday is one week away 🎂`, html);
+    console.log(`[ourfableDelivery] Sent birthday letter reminder for ${familyId}`);
+
+    // Self-schedule next year's reminder
+    const nextYearBirthday = new Date(now.getFullYear() + 1, dob.getMonth(), dob.getDate(), 15, 0, 0); // 10 AM CT = 15 UTC
+    const nextFireAt = nextYearBirthday.getTime() - 7 * 24 * 60 * 60 * 1000;
+
+    await ctx.scheduler.runAt(
+      nextFireAt,
+      internal.ourfableDelivery.sendBirthdayLetterReminderForFamily,
+      { familyId, childDob, childName: family.childName ?? childName, parentEmail: email }
+    );
+
+    const nextFireDate = new Date(nextFireAt).toISOString().slice(0, 10);
+    console.log(`[ourfableDelivery] Next year's birthday reminder scheduled for ${familyId} on ${nextFireDate}`);
   },
 });
 

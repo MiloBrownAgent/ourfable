@@ -62,7 +62,7 @@ export const createFamily = mutation({
     const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
     const familyName = lastName ? `The ${lastName}s` : `${firstName}'s Family`;
 
-    return await ctx.db.insert("ourfable_vault_families", {
+    const docId = await ctx.db.insert("ourfable_vault_families", {
       familyId: args.familyId,
       familyName,
       childName: args.childName,
@@ -73,6 +73,18 @@ export const createFamily = mutation({
       plan: args.plan ?? "monthly",
       createdAt: Date.now(),
     });
+
+    // Schedule birthday letter reminder (7 days before next birthday)
+    if (args.parentEmail) {
+      await ctx.scheduler.runAfter(0, internal.ourfableDelivery.scheduleBirthdayReminder, {
+        familyId: args.familyId,
+        childDob: args.childDob,
+        childName: args.childName,
+        parentEmail: args.parentEmail,
+      });
+    }
+
+    return docId;
   },
 });
 
@@ -2681,6 +2693,20 @@ export const addChild = mutation({
         promptText: p.text,
         sent: false,
         createdAt: Date.now(),
+      });
+    }
+
+    // Schedule birthday letter reminder for this child
+    const parentFamily = await ctx.db
+      .query("ourfable_vault_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (parentFamily?.parentEmail) {
+      await ctx.scheduler.runAfter(0, internal.ourfableDelivery.scheduleBirthdayReminder, {
+        familyId,
+        childDob,
+        childName,
+        parentEmail: parentFamily.parentEmail,
       });
     }
 
