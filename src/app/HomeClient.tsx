@@ -5,6 +5,7 @@ import {
   HeroSection,
   VignettesSection,
   LetterMomentSection,
+  VideoMomentSection,
   StatsSection,
   CircleSection,
   HowItWorksSection,
@@ -105,6 +106,7 @@ export default function HomeClient() {
       <VignettesSection />
       <DispatchSection />
       <LetterMomentSection />
+      <VideoMomentSection />
       <CircleSection />
       <HowItWorksSection />
       <FeaturesSection />

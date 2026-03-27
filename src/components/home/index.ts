@@ -5,7 +5,7 @@ export { AnimatedHeadline, CHILD_NAMES } from "./AnimatedHeadline";
 export { Counter } from "./Counter";
 export { HeroSection } from "./HeroSection";
 export { SnapshotMockup } from "./HeroSection";
-export { VignettesSection, LetterMomentSection } from "./VignettesSection";
+export { VignettesSection, LetterMomentSection, VideoMomentSection } from "./VignettesSection";
 export { StatsSection } from "./StatsSection";
 export { CircleSection } from "./CircleSection";
 export { HowItWorksSection } from "./HowItWorksSection";

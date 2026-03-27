@@ -135,3 +135,72 @@ export function VignettesSection() {
     </>
   );
 }
+
+export function VideoMomentSection() {
+  return (
+    <section style={{ padding: "120px 40px", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
+      <Reveal>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          <div style={{ width: 40, height: 1, background: "var(--gold-border)", marginBottom: 48 }} />
+
+          <p style={{
+            fontFamily: "var(--font-playfair)",
+            fontSize: "clamp(1.75rem, 4vw, 3rem)",
+            fontWeight: 800,
+            letterSpacing: "-0.025em",
+            lineHeight: 1.15,
+            color: "var(--text)",
+            marginBottom: 40,
+          }}>
+            What would you give to have a video of your grandfather — just talking to you?
+          </p>
+
+          <p style={{
+            fontSize: 18,
+            lineHeight: 1.9,
+            color: "var(--text-2)",
+            marginBottom: 28,
+            maxWidth: 580,
+          }}>
+            Not a photo. Not a memory someone else told you. A video. Him, looking at the camera, saying your name. Telling you what he hoped for you. Laughing the way he laughed.
+          </p>
+
+          <p style={{
+            fontSize: 18,
+            lineHeight: 1.9,
+            color: "var(--text-2)",
+            marginBottom: 48,
+            maxWidth: 580,
+          }}>
+            Your child could have that. From you. From their grandparents. From everyone who loves them right now — while they&apos;re still here, while the light is still good, while there&apos;s still time.
+          </p>
+
+          <div style={{
+            borderLeft: "2px solid var(--gold)",
+            paddingLeft: 28,
+          }}>
+            <p style={{
+              fontFamily: "var(--font-playfair)",
+              fontStyle: "italic",
+              fontSize: "clamp(1.1rem, 2vw, 1.35rem)",
+              lineHeight: 1.7,
+              color: "var(--text)",
+              marginBottom: 12,
+            }}>
+              &ldquo;Every person in your child&apos;s circle can record a video message directly into the Vault. No app. No login. Just a link in their email and a button that says record.&rdquo;
+            </p>
+            <p style={{
+              fontSize: 13,
+              color: "var(--text-3)",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              fontWeight: 600,
+            }}>
+              Sealed until your child is ready to watch.
+            </p>
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
