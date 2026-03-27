@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
   Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
-  ChevronDown, Check, Plus,
+  ChevronDown, Check, Plus, Mail, Cake,
 } from "lucide-react";
 import { useChildContext, type Child } from "@/components/ChildContext";
 
@@ -26,6 +26,8 @@ function buildChildNav(familyId: string) {
   return [
     { name: "Home", href: `/${familyId}`, icon: LayoutDashboard, exact: true },
     { name: "The Vault", href: `/${familyId}/vault`, icon: FolderLock },
+    { name: "Letters", href: `/${familyId}/letters`, icon: Mail },
+    { name: "Birthday Letters", href: `/${familyId}/birthday-letters`, icon: Cake },
     { name: "Born Day", href: `/${familyId}/born`, icon: Sunrise },
     { name: "Your Story", href: `/${familyId}/before-born`, icon: BookOpen },
     { name: "World Snapshot", href: `/${familyId}/snapshot`, icon: Globe },
