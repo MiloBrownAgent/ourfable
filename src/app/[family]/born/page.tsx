@@ -2,6 +2,44 @@
 import { useEffect, useState, use } from "react";
 import { Pencil, Check, X } from "lucide-react";
 
+interface MonthlySnapshot {
+  _id: string;
+  year: number;
+  month: number;
+  topHeadline?: string;
+  topSong?: string;
+  weatherDesc?: string;
+  tempHigh?: number;
+  funFact?: string;
+  notes?: string;
+}
+
+function monthName(m: number): string {
+  return new Date(2000, m - 1, 1).toLocaleDateString("en-US", { month: "long" });
+}
+
+function childAgeAtMonth(dob: string, year: number, month: number): string {
+  const born = new Date(dob + "T00:00:00");
+  const target = new Date(`${year}-${String(month).padStart(2, "0")}-01T00:00:00`);
+  let months = (target.getFullYear() - born.getFullYear()) * 12 + (target.getMonth() - born.getMonth());
+  if (target.getDate() < born.getDate()) months--;
+  if (months <= 0) return "Newborn";
+  const days = Math.floor((target.getTime() - new Date(born.getFullYear(), born.getMonth() + months, born.getDate()).getTime()) / 86400000);
+  return days > 0 ? `${months}m ${days}d` : `${months}m`;
+}
+
+function buildMonthRange(dob: string): Array<{ year: number; month: number }> {
+  const start = new Date(dob + "T00:00:00");
+  const now = new Date();
+  const result: Array<{ year: number; month: number }> = [];
+  const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur <= now) {
+    result.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return result.reverse();
+}
+
 interface BorndayData {
   weatherHigh?: number;
   weatherLow?: number;
@@ -146,17 +184,25 @@ function BirthStatsEditor({
 export default function BornPage({ params }: { params: Promise<{ family: string }> }) {
   const { family: familyId } = use(params);
   const [family, setFamily] = useState<Family | null>(null);
+  const [snapshots, setSnapshots] = useState<MonthlySnapshot[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/ourfable/data`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }),
-    })
-      .then(r => r.json())
-      .then(d => setFamily(d.value ?? null))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`/api/ourfable/data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }),
+      }).then(r => r.json()).then(d => d.value ?? null),
+      fetch(`/api/ourfable/data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "ourfable:listSnapshots", args: { familyId } }),
+      }).then(r => r.json()).then(d => d.value ?? []).catch(() => []),
+    ]).then(([fam, snaps]) => {
+      setFamily(fam);
+      setSnapshots(snaps);
+    }).finally(() => setLoading(false));
   }, [familyId]);
 
   if (loading) return <div style={{ padding: 60, color: "var(--text-3)", fontSize: 14 }}>Loading…</div>;
@@ -190,7 +236,7 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
           color: "var(--sage)",
           marginBottom: 32,
         }}>
-          The Day Everything Changed
+          The World, Then &amp; Now
         </p>
 
         <h1 className="font-display" style={{
@@ -400,6 +446,109 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
         <div style={{ height: 2, background: "var(--gold)", width: 60, margin: "40px auto 0" }} />
       </section>
 
+      {/* === MONTHLY SNAPSHOT TIMELINE === */}
+      {family.childDob && (
+        <section style={{ paddingTop: 80, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+          <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 28 }}>
+            Month by Month
+          </p>
+          <h2 className="font-display" style={{ fontSize: "clamp(1.4rem, 3.5vw, 2rem)", fontWeight: 700, color: "var(--text)", marginBottom: 12, letterSpacing: "-0.01em" }}>
+            {family.childName.split(" ")[0]}&apos;s World
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.65, marginBottom: 40, maxWidth: 480 }}>
+            A snapshot of the world, month by month — the headlines, the songs, the weather outside.
+          </p>
+
+          {(() => {
+            const months = buildMonthRange(family.childDob);
+            const snapMap = new Map<string, MonthlySnapshot>();
+            for (const s of snapshots) snapMap.set(`${s.year}-${s.month}`, s);
+
+            return months.length > 0 ? (
+              <div style={{ paddingLeft: 6 }}>
+                {months.map(({ year, month }) => {
+                  const snap = snapMap.get(`${year}-${month}`);
+                  const hasData = snap && (snap.topHeadline || snap.topSong || snap.weatherDesc || snap.funFact);
+                  const label = `${monthName(month)} ${year}`;
+                  const age = childAgeAtMonth(family.childDob, year, month);
+
+                  return (
+                    <div key={`${year}-${month}`} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 6 }}>
+                        <div style={{
+                          width: 12, height: 12, borderRadius: "50%",
+                          background: hasData ? "var(--gold)" : "transparent",
+                          border: hasData ? "2px solid var(--gold)" : "2px solid var(--border)",
+                          flexShrink: 0,
+                        }} />
+                        <div style={{ width: 1, flex: 1, background: "var(--border)", marginTop: 8 }} />
+                      </div>
+                      <div style={{
+                        flex: 1, padding: 24, marginBottom: 16,
+                        background: "var(--surface, #fff)", borderRadius: 12,
+                        boxShadow: hasData ? "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)" : "0 1px 2px rgba(0,0,0,0.02)",
+                        border: "1px solid var(--border)",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: hasData ? 20 : 12 }}>
+                          <div>
+                            <h3 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", letterSpacing: "0.02em", lineHeight: 1.2 }}>
+                              {label}
+                            </h3>
+                            <span style={{ display: "inline-block", marginTop: 6, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)" }}>
+                              {age}
+                            </span>
+                          </div>
+                        </div>
+                        {hasData && snap ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                            {snap.topHeadline && (
+                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>Headlines</span>
+                                <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.65 }}>{snap.topHeadline}</p>
+                              </div>
+                            )}
+                            {snap.topSong && (
+                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>No. 1 Song</span>
+                                <p className="font-display" style={{ fontSize: 15, color: "var(--text-2)", fontStyle: "italic", lineHeight: 1.5 }}>{snap.topSong}</p>
+                              </div>
+                            )}
+                            {(snap.weatherDesc || snap.tempHigh) && (
+                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>Weather</span>
+                                <p style={{ fontSize: 14, color: "var(--text-2)" }}>{snap.weatherDesc}{snap.tempHigh ? ` · ${snap.tempHigh}°F` : ""}</p>
+                              </div>
+                            )}
+                            {snap.funFact && (
+                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>Fun Fact</span>
+                                <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.65 }}>{snap.funFact}</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="font-display" style={{ fontSize: 15, color: "var(--text-3)", fontStyle: "italic", lineHeight: 1.6 }}>
+                            Snapshot not yet captured.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ display: "flex", gap: 24, alignItems: "flex-start", paddingBottom: 24 }}>
+                  <div style={{ flexShrink: 0, paddingTop: 4 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--gold)", opacity: 0.4 }} />
+                  </div>
+                  <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
+                    The day {family.childName.split(" ")[0]} was born.
+                  </p>
+                </div>
+              </div>
+            ) : null;
+          })()}
+        </section>
+      )}
+
       {/* === FOOTER === */}
       <div style={{ textAlign: "center", paddingBottom: 80, paddingTop: 20 }}>
         <p style={{
@@ -420,8 +569,5 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
         </div>
       </div>
     </div>
-  );
-}
-</div>
   );
 }

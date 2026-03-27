@@ -28,9 +28,8 @@ function buildChildNav(familyId: string) {
     { name: "The Vault", href: `/${familyId}/vault`, icon: FolderLock },
     { name: "Dispatches", href: `/${familyId}/outgoings`, icon: Send },
     { name: "Letters", href: `/${familyId}/letters`, icon: Mail },
-    { name: "Born Day", href: `/${familyId}/born`, icon: Sunrise },
+    { name: "The World", href: `/${familyId}/born`, icon: Sunrise },
     { name: "Before You Were Born", href: `/${familyId}/before-born`, icon: BookOpen },
-    { name: "World Snapshot", href: `/${familyId}/snapshot`, icon: Globe },
     { name: "Birthday Letters", href: `/${familyId}/birthday-letters`, icon: Cake },
   ];
 }
