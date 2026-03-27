@@ -17,7 +17,14 @@ interface PromptData {
   familyId: string;
   memberId: string;
   status: string;
+  relationship?: string;
 }
+
+const GRANDPARENT_RELATIONSHIPS = new Set([
+  "grandparent", "grandma", "grandpa", "grandfather", "grandmother",
+  "nana", "papa", "granny", "gran", "nanny", "grammy", "gramps",
+  "abuela", "abuelo", "oma", "opa", "mimi", "pop-pop", "poppop",
+]);
 
 function unlockLabel(data: PromptData): string {
   if (data.promptUnlocksAtEvent) return `Opens on ${data.promptUnlocksAtEvent}`;
@@ -140,6 +147,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
             familyId: family.familyId,
             memberId: member._id,
             status: prompt.status,
+            relationship: member.relationship ?? member.relationshipKey ?? "",
           };
         } else {
           promptData = val as PromptData;
@@ -236,6 +244,9 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
 
   const childFirst = childName.split(" ")[0] || "them";
   const memberFirst = data?.memberName.split(" ")[0] || "";
+  const isGrandparent = data?.relationship
+    ? GRANDPARENT_RELATIONSHIPS.has(data.relationship.toLowerCase().trim())
+    : false;
 
   // ── Loading ──
   if (loading) return (
@@ -324,7 +335,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "0 0 80px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "0 0 80px" }} className={isGrandparent ? "gp-mode" : ""}>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -337,6 +348,37 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
           .respond-prompt { font-size: 1.25rem !important; }
           .tabs-row { gap: 6px !important; }
           .tab-label { display: none; }
+        }
+
+        /* ── Grandparent accessibility mode ── */
+        .gp-mode { font-size: 18px; }
+        .gp-mode .respond-container { max-width: 580px; }
+        .gp-mode .respond-hero-name { font-size: clamp(3rem, 9vw, 4rem) !important; line-height: 1.15 !important; }
+        .gp-mode .respond-prompt { font-size: clamp(1.5rem, 4.5vw, 2rem) !important; line-height: 1.7 !important; }
+        .gp-mode textarea.vault-input {
+          font-size: 18px !important;
+          padding: 18px 20px !important;
+          line-height: 1.8 !important;
+          min-height: 200px !important;
+        }
+        .gp-mode .tab-btn {
+          min-height: 56px !important;
+          padding: 14px 20px !important;
+          font-size: 15px !important;
+        }
+        .gp-mode .respond-submit-btn {
+          min-height: 56px !important;
+          font-size: 17px !important;
+          padding: 18px 32px !important;
+        }
+        .gp-mode .gp-enhance { color: var(--text) !important; }
+        .gp-mode .tab-label { display: inline !important; }
+        .gp-mode .respond-seal-line { font-size: 14px !important; }
+        .gp-mode input[type="file"] + div { min-height: 56px !important; }
+        @media (max-width: 480px) {
+          .gp-mode .respond-hero-name { font-size: 2.8rem !important; }
+          .gp-mode .respond-prompt { font-size: 1.4rem !important; }
+          .gp-mode .tab-label { display: inline !important; }
         }
       `}</style>
 
@@ -391,7 +433,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
             &ldquo;{data.promptText}&rdquo;
           </p>
 
-          <p style={{ fontSize: 12, color: "var(--text-3)", display: "flex", alignItems: "center", gap: 6 }}>
+          <p className="respond-seal-line gp-enhance" style={{ fontSize: 12, color: "var(--text-3)", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 14 }}>🔒</span>
             {unlockLabel(data)}
           </p>
@@ -551,6 +593,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
 
           {/* ── Submit ── */}
           <button
+            className="respond-submit-btn"
             onClick={handleSubmit}
             disabled={!canSubmit() || submitting}
             style={{
@@ -580,7 +623,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
         </div>
 
         {/* Footer */}
-        <p style={{ textAlign: "center", fontSize: 11, color: "var(--text-3)", marginTop: 48, letterSpacing: "0.08em" }}>
+        <p className="gp-enhance" style={{ textAlign: "center", fontSize: 11, color: "var(--text-3)", marginTop: 48, letterSpacing: "0.08em" }}>
           Private. Not on social. Not public.
         </p>
 
