@@ -1,6 +1,6 @@
 "use client";
-import { use, useEffect, useState } from "react";
-import { Send, ChevronDown, ChevronUp, Check, Users, User, Loader2, Sparkles, ArrowRight, Paperclip, X } from "lucide-react";
+import { use, useEffect, useState, useRef } from "react";
+import { Send, ChevronDown, ChevronUp, Check, Users, User, Loader2, Sparkles, ArrowRight, Paperclip, X, Mic, Video, Image as ImageIcon, Square } from "lucide-react";
 import Link from "next/link";
 import { useChildContext } from "@/components/ChildContext";
 import FileUpload, { UploadedFile } from "@/components/FileUpload";
@@ -143,6 +143,87 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
   const [showAttach, setShowAttach] = useState(false);
   const [sentToAll, setSentToAll] = useState(true);
+
+  // Recording state
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [isRecordingVideo, setIsRecordingVideo] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [uploadingRecording, setUploadingRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    setIsRecordingVoice(false);
+    setIsRecordingVideo(false);
+    setRecordingSeconds(0);
+  };
+
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(recordingChunksRef.current, { type: "audio/webm" });
+        const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
+        await uploadRecordedFile(file, "voice");
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecordingVoice(true);
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+    } catch { alert("Microphone access denied. Please allow microphone access and try again."); }
+  };
+
+  const startVideoRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (videoPreviewRef.current) { videoPreviewRef.current.srcObject = stream; videoPreviewRef.current.play(); }
+      const recorder = new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+        const blob = new Blob(recordingChunksRef.current, { type: "video/webm" });
+        const file = new File([blob], `video-${Date.now()}.webm`, { type: "video/webm" });
+        await uploadRecordedFile(file, "video");
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecordingVideo(true);
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+    } catch { alert("Camera access denied. Please allow camera access and try again."); }
+  };
+
+  const uploadRecordedFile = async (file: File, type: "voice" | "video") => {
+    setUploadingRecording(true);
+    try {
+      const presignRes = await fetch(`/api/ourfable/upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ familyId, fileName: file.name, fileType: file.type, contributionType: "dispatch" }),
+      });
+      if (!presignRes.ok) throw new Error("Upload failed");
+      const { uploadUrl, r2Key, publicUrl } = await presignRes.json();
+      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      setAttachedFiles(prev => [...prev, { fileName: file.name, r2Key, r2Url: publicUrl, mediaType: type, fileType: file.type, fileSize: file.size }]);
+    } catch { alert("Upload failed. Please try again."); }
+    finally { setUploadingRecording(false); }
+  };
+
+  const formatSeconds = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<{ count: number; total: number } | null>(null);
@@ -432,33 +513,79 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
 
             {/* Media attachments */}
             <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: showAttach ? 16 : 0 }}>
-                <button
-                  onClick={() => setShowAttach(v => !v)}
-                  style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--text-3)", padding: 0, fontFamily: "inherit" }}
-                >
-                  <Paperclip size={14} strokeWidth={1.5} />
-                  {attachedFiles.length > 0 ? `${attachedFiles.length} file${attachedFiles.length > 1 ? "s" : ""} attached` : "Add photo, video, or voice memo"}
-                </button>
-                {attachedFiles.length > 0 && (
-                  <button onClick={() => setAttachedFiles([])} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", padding: 0 }}>
-                    <X size={14} strokeWidth={2} />
+              <label style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 12 }}>
+                Attach
+              </label>
+
+              {/* Active recording UI */}
+              {(isRecordingVoice || isRecordingVideo) && (
+                <div style={{ padding: "16px 20px", background: "var(--sage-dim)", border: "1px solid rgba(107,143,111,0.3)", borderRadius: 12, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#E07070", animation: "pulse 1s infinite" }} />
+                    <span style={{ fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)" }}>
+                      {isRecordingVoice ? "Recording voice" : "Recording video"} — {formatSeconds(recordingSeconds)}
+                    </span>
+                  </div>
+                  <button onClick={stopRecording} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#E07070", border: "none", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 500, fontFamily: "var(--font-body)" }}>
+                    <Square size={12} strokeWidth={2.5} fill="#fff" /> Stop
                   </button>
-                )}
-              </div>
-              {showAttach && (
-                <FileUpload
-                  familyId={familyId}
-                  contributionType="dispatch"
-                  maxFiles={5}
-                  onUploadComplete={(files) => {
-                    setAttachedFiles(prev => [...prev, ...files]);
-                    setShowAttach(false);
-                  }}
-                />
+                </div>
               )}
-              {attachedFiles.length > 0 && !showAttach && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+
+              {/* Video preview */}
+              {isRecordingVideo && (
+                <video ref={videoPreviewRef} muted style={{ width: "100%", borderRadius: 10, marginBottom: 12, maxHeight: 200, background: "#000", display: "block" }} />
+              )}
+
+              {/* Uploading indicator */}
+              {uploadingRecording && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", fontSize: 13, color: "var(--text-3)" }}>
+                  <Loader2 size={14} strokeWidth={2} style={{ animation: "spin 1s linear infinite" }} /> Uploading recording…
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {!isRecordingVoice && !isRecordingVideo && !uploadingRecording && (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    onClick={startVoiceRecording}
+                    style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
+                  >
+                    <Mic size={15} strokeWidth={1.5} color="var(--sage)" /> Record voice
+                  </button>
+                  <button
+                    onClick={startVideoRecording}
+                    style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
+                  >
+                    <Video size={15} strokeWidth={1.5} color="var(--sage)" /> Record video
+                  </button>
+                  <button
+                    onClick={() => setShowAttach(v => !v)}
+                    style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
+                  >
+                    <ImageIcon size={15} strokeWidth={1.5} color="var(--sage)" /> Add photo / file
+                  </button>
+                </div>
+              )}
+
+              {/* File upload (photo/file picker) */}
+              {showAttach && !isRecordingVoice && !isRecordingVideo && (
+                <div style={{ marginTop: 12 }}>
+                  <FileUpload
+                    familyId={familyId}
+                    contributionType="dispatch"
+                    maxFiles={5}
+                    onUploadComplete={(files) => {
+                      setAttachedFiles(prev => [...prev, ...files]);
+                      setShowAttach(false);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Attached files list */}
+              {attachedFiles.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                   {attachedFiles.map((f, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "var(--sage-dim)", border: "1px solid rgba(107,143,111,0.25)", borderRadius: 8, fontSize: 12, color: "var(--sage)" }}>
                       {f.mediaType === "photo" ? "📷" : f.mediaType === "video" ? "🎥" : "🎙"} {f.fileName}
