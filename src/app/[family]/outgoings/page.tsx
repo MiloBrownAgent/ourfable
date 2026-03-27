@@ -534,7 +534,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
 
               {/* Video preview */}
               {isRecordingVideo && (
-                <video ref={videoPreviewRef} muted style={{ width: "100%", borderRadius: 10, marginBottom: 12, maxHeight: 200, background: "#000", display: "block" }} />
+                <video ref={videoPreviewRef} muted playsInline style={{ width: "100%", borderRadius: 10, marginBottom: 12, maxHeight: 200, background: "#000", display: "block", transform: "scaleX(-1)" }} />
               )}
 
               {/* Uploading indicator */}

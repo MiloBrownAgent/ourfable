@@ -262,7 +262,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
       {/* Video camera preview */}
       {recordingVideo && (
-        <video ref={videoCameraRef} muted style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block' }} />
+        <video ref={videoCameraRef} muted playsInline style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block', transform: 'scaleX(-1)' }} />
       )}
 
       {/* Recording overlay */}
