@@ -1,120 +1,36 @@
-# 📖 OurFable.ai
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Personalized AI-generated storybooks where your child is the hero.
+## Getting Started
 
-## Tech Stack
+First, run the development server:
 
-| Layer | Tech |
-|-------|------|
-| Framework | Next.js 14 (App Router) |
-| Database | PostgreSQL (Supabase) |
-| Auth | Supabase Auth (email + OAuth) |
-| Storage | Supabase Storage (photos, PDFs) |
-| Payments | Stripe Checkout |
-| Story AI | Anthropic Claude |
-| Image AI | Replicate (Flux) — *TODO* |
-| Print | Lulu API — *TODO* |
-
-## Project Structure
-
-```
-ourfable/
-├── app/
-│   ├── api/
-│   │   ├── auth/              ✅ Supabase auth callback
-│   │   ├── books/route.ts     ✅ GET (list) + POST (create book)
-│   │   ├── generate/route.ts  ✅ POST (AI story generation via Claude)
-│   │   ├── orders/route.ts    ✅ GET (list) + POST (create order + Stripe checkout)
-│   │   ├── upload/route.ts    ✅ POST (signed upload URL for photos)
-│   │   └── webhooks/
-│   │       └── stripe/route.ts ✅ Stripe payment webhook handler
-│   ├── auth/                  ✅ Login + signup pages
-│   ├── create/                ✅ Book creation form page
-│   └── dashboard/             ✅ User dashboard
-├── lib/
-│   ├── stripe.ts              ✅ Stripe client + pricing
-│   └── supabase/              ✅ Browser + server Supabase clients
-├── supabase/
-│   └── schema.sql             ✅ Full DB schema with RLS policies
-└── types/
-    └── database.ts            ✅ TypeScript types for DB tables
-```
-
-## Database Schema
-
-```
-profiles ──1:N──> books ──1:N──> orders
-                    │
-                    └── pages (JSONB array inside book)
-```
-
-**Tables:**
-- `profiles` — user data, auto-created on Supabase signup
-- `books` — character info, story prompt, art style, generated pages (JSONB), status
-- `orders` — digital/hardcover, Stripe payment, shipping tracking
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/upload` | Get signed URL for photo upload to Supabase Storage |
-| GET | `/api/books` | List authenticated user's books |
-| POST | `/api/books` | Create a new book (draft) |
-| POST | `/api/generate` | Generate story + image prompts via Claude |
-| GET | `/api/orders` | List authenticated user's orders |
-| POST | `/api/orders` | Create order + Stripe checkout session |
-| POST | `/api/webhooks/stripe` | Handle Stripe payment events |
-
-## Data Flow
-
-```
-1. UPLOAD:   Client → /api/upload → signed URL → Client uploads to Supabase Storage
-2. CREATE:   Client → /api/books { name, age, photo, prompt, style } → book (draft)
-3. GENERATE: Client → /api/generate { bookId } → Claude → story + image prompts → book (ready)
-4. PURCHASE: Client → /api/orders { bookId, format } → Stripe checkout → webhook → fulfilled
-```
-
-## Setup
-
-### 1. Supabase
-- Create project at [supabase.com](https://supabase.com)
-- Run `supabase/schema.sql` in the SQL Editor
-- Copy project URL + keys
-
-### 2. Stripe
-- Create account at [stripe.com](https://stripe.com)
-- Get API keys
-- Set webhook to `https://yourdomain.com/api/webhooks/stripe`
-- Events: `checkout.session.completed`, `charge.refunded`
-
-### 3. Anthropic
-- Get API key from [console.anthropic.com](https://console.anthropic.com)
-
-### 4. Environment
 ```bash
-cp .env.local.example .env.local
-# Fill in all values
-```
-
-### 5. Run
-```bash
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## Remaining TODO
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Must-have
-- [ ] Image generation — integrate Replicate API for page illustrations
-- [ ] PDF assembly — compile generated pages into downloadable PDF
-- [ ] Print-on-demand — integrate Lulu/Blurb for hardcover fulfillment
-- [ ] Book preview page — reading experience for generated books
-- [ ] Download flow — signed URLs for purchased digital books
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Nice-to-have
-- [ ] Background job queue (Inngest / Trigger.dev) for generation
-- [ ] Rate limiting on generation endpoints
-- [ ] Retry logic for failed page generations
-- [ ] Email notifications (order confirmation, shipping updates)
-- [ ] Gift purchases (send to someone else)
-- [ ] Book gallery / sample books for marketing
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

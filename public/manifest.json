@@ -1,16 +1,12 @@
 {
-  "name": "OurFable.ai — Personalized Animated Storybooks",
-  "short_name": "OurFable",
-  "description": "Create personalized, animated storybooks for your child in under 3 minutes.",
+  "name": "Our Fable",
+  "short_name": "Our Fable",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0EA5A5",
+  "background_color": "#FDFBF7",
+  "theme_color": "#FDFBF7",
   "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "any",
-      "type": "image/x-icon"
-    }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }

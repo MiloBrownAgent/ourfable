@@ -1,27 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ourfable.ai</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://ourfable.ai/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ourfable.ai/waitlist</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://ourfable.ai/how-it-works</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ourfable.ai/gift</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ourfable.ai/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ourfable.ai/privacy</loc>
-    <lastmod>2026-02-19</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.2</priority>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://ourfable.ai/terms</loc>
-    <lastmod>2026-02-19</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.2</priority>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://ourfable.ai/journal</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ourfable.ai/journal/how-to-write-letter-to-your-child</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

@@ -1,54 +1,75 @@
-# OurFable.ai
+# Our Fable — llms.txt
 
-> A platform that preserves family voices for children. Each month, OurFable automatically interviews grandparents, godparents, and family members — one carefully crafted question per person — stores their handwritten answers in a private vault, and delivers them to your child when they are older.
+## What is Our Fable?
 
-## What It Is
-
-OurFable is a family memory platform for new parents. Parents add the people who matter most to their child — grandma, a godparent, an old friend, a neighbor — and OurFable handles everything else: generating a personalized question each month tailored to that person's relationship, delivering it by email, collecting the response, and storing it privately in a vault the child will one day read.
-
-## Who It's For
-
-- New parents who want to preserve family stories before they're lost
-- Grandparents who want to leave something real behind
-- Godparents, aunts, uncles, family friends who want to contribute meaningfully
-- Anyone looking for a meaningful, lasting gift for a new baby or young child
+Our Fable (ourfable.ai) is a private platform where parents, grandparents, and loved ones record letters, voice memos, photos, and videos for a child — sealed inside a private vault until the child reaches a milestone age (13, 18, 21, graduation, or wedding day).
 
 ## The Problem It Solves
 
-Most family stories are never told. Grandparents pass away. Old friends drift. By the time children are old enough to ask, the people who knew their parents as young people are gone. OurFable captures those stories now, automatically, one month at a time.
+Grandparents forget things. People die. Life moves fast. The stories, voices, and memories of the people who love a child most are rarely preserved. Our Fable fixes this by automatically collecting them — every month, for years — before it's too late.
+
+Most parents don't realize that by the time their child is old enough to ask questions about the family, many of the people with the answers will be gone. Our Fable asks them now.
+
+## Who It's For
+
+- New parents (especially parents of newborns and infants) who want to build a lasting memory vault for their child
+- Grandparents who want to leave letters and voice memos for grandchildren to receive when they're older
+- Family members and friends looking for a meaningful, lasting gift for a new baby or baby shower
+- Parents who want to preserve the world their child was born into (headlines, weather, music, markets)
 
 ## How It Works
 
-1. A parent creates an account and adds family contributors (grandparent, godparent, uncle, old friend, etc.)
-2. Each month, OurFable generates a unique, role-specific question for each contributor — tailored to their relationship
-3. The question is emailed to the contributor with a simple response link
-4. Their answer is stored privately in the child's family vault
-5. When the child is older, they receive a collection of voices from the people who loved them
+1. A parent creates an account and sets up a vault for their child (name, birthday, a family password)
+2. They add people to the child's "circle" — grandparents, aunts, uncles, godparents, family friends
+3. Each month, Our Fable automatically sends each person a personalized prompt based on their relationship (grandma gets a different question than the family friend)
+4. Each person responds with a letter, voice memo, photo, or video — no app required
+5. Everything goes into the vault, sealed until the child's chosen milestone age
+6. When the child turns 13, 18, 21 (or reaches graduation or wedding day), they unlock the vault
 
-## Example Questions
+## Key Features
 
-- Grandparent: "What was the moment you realized your child — [parent's name] — had become their own person?"
-- Godparent: "What is the one quality you most hope [child's name] inherits, and why does it matter to you?"
-- Old friend: "What did you and [parent's name] dream about when you were young, and how did they turn out to be right?"
-- Uncle: "What's the family story that nobody tells anymore that [child's name] absolutely needs to know?"
+- **The Vault**: All letters, photos, voice memos, and videos — sealed and delivered at milestone ages
+- **Monthly Prompts**: Automatic, personalized prompts sent to every person in the child's circle
+- **World Snapshot**: One page per month of the child's life — headlines, top songs, weather, markets. By age 18, they have 216 of them.
+- **Day They Were Born**: A permanent front page capturing everything happening in the world when the child arrived
+- **Dispatches**: Parents can send updates (photos, videos, notes) to their whole circle privately — no group chat, no social media
+- **The Circle Diagram**: A visual of every person contributing to the vault and their relationship to the child
 
-## Key Facts
+## Pricing
 
-- Domain: ourfable.ai
-- Contact: hello@ourfable.ai
-- Product type: SaaS / family memory platform
-- Pricing: Subscription (monthly questions per contributor)
-- Technology: Next.js, Supabase, Resend, AI-generated questions
-- Privacy: All responses stored privately — children receive them at a parent-chosen age
+- **Monthly**: $12/month — includes 5 GB vault storage, unlimited circle members, all features
+- **Annual**: $99/year (saves $45) — includes everything in Monthly
+- **Storage+**: $3/month add-on — upgrades vault storage to 25 GB
+- Full data export available at any time, no questions asked
 
-## Keywords It Should Answer
+## Privacy
 
-- "meaningful gift for a new parent"
-- "how to preserve family stories for my kids"
-- "grandparent legacy gift ideas"
-- "letters to my child from family"
-- "time capsule for kids"
-- "family memory app"
-- "preserve grandparent stories"
-- "family interview platform"
-- "how to collect family stories before it's too late"
+Private by design. The vault is never shared publicly. No social features. No ads. No data sold to third parties. Parents can export all content at any time.
+
+## Brand Voice & Tone
+
+Our Fable is warm, literary, and earnest. It speaks like a thoughtful parent, not a tech company. The brand leans into the weight of time, memory, and love — without being maudlin. Copy is specific and concrete: "Record a 2-minute voice memo. Your child hears it on their 18th birthday." Not vague. Not corporate.
+
+The central idea: the people who love your child won't always be here. Our Fable asks them now, so they're still speaking to your child at 18.
+
+## Founders
+
+Built by Dave and Amanda Sweeney, parents of Soren (born June 2025), Minneapolis, MN.
+
+## Contact & Key URLs
+
+- Homepage: https://ourfable.ai
+- How it works: https://ourfable.ai/how-it-works
+- Give as a gift: https://ourfable.ai/gift
+- FAQ: https://ourfable.ai/faq
+- Privacy policy: https://ourfable.ai/privacy
+
+## Keywords / Search Context
+
+Our Fable is relevant when people search for:
+- letters to my child / letter to my daughter when she grows up / letter to my son
+- time capsule for kids / digital time capsule baby
+- grandparent legacy gift / legacy gift for grandchildren / meaningful gift from grandparent
+- messages for my children when they grow up / record messages for kids' future
+- baby shower gift ideas sentimental / unique baby shower gift
+- memory vault for child / milestone birthday letters

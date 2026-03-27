@@ -1,0 +1,516 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Check, BookOpen, Lock, Users, Star, Shield, Send } from "lucide-react";
+
+// ── Waitlist form ───────────────────────────────────────────────────────────────
+function WaitlistForm({ compact = false }: { compact?: boolean }) {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/grove/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setSubmitted(true);
+      // Fire Meta Pixel Lead event
+      if (typeof window !== "undefined") {
+        const w = window as unknown as { fbq?: (...args: unknown[]) => void };
+        if (w.fbq) w.fbq("track", "Lead");
+      }
+    } catch (_err) {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div style={{
+        padding: compact ? "20px 24px" : "28px 32px",
+        background: "var(--green-light)",
+        border: "1.5px solid var(--green-border)",
+        borderRadius: 16,
+        textAlign: "center",
+        animation: "fadeIn 0.4s ease both",
+      }}>
+        <p style={{ fontSize: 20, marginBottom: 6 }}>🌿</p>
+        <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: compact ? 16 : 18, color: "var(--green)", marginBottom: 6 }}>
+          You&apos;re on the list.
+        </p>
+        <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.6 }}>
+          We&apos;ll reach out to founding families first. Tell a friend who&apos;s expecting.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <input
+          type="email"
+          required
+          placeholder="Your email address"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          style={{
+            flex: "1 1 240px",
+            padding: compact ? "12px 16px" : "15px 18px",
+            borderRadius: 10,
+            border: "1.5px solid var(--border)",
+            background: "var(--bg)",
+            color: "var(--text)",
+            fontSize: 15,
+            outline: "none",
+            fontFamily: "inherit",
+          }}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary"
+          style={{ padding: compact ? "12px 22px" : "15px 26px", fontSize: 15, whiteSpace: "nowrap", opacity: loading ? 0.7 : 1 }}
+        >
+          {loading ? "Saving…" : "Reserve your spot"}
+        </button>
+      </div>
+      {error && <p style={{ marginTop: 8, fontSize: 13, color: "#c0392b" }}>{error}</p>}
+    </form>
+  );
+}
+
+function Reveal({ children, delay = 0, style = {} }: {
+  children: React.ReactNode; delay?: number; style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([e]) => { if (e.isIntersecting) { setDone(true); obs.disconnect(); } },
+        { threshold: 0.01, rootMargin: "120px 0px 120px 0px" }
+      );
+      obs.observe(el);
+    }, 40);
+    return () => clearTimeout(timer);
+  }, []);
+  return (
+    <div ref={ref} style={{
+      animation: done ? `revealUp 0.55s cubic-bezier(0.4,0,0.2,1) ${delay}ms both` : undefined,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+const STEPS = [
+  { n: "01", title: "Tell Our Fable about your child.", body: "Name, birthday, a family password. Five minutes. Our Fable builds their private Vault, their circle, and their world snapshot — ready instantly." },
+  { n: "02", title: "Add the people who love them.", body: "Grandparents, aunts, uncles, godparents, best friends. Each person gets a unique link. No account. No app. Just a link." },
+  { n: "03", title: "Our Fable asks every circle member, every month.", body: "A personal prompt goes out automatically — different for each relationship. Grandma gets a different question than the college roommate. They respond with text, a photo, a voice memo, or a video." },
+  { n: "04", title: "Everything seals in the Vault.", body: "Every response is stored and time-locked. Some open at 13. Some at 18. Some on graduation day, or their wedding. The people who love them, speaking directly across time." },
+];
+
+const FEATURES = [
+  { icon: Lock, title: "The Vault", body: "Every response from every circle member — photos, videos, voice memos, letters — sealed and waiting. Age-gated and delivered at the moments that matter. 13. 18. Graduation. Wedding day." },
+  { icon: Users, title: "Monthly Prompts", body: "Our Fable interviews the people in your child's life automatically. Tailored to each relationship, sent every month. All they do is reply." },
+  { icon: Send, title: "Outgoings", body: "Send photos, videos, letters, or updates to your whole circle — or just select a few. One send, everyone who matters gets it. No group chat. No social media. Just the people who love them." },
+  { icon: BookOpen, title: "Monthly World Snapshot", body: "Once a month, Our Fable captures the world your child was born into — the top news story, the weather, the #1 song, the market close. One page per month of their life. At 18, they have 216 of them." },
+  { icon: Star, title: "The Day They Were Born", body: "A permanent front page for their birthday — everything happening in the world on the day they arrived. Something they'll actually want to read someday." },
+];
+
+export default function LandingPage() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 30);
+    window.addEventListener("scroll", h, { passive: true });
+    h();
+    return () => window.removeEventListener("scroll", h);
+  }, []);
+
+  return (
+    <div style={{ background: "var(--bg)", color: "var(--text)" }}>
+
+      {/* ── KEYFRAMES ── */}
+      <style>{`
+        @keyframes revealUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media (max-width: 860px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .hero-card { display: none !important; }
+          .steps-grid { grid-template-columns: 1fr 1fr !important; }
+          .features-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 540px) {
+          .steps-grid { grid-template-columns: 1fr !important; }
+          .features-grid { grid-template-columns: 1fr !important; }
+          .security-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 680px) {
+          .nav-text-links { display: none !important; }
+          .hero-section { padding: 100px 20px 60px !important; }
+          .proof-strip { gap: 14px !important; padding: 14px 20px !important; }
+          .proof-strip span { font-size: 12px !important; }
+          .section-inner { padding-left: 20px !important; padding-right: 20px !important; }
+          .security-intro { grid-template-columns: 1fr !important; gap: 32px !important; }
+        }
+      `}</style>
+
+      {/* ── NAV ── */}
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, height: 64,
+        display: "flex", alignItems: "center", padding: "0 40px",
+        background: scrolled ? "rgba(253,251,247,0.96)" : "transparent",
+        borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
+        backdropFilter: scrolled ? "blur(16px)" : "none",
+        transition: "all 250ms ease",
+      }}>
+        <div style={{ maxWidth: 1160, margin: "0 auto", width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--green)", letterSpacing: "-0.01em" }}>Our Fable</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div className="nav-text-links" style={{ display: "flex", alignItems: "center", gap: 24 }}>
+              <Link href="/how-it-works" className="nav-link" style={{ fontSize: 14 }}>How it works</Link>
+              <Link href="/gift" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
+              <Link href="/login" className="nav-link" style={{ fontSize: 14 }}>Sign in</Link>
+            </div>
+            <Link href="#waitlist" className="btn-primary" style={{ padding: "10px 22px", fontSize: 14 }}
+              onClick={e => { e.preventDefault(); document.querySelector("#waitlist")?.scrollIntoView({ behavior: "smooth" }); }}>
+              Reserve your spot
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── HERO ── */}
+      <section id="waitlist" className="hero-section" style={{ padding: "148px 40px 100px", maxWidth: 1160, margin: "0 auto" }}>
+        <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
+          {/* Left: copy */}
+          <div>
+            <div style={{ marginBottom: 20, animation: "revealUp 0.5s ease both" }}>
+              <span className="chip chip-green" style={{ fontSize: 12 }}>Private · Permanent · Personal</span>
+            </div>
+            <h1 style={{
+              fontFamily: "var(--font-playfair)", fontWeight: 800,
+              fontSize: "clamp(2.8rem, 4.8vw, 4.4rem)",
+              lineHeight: 1.08, letterSpacing: "-0.025em",
+              marginBottom: 24, color: "var(--text)",
+              animation: "revealUp 0.5s ease 0.08s both",
+            }}>
+              Before they can<br />read, someone<br />should be{" "}
+              <em style={{ color: "var(--green)", fontStyle: "italic" }}>writing.</em>
+            </h1>
+            <p style={{
+              fontSize: 18, lineHeight: 1.75, color: "var(--text-2)",
+              marginBottom: 36, maxWidth: 420,
+              animation: "revealUp 0.5s ease 0.16s both",
+            }}>
+              Our Fable automatically interviews the people in your child's life — and holds their answers until your child is ready.
+            </p>
+            <div style={{ maxWidth: 480, animation: "revealUp 0.5s ease 0.24s both" }}>
+              <div style={{ marginBottom: 10 }}>
+                <span className="chip chip-green" style={{ fontSize: 12 }}>🌿 Founding families only · Limited spots</span>
+              </div>
+              <WaitlistForm />
+              <p style={{ marginTop: 12, fontSize: 13, color: "var(--text-3)" }}>
+                No spam. No credit card. First access goes to families on this list.
+              </p>
+            </div>
+          </div>
+
+          {/* Right: Chronicle card mockup */}
+          <div className="hero-card" style={{ position: "relative", animation: "fadeIn 0.8s ease 0.2s both" }}>
+            {/* Background card (rotated) */}
+            <div style={{
+              position: "absolute", inset: "12px -12px -12px 12px",
+              background: "var(--green-light)", border: "1.5px solid var(--green-border)",
+              borderRadius: 20, zIndex: 0,
+            }} />
+            {/* Main card */}
+            <div className="card" style={{ position: "relative", zIndex: 1, padding: "28px 26px", boxShadow: "var(--shadow-lg)" }}>
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)", marginBottom: 6 }}>A question for you</p>
+                <p style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "var(--text)", lineHeight: 1.3 }}>Hi, Grandma.</p>
+              </div>
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, marginBottom: 16 }}>
+                <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 10 }}>This month&apos;s prompt</p>
+                <p style={{
+                  fontFamily: "var(--font-playfair)", fontSize: 15.5, fontWeight: 400,
+                  lineHeight: 1.75, color: "var(--text-2)", fontStyle: "italic",
+                }}>
+                  &ldquo;Tell them a story about when you were growing up. What was one of the most impactful moments of your life — something you&apos;d want them to carry with them?&rdquo;
+                </p>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span className="chip" style={{ fontSize: 11 }}>🔒 Opens at age 13</span>
+                <span style={{ fontSize: 12, color: "var(--green)", fontWeight: 600, cursor: "pointer" }}>Submit →</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROOF STRIP ── */}
+      <div style={{ background: "var(--green)", padding: "18px 40px" }}>
+        <div className="proof-strip" style={{ maxWidth: 1160, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 36, flexWrap: "wrap" }}>
+          {["Automatic monthly prompts", "Photos, video & voice memos", "Outgoings to your whole circle", "Sealed until they're ready", "Private by design"].map(p => (
+            <div key={p} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Check size={12} color="rgba(255,255,255,0.6)" strokeWidth={2.5} />
+              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.85)" }}>{p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── HOW IT WORKS ── */}
+      <section style={{ padding: "120px 40px", maxWidth: 1160, margin: "0 auto" }}>
+        <Reveal>
+          <div style={{ marginBottom: 64 }}>
+            <p className="label label-green" style={{ marginBottom: 14 }}>How it works</p>
+            <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, marginBottom: 14, maxWidth: 520 }}>
+              Set up in five minutes.<br />Runs for a lifetime.
+            </h2>
+            <p style={{ fontSize: 17, color: "var(--text-2)", lineHeight: 1.7, maxWidth: 440 }}>
+              You don't have to write every day.<br />Our Fable does it for you.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {STEPS.map((step, i) => (
+            <Reveal key={step.n} delay={i * 60}>
+              <div style={{
+                padding: "32px 26px", borderRadius: 18, height: "100%",
+                background: i === 0 ? "var(--green)" : i === 2 ? "var(--green-light)" : "var(--card)",
+                border: "1.5px solid",
+                borderColor: i === 0 ? "transparent" : i === 2 ? "var(--green-border)" : "var(--border)",
+                boxShadow: i === 0 ? "none" : "var(--shadow-sm)",
+              }}>
+                <p style={{
+                  fontFamily: "var(--font-playfair)", fontSize: 42, fontWeight: 800,
+                  lineHeight: 1, marginBottom: 22, letterSpacing: "-0.03em",
+                  color: i === 0 ? "rgba(255,255,255,0.2)" : i === 2 ? "var(--green)" : "var(--border-dark)",
+                }}>
+                  {step.n}
+                </p>
+                <h3 style={{
+                  fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700,
+                  marginBottom: 10, lineHeight: 1.35, letterSpacing: "-0.01em",
+                  color: i === 0 ? "#fff" : "var(--text)",
+                }}>
+                  {step.title}
+                </h3>
+                <p style={{ fontSize: 13.5, lineHeight: 1.75, color: i === 0 ? "rgba(255,255,255,0.72)" : "var(--text-2)" }}>
+                  {step.body}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        {/* AI transparency note */}
+        <Reveal delay={300}>
+          <div style={{ marginTop: 24, padding: "18px 24px", background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--green)", marginTop: 7, flexShrink: 0 }} />
+            <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.7 }}>
+              <strong style={{ color: "var(--text)", fontWeight: 600 }}>How it works:</strong>{" "}
+              Each month, two things happen automatically. Every circle member receives a personal prompt — tailored to their relationship, sent by email, no account needed. And Our Fable generates a one-page World Snapshot: what was in the news, the weather, the #1 song, the market close. Responses go into the Vault. Snapshots build a record of the world your child was born into. Both are sealed at the level that makes sense — some at 13, some at 18, some on the wedding day.
+            </p>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── PHILOSOPHY ── */}
+      <section style={{ background: "var(--bg-2)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "100px 40px" }}>
+        <Reveal>
+          <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+            <p className="label label-green" style={{ marginBottom: 20 }}>The philosophy</p>
+            <h2 style={{
+              fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 4vw, 3.4rem)",
+              fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, marginBottom: 28,
+            }}>
+              The invite comes from{" "}
+              <em style={{ color: "var(--green)", fontStyle: "italic" }}>your child,</em>{" "}
+              not from you.
+            </h2>
+            <p style={{ fontSize: 17, lineHeight: 1.8, color: "var(--text-2)", marginBottom: 16, maxWidth: 560, margin: "0 auto 16px" }}>
+              When Grandma gets her invite, the subject line reads: <strong style={{ color: "var(--text)" }}>"Hi — it's me."</strong> She's not receiving a parent newsletter. She's receiving a letter from a child — and her response is a letter back to them, not a form for you.
+            </p>
+            <p style={{ fontSize: 17, lineHeight: 1.8, color: "var(--text-2)", maxWidth: 560, margin: "0 auto" }}>
+              Our Fable is built around the child. Parents are the setup. Everything else belongs to them.
+            </p>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section style={{ padding: "120px 40px", maxWidth: 1160, margin: "0 auto" }}>
+        <Reveal>
+          <div style={{ marginBottom: 64 }}>
+            <p className="label label-green" style={{ marginBottom: 14 }}>What's inside</p>
+            <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, maxWidth: 480 }}>
+              Everything your child<br />will want someday.
+            </h2>
+          </div>
+        </Reveal>
+
+        <div className="features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {FEATURES.map((f, i) => {
+            const Icon = f.icon;
+            return (
+              <Reveal key={f.title} delay={i * 55}>
+                <div className="card" style={{ padding: "32px 26px", height: "100%" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--green-light)", border: "1px solid var(--green-border)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+                    <Icon size={20} color="var(--green)" strokeWidth={1.75} />
+                  </div>
+                  <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: 19, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 10, lineHeight: 1.3 }}>
+                    {f.title}
+                  </h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--text-2)" }}>
+                    {f.body}
+                  </p>
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── THE LETTER MOMENT ── */}
+      <section style={{ background: "var(--green)", padding: "100px 40px" }}>
+        <Reveal>
+          <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", marginBottom: 32 }}>
+              Why it matters
+            </p>
+            <p style={{
+              fontFamily: "var(--font-playfair)", fontStyle: "italic", fontWeight: 500,
+              fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)", lineHeight: 1.55,
+              color: "#FFFFFF", marginBottom: 28,
+            }}>
+              "Imagine your child at 18, opening a voice memo from their great-grandmother — recorded when they were 9 months old.
+              <br /><br />
+              Their great-grandmother, who is no longer alive.
+              <br /><br />
+              Telling them how she wants to be remembered."
+            </p>
+            <div style={{ width: 40, height: 1, background: "rgba(255,255,255,0.2)", margin: "0 auto 24px" }} />
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, maxWidth: 520, margin: "0 auto" }}>
+              Our Fable makes this happen because once a month, it asked. She answered. Her voice is in the Vault — sealed, waiting for the moment your child is ready to hear it.
+            </p>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── SECURITY ── */}
+      <section style={{ padding: "100px 40px", maxWidth: 960, margin: "0 auto" }}>
+        <Reveal>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center", marginBottom: 56 }} className="security-intro">
+            <div>
+              <p className="label label-green" style={{ marginBottom: 14 }}>Privacy</p>
+              <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.8rem, 3vw, 2.6rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.2, marginBottom: 16 }}>
+                Private by design.<br />Not by policy.
+              </h2>
+              <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.75 }}>
+                This is not a social network with a private mode. Our Fable was built from day one to never be public. Your child's story belongs to your family — not to an algorithm, not to advertisers, not to anyone.
+              </p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {[
+                { icon: Shield, text: "No public profiles or search results. Every page blocks search engines." },
+                { icon: Lock, text: "Letters are sealed on our servers. Not even parents can read them before the date." },
+                { icon: Check, text: "Each circle member has their own unique link. No shared access. No accounts to create." },
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <div key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "16px 18px", background: "var(--card)", border: "1.5px solid var(--border)", borderRadius: 12 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--green-light)", border: "1px solid var(--green-border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Icon size={14} color="var(--green)" strokeWidth={2} />
+                    </div>
+                    <p style={{ fontSize: 14, lineHeight: 1.65, color: "var(--text-2)", paddingTop: 2 }}>{item.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={100}>
+          <div className="security-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            {[
+              { title: "Rate-limited auth", body: "Login attempts are limited to 5 per 15 minutes per device." },
+              { title: "Session security", body: "Auth uses cryptographically signed tokens. No third-party services involved." },
+              { title: "No tracking, no ads", body: "Zero analytics reporting to third parties. Your child's data is never sold or shared." },
+            ].map((item) => (
+              <div key={item.title} style={{ padding: "18px 18px", background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: 10 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>{item.title}</p>
+                <p style={{ fontSize: 13, lineHeight: 1.65, color: "var(--text-2)" }}>{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section style={{ padding: "80px 40px 140px", textAlign: "center" }}>
+        <Reveal>
+          <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "clamp(1.1rem, 2vw, 1.4rem)", color: "var(--text-3)", marginBottom: 24, lineHeight: 1.6 }}>
+              "The people who love your child won't be here forever."
+            </p>
+            <h2 style={{ fontFamily: "var(--font-playfair)", fontWeight: 800, fontSize: "clamp(2.5rem, 5vw, 4rem)", letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 20 }}>
+              Start{" "}
+              <em style={{ color: "var(--green)", fontStyle: "italic" }}>their</em>
+              {" "}story.
+            </h2>
+            <p style={{ fontSize: 17, color: "var(--text-2)", marginBottom: 40, lineHeight: 1.7 }}>
+              Five minutes to set up. Our Fable interviews them every month — and holds every answer until your child is ready.
+            </p>
+            <div style={{ maxWidth: 480, margin: "0 auto" }}>
+              <WaitlistForm />
+            </div>
+            <p style={{ marginTop: 14, fontSize: 13, color: "var(--text-3)" }}>Founding families only · First access · No credit card</p>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ borderTop: "1px solid var(--border)", padding: "32px 40px", background: "var(--bg-2)" }}>
+        <div style={{ maxWidth: 1160, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 20 }}>
+            <span style={{ fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 700, color: "var(--green)", letterSpacing: "-0.01em" }}>Our Fable</span>
+            <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+              <Link href="/how-it-works" className="nav-link" style={{ fontSize: 13 }}>How it works</Link>
+              <Link href="/privacy" className="nav-link" style={{ fontSize: 13 }}>Privacy</Link>
+              <Link href="/terms" className="nav-link" style={{ fontSize: 13 }}>Terms</Link>
+            </div>
+          </div>
+          <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <p style={{ fontSize: 12, color: "var(--text-3)" }}>Private by design. For families. Not followers.</p>
+            <p style={{ fontSize: 12, color: "var(--text-4)" }}>© 2026 Our Fable</p>
+          </div>
+        </div>
+      </footer>
+
+      <style>{`
+        @media (max-width: 860px) { .security-intro { grid-template-columns: 1fr !important; gap: 32px !important; } }
+      `}</style>
+    </div>
+  );
+}

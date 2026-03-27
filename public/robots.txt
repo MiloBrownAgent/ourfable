@@ -1,9 +1,15 @@
 User-agent: *
 Allow: /
-Disallow: /dashboard
-Disallow: /create
-Disallow: /auth/
+
+# Block private family dashboard routes
 Disallow: /api/
-Disallow: /books/
+Disallow: /login
+Disallow: /signup
+Disallow: /welcome
+Disallow: /unsubscribe
+Disallow: /respond/
+Disallow: /join/
+Disallow: /redeem/
+Disallow: /mockup/
 
 Sitemap: https://ourfable.ai/sitemap.xml

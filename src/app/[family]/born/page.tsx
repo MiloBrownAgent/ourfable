@@ -1,0 +1,424 @@
+"use client";
+import { useEffect, useState, use } from "react";
+import { Pencil, Check, X } from "lucide-react";
+
+interface BorndayData {
+  weatherHigh?: number;
+  weatherLow?: number;
+  weatherDesc?: string;
+  song?: string;
+  songArtist?: string;
+  headlines?: string[];
+  funFact?: string;
+  quote?: string;
+  birthWeightLbs?: number;
+  birthWeightOz?: number;
+  birthLengthIn?: number;
+}
+
+interface Family {
+  childName: string;
+  childDob: string;
+  familyName: string;
+  borndayData?: BorndayData;
+}
+
+function GoldDivider() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, margin: "0 auto", maxWidth: 200 }}>
+      <div style={{ flex: 1, height: 1, background: "var(--gold-border)" }} />
+      <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--gold)", opacity: 0.5 }} />
+      <div style={{ flex: 1, height: 1, background: "var(--gold-border)" }} />
+    </div>
+  );
+}
+
+function BirthStatsEditor({
+  familyId,
+  initial,
+  onSaved,
+}: {
+  familyId: string;
+  initial: BorndayData;
+  onSaved: (d: BorndayData) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [lbs, setLbs] = useState(String(initial.birthWeightLbs ?? ""));
+  const [oz, setOz] = useState(String(initial.birthWeightOz ?? ""));
+  const [len, setLen] = useState(String(initial.birthLengthIn ?? ""));
+  const [saving, setSaving] = useState(false);
+
+  const hasData = initial.birthWeightLbs != null || initial.birthLengthIn != null;
+
+  const save = async () => {
+    setSaving(true);
+    const patch: BorndayData = {
+      ...initial,
+      ...(lbs !== "" ? { birthWeightLbs: parseFloat(lbs) } : {}),
+      ...(oz !== "" ? { birthWeightOz: parseFloat(oz) } : {}),
+      ...(len !== "" ? { birthLengthIn: parseFloat(len) } : {}),
+    };
+    await fetch(`/api/ourfable/data`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "ourfable:patchFamily", args: { familyId, borndayData: patch }, type: "mutation" }),
+    });
+    setSaving(false);
+    setEditing(false);
+    onSaved(patch);
+  };
+
+  if (editing) {
+    return (
+      <div style={{ marginTop: 24 }}>
+        <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 10, color: "var(--text-3)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>lbs</label>
+            <input value={lbs} onChange={e => setLbs(e.target.value)} type="number" placeholder="8" className="input" style={{ width: 68, padding: "8px 12px", fontSize: 15 }} />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 10, color: "var(--text-3)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>oz</label>
+            <input value={oz} onChange={e => setOz(e.target.value)} type="number" placeholder="4" className="input" style={{ width: 68, padding: "8px 12px", fontSize: 15 }} />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 10, color: "var(--text-3)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>inches</label>
+            <input value={len} onChange={e => setLen(e.target.value)} type="number" placeholder="20" className="input" style={{ width: 80, padding: "8px 12px", fontSize: 15 }} />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={save} disabled={saving} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--gold-dim)", border: "1px solid var(--gold-border)", borderRadius: 8, padding: "8px 16px", fontSize: 12, color: "var(--gold)", cursor: "pointer", fontWeight: 500 }}>
+            <Check size={13} strokeWidth={2.5} /> {saving ? "Saving…" : "Save"}
+          </button>
+          <button onClick={() => setEditing(false)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 16px", fontSize: 12, color: "var(--text-3)", cursor: "pointer" }}>
+            <X size={13} strokeWidth={2} /> Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      {hasData ? (
+        <div style={{ display: "flex", gap: 40, marginBottom: 16 }}>
+          <div>
+            <p className="font-display" style={{ fontSize: 32, fontWeight: 300, color: "var(--text)", lineHeight: 1.2 }}>
+              {initial.birthWeightLbs} lbs {initial.birthWeightOz ?? 0} oz
+            </p>
+            <p style={{ fontSize: 10, color: "var(--text-3)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 6 }}>Weight</p>
+          </div>
+          <div>
+            <p className="font-display" style={{ fontSize: 32, fontWeight: 300, color: "var(--text)", lineHeight: 1.2 }}>
+              {initial.birthLengthIn} in
+            </p>
+            <p style={{ fontSize: 10, color: "var(--text-3)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 6 }}>Length</p>
+          </div>
+        </div>
+      ) : (
+        <p style={{ fontSize: 15, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 16, fontStyle: "italic" }}>
+          Birth stats not yet recorded.
+        </p>
+      )}
+      {hasData ? (
+        <button
+          onClick={() => setEditing(true)}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 14px", fontSize: 11, color: "var(--text-3)", cursor: "pointer", letterSpacing: "0.04em" }}
+        >
+          <Pencil size={11} strokeWidth={1.5} /> Edit
+        </button>
+      ) : (
+        <div style={{ marginTop: 8, padding: "20px 24px", background: "var(--gold-dim)", border: "1px dashed var(--gold-border)", borderRadius: 12, textAlign: "center" }}>
+          <p style={{ fontFamily: "var(--font-cormorant, var(--font-display))", fontSize: 17, fontStyle: "italic", color: "var(--text-2)", marginBottom: 14, lineHeight: 1.5 }}>
+            Record birth weight and length — a detail worth keeping forever.
+          </p>
+          <button
+            onClick={() => setEditing(true)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--gold)", border: "none", borderRadius: 10, padding: "12px 24px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer" }}
+          >
+            <Pencil size={14} strokeWidth={2} /> Add birth stats
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function BornPage({ params }: { params: Promise<{ family: string }> }) {
+  const { family: familyId } = use(params);
+  const [family, setFamily] = useState<Family | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/ourfable/data`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }),
+    })
+      .then(r => r.json())
+      .then(d => setFamily(d.value ?? null))
+      .finally(() => setLoading(false));
+  }, [familyId]);
+
+  if (loading) return <div style={{ padding: 60, color: "var(--text-3)", fontSize: 14 }}>Loading…</div>;
+  if (!family) return <div style={{ color: "var(--text-3)", padding: 60 }}>Family not found.</div>;
+
+  const d = family.borndayData ?? {};
+  const dob = new Date(family.childDob + "T12:00:00");
+  const fullDate = dob.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+  const weatherHigh = d.weatherHigh ?? 96;
+  const weatherDesc = d.weatherDesc ?? "Sunny. The hottest day of the year. The summer solstice. The longest day.";
+  const song = d.song ?? "Manchild";
+  const songArtist = d.songArtist ?? "Sabrina Carpenter";
+  const headlines = d.headlines ?? [
+    "The summer solstice arrived — the longest, sunniest day of the year",
+    "Families everywhere headed outdoors for picnics, swimming, and firefly-catching",
+    "Sabrina Carpenter's \"Manchild\" was the #1 song in America",
+  ];
+  const quote = d.quote ?? "Every child begins the world again.";
+
+  return (
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 24px" }}>
+
+      {/* === HERO: The Date === */}
+      <section style={{ textAlign: "center", paddingTop: 80, paddingBottom: 80 }}>
+        <p style={{
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          color: "var(--sage)",
+          marginBottom: 32,
+        }}>
+          The Day Everything Changed
+        </p>
+
+        <h1 className="font-display" style={{
+          fontSize: "clamp(2.4rem, 7vw, 4.2rem)",
+          fontWeight: 700,
+          color: "var(--green)",
+          lineHeight: 1.1,
+          marginBottom: 32,
+          letterSpacing: "-0.01em",
+        }}>
+          {fullDate}
+        </h1>
+
+        <GoldDivider />
+
+        <p className="font-display" style={{
+          fontSize: "clamp(3rem, 10vw, 6.5rem)",
+          fontWeight: 700,
+          color: "var(--gold)",
+          lineHeight: 1.0,
+          marginTop: 40,
+          letterSpacing: "-0.02em",
+        }}>
+          {family.childName}
+        </p>
+        <p style={{
+          fontSize: 12,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: "var(--text-3)",
+          marginTop: 16,
+        }}>
+          arrived
+        </p>
+      </section>
+
+      {/* === THE WEATHER — editorial prose === */}
+      <section style={{ paddingTop: 64, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          color: "var(--sage)",
+          marginBottom: 28,
+        }}>
+          The Weather
+        </p>
+
+        <p className="font-display" style={{
+          fontSize: "clamp(1.6rem, 4vw, 2.4rem)",
+          fontWeight: 700,
+          color: "var(--text)",
+          lineHeight: 1.35,
+          marginBottom: 24,
+        }}>
+          It was {weatherHigh}° and {weatherDesc.toLowerCase().includes("sunny") ? "sunny" : weatherDesc.split(".")[0].toLowerCase().trim()}
+        </p>
+
+        <p style={{
+          fontSize: 16,
+          lineHeight: 1.75,
+          color: "var(--text-2)",
+          maxWidth: 560,
+        }}>
+          {weatherDesc}
+        </p>
+      </section>
+
+      {/* === THE #1 SONG === */}
+      <section style={{ paddingTop: 64, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          color: "var(--sage)",
+          marginBottom: 28,
+        }}>
+          #1 Song in America
+        </p>
+
+        <p className="font-display" style={{
+          fontSize: "clamp(1.4rem, 3.5vw, 2rem)",
+          fontWeight: 700,
+          fontStyle: "italic",
+          color: "var(--text)",
+          lineHeight: 1.4,
+        }}>
+          The #1 song was &ldquo;{song}&rdquo;
+          <br />
+          <span style={{ fontStyle: "normal", fontWeight: 400, color: "var(--text-2)" }}>
+            by {songArtist}
+          </span>
+        </p>
+
+        <p style={{
+          fontSize: 15,
+          lineHeight: 1.7,
+          color: "var(--text-3)",
+          marginTop: 20,
+          maxWidth: 480,
+        }}>
+          It debuted at #1 on the Billboard Hot 100 the week you arrived.
+        </p>
+      </section>
+
+      {/* === TOP HEADLINE — pull quote treatment === */}
+      <section style={{ paddingTop: 64, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          color: "var(--sage)",
+          marginBottom: 40,
+        }}>
+          The World That Day
+        </p>
+
+        {/* Lead headline as pull quote */}
+        {headlines.length > 0 && (
+          <div style={{ padding: "40px 0", margin: "0 0 40px 0" }}>
+            <div style={{ height: 2, background: "var(--gold)", marginBottom: 32, maxWidth: 80 }} />
+            <p className="font-display" style={{
+              fontSize: "clamp(1.3rem, 3vw, 1.8rem)",
+              fontWeight: 700,
+              fontStyle: "italic",
+              color: "var(--text)",
+              lineHeight: 1.45,
+              maxWidth: 560,
+            }}>
+              &ldquo;{headlines[0]}&rdquo;
+            </p>
+            <div style={{ height: 2, background: "var(--gold)", marginTop: 32, maxWidth: 80 }} />
+          </div>
+        )}
+
+        {/* Remaining headlines */}
+        {headlines.length > 1 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingLeft: 4 }}>
+            {headlines.slice(1).map((h, i) => (
+              <div key={i} style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
+                <span style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, letterSpacing: "0.06em", flexShrink: 0 }}>
+                  {String(i + 2).padStart(2, "0")}
+                </span>
+                <p style={{ fontSize: 16, lineHeight: 1.65, color: "var(--text-2)" }}>
+                  {h}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* === BIRTH STATS === */}
+      <section style={{ paddingTop: 64, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          color: "var(--sage)",
+          marginBottom: 8,
+        }}>
+          At Birth
+        </p>
+
+        <BirthStatsEditor
+          familyId={familyId}
+          initial={d}
+          onSaved={(updated) => setFamily(f => f ? { ...f, borndayData: updated } : f)}
+        />
+      </section>
+
+      {/* === CLOSING QUOTE === */}
+      <section style={{
+        paddingTop: 80,
+        paddingBottom: 80,
+        borderTop: "1px solid var(--border)",
+        textAlign: "center",
+      }}>
+        <div style={{ height: 2, background: "var(--gold)", width: 60, margin: "0 auto 40px" }} />
+
+        <p className="font-display" style={{
+          fontSize: "clamp(1.5rem, 4vw, 2.2rem)",
+          fontWeight: 700,
+          fontStyle: "italic",
+          color: "var(--green)",
+          lineHeight: 1.5,
+          maxWidth: 520,
+          margin: "0 auto",
+        }}>
+          &ldquo;{quote}&rdquo;
+        </p>
+
+        <p style={{
+          fontSize: 11,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: "var(--text-3)",
+          marginTop: 20,
+        }}>
+          Henry David Thoreau
+        </p>
+
+        <div style={{ height: 2, background: "var(--gold)", width: 60, margin: "40px auto 0" }} />
+      </section>
+
+      {/* === FOOTER === */}
+      <div style={{ textAlign: "center", paddingBottom: 80, paddingTop: 20 }}>
+        <p style={{
+          fontSize: 13,
+          color: "var(--text-3)",
+          lineHeight: 1.7,
+          fontStyle: "italic",
+          marginBottom: 24,
+        }}>
+          This page is permanent. It will be here when you read it.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
+          <div style={{ width: 40, height: 1, background: "var(--gold-border)" }} />
+          <span className="font-display" style={{ fontSize: 13, color: "var(--gold)", letterSpacing: "0.18em", fontWeight: 700, textTransform: "uppercase" }}>
+            Our Fable
+          </span>
+          <div style={{ width: 40, height: 1, background: "var(--gold-border)" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
