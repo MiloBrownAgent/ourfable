@@ -14,6 +14,7 @@ const TIERS = [
     name: "Our Fable",
     monthlyPrice: 12,
     annualPrice: 79,
+    originalMonthly: 16,
     originalAnnual: 99,
     badge: "Founding Member" as string | undefined,
     highlight: false,
@@ -33,6 +34,7 @@ const TIERS = [
     name: "Our Fable+",
     monthlyPrice: 19,
     annualPrice: 99,
+    originalMonthly: 25,
     originalAnnual: 149,
     badge: "Founding Member",
     highlight: true,
@@ -139,22 +141,30 @@ export function PricingSection() {
                     {tier.name}
                   </p>
 
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 6 }}>
-                    <span style={{ fontFamily: "var(--font-playfair)", fontSize: 44, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                  {/* Original price — large, crossed out */}
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
+                    <span style={{ fontFamily: "var(--font-playfair)", fontSize: 44, fontWeight: 800, color: "var(--text-4)", letterSpacing: "-0.03em", lineHeight: 1, textDecoration: "line-through" }}>
+                      ${billing === "monthly" ? tier.originalMonthly : tier.originalAnnual}
+                    </span>
+                    <span style={{ fontSize: 15, color: "var(--text-4)", textDecoration: "line-through" }}>{period}</span>
+                  </div>
+
+                  {/* Founding price — smaller, green */}
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                    <span style={{ fontFamily: "var(--font-playfair)", fontSize: 28, fontWeight: 800, color: "var(--green)", letterSpacing: "-0.02em", lineHeight: 1 }}>
                       ${price}
                     </span>
-                    <span style={{ fontSize: 15, color: "var(--text-3)" }}>{period}</span>
+                    <span style={{ fontSize: 13, color: "var(--green)", fontWeight: 600 }}>{period} founding</span>
                   </div>
 
                   {billing === "annual" && (
                     <p style={{ fontSize: 12, color: "var(--green)", fontWeight: 600, marginBottom: 12 }}>
-                      <span style={{ textDecoration: "line-through", color: "var(--text-4)", marginRight: 6 }}>${tier.originalAnnual}/yr</span>
-                      Founding rate — locked for life
+                      Locked for life · Save ${tier.originalAnnual - tier.annualPrice}/yr
                     </p>
                   )}
                   {billing === "monthly" && (
                     <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 12 }}>
-                      or ${tier.annualPrice}/yr founding rate — save ${savings}
+                      or ${tier.annualPrice}/yr annual founding rate — save ${savings}
                     </p>
                   )}
 
