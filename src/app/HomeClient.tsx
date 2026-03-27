@@ -100,8 +100,8 @@ export default function HomeClient() {
       <MobileNav scrolled={scrolled} />
       <StickyNav scrolled={scrolled} showSecondNav={showSecondNav} activeSection={activeSection} />
       <HeroSection />
-      <ProofStrip />
       <DispatchSection />
+      <ProofStrip />
       <VignettesSection />
       <MidPageCapture />
       <StatsSection />
