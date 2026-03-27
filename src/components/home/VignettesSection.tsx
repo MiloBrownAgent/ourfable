@@ -1,6 +1,30 @@
 "use client";
 import { Reveal } from "./Reveal";
 
+export function LetterMomentSection() {
+  return (
+    <section className="dark-section" style={{ background: "#141412", padding: "120px 40px", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse at 50% 0%, rgba(74,94,76,0.25) 0%, transparent 65%)", pointerEvents: "none" }} />
+      <Reveal>
+        <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center", position: "relative" }}>
+          <div style={{ width: 48, height: 1, background: "rgba(201,169,110,0.4)", margin: "0 auto 40px" }} />
+          <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontWeight: 500, fontSize: "clamp(1.25rem, 3vw, 2.4rem)", lineHeight: 1.6, color: "#FFFFFF", marginBottom: 32 }}>
+            &ldquo;Imagine your child at 18, opening a voice memo from their great-grandmother — recorded when they were 9 months old.
+            <br /><br />
+            Their great-grandmother, who is no longer alive.
+            <br /><br />
+            Telling them how she wants to be remembered.&rdquo;
+          </p>
+          <div style={{ width: 48, height: 1, background: "rgba(201,169,110,0.4)", margin: "0 auto 32px" }} />
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: 500, margin: "0 auto" }}>
+            Our Fable makes this happen because once a month, it asked. She answered. Her voice is in the Vault — sealed, waiting.
+          </p>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
 const VIGNETTES = [
   {
     who: "Grandpa",
@@ -71,26 +95,6 @@ export function VignettesSection() {
 
       </section>
 
-      {/* ── THE LETTER MOMENT — dark, cinematic ── */}
-      <section className="dark-section" style={{ background: "#141412", padding: "120px 40px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse at 50% 0%, rgba(74,94,76,0.25) 0%, transparent 65%)", pointerEvents: "none" }} />
-        <Reveal>
-          <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center", position: "relative" }}>
-            <div style={{ width: 48, height: 1, background: "rgba(201,169,110,0.4)", margin: "0 auto 40px" }} />
-            <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontWeight: 500, fontSize: "clamp(1.25rem, 3vw, 2.4rem)", lineHeight: 1.6, color: "#FFFFFF", marginBottom: 32 }}>
-              &ldquo;Imagine your child at 18, opening a voice memo from their great-grandmother — recorded when they were 9 months old.
-              <br /><br />
-              Their great-grandmother, who is no longer alive.
-              <br /><br />
-              Telling them how she wants to be remembered.&rdquo;
-            </p>
-            <div style={{ width: 48, height: 1, background: "rgba(201,169,110,0.4)", margin: "0 auto 32px" }} />
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: 500, margin: "0 auto" }}>
-              Our Fable makes this happen because once a month, it asked. She answered. Her voice is in the Vault — sealed, waiting.
-            </p>
-          </div>
-        </Reveal>
-      </section>
     </>
   );
 }

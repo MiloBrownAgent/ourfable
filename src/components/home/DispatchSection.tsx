@@ -21,6 +21,9 @@ export function DispatchSection() {
 
       <div className="dispatch-inner" style={{ maxWidth: 680, margin: "0 auto" }}>
         <Reveal>
+          {/* Section label */}
+          <p className="label label-green" style={{ marginBottom: 16 }}>Dispatches</p>
+
           {/* Premium badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
             <span style={{

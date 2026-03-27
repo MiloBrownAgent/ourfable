@@ -4,6 +4,7 @@ import {
   MobileNav,
   HeroSection,
   VignettesSection,
+  LetterMomentSection,
   StatsSection,
   CircleSection,
   HowItWorksSection,
@@ -103,6 +104,7 @@ export default function HomeClient() {
       <ProofStrip />
       <VignettesSection />
       <DispatchSection />
+      <LetterMomentSection />
       <CircleSection />
       <HowItWorksSection />
       <FeaturesSection />
