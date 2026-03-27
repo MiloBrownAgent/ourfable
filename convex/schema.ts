@@ -432,6 +432,9 @@ export default defineSchema({
     facilitator2Email: v.optional(v.string()),
     facilitator2Relationship: v.optional(v.string()),
     childEmail: v.optional(v.string()),
+    deliveryMilestoneChoice: v.optional(v.string()), // "13" | "18" | "21" | "all"
+    deliveryFormatPref: v.optional(v.string()),       // "email" | "letter" | "video"
+    backupContactEmail: v.optional(v.string()),
     deliveryStatus: v.optional(v.string()),
     lastDeliveryNotification: v.optional(v.number()),
     totpSecret: v.optional(v.string()),

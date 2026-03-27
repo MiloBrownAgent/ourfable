@@ -2067,6 +2067,9 @@ export const updateOurFableFacilitators = mutation({
     facilitator2Email: v.optional(v.string()),
     facilitator2Relationship: v.optional(v.string()),
     childEmail: v.optional(v.string()),
+    deliveryMilestoneChoice: v.optional(v.string()),
+    deliveryFormatPref: v.optional(v.string()),
+    backupContactEmail: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { familyId, ...patch } = args;
@@ -2098,6 +2101,9 @@ export const getOurFableFacilitators = query({
       facilitator2Email: family.facilitator2Email,
       facilitator2Relationship: family.facilitator2Relationship,
       childEmail: family.childEmail,
+      deliveryMilestoneChoice: family.deliveryMilestoneChoice,
+      deliveryFormatPref: family.deliveryFormatPref,
+      backupContactEmail: family.backupContactEmail,
       deliveryStatus: family.deliveryStatus,
     };
   },

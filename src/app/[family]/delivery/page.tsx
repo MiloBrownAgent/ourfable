@@ -1,36 +1,12 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import {
-  Gift, Calendar, Send, Mail, Video, BookOpen, Loader2, Check,
-  Clock, Plus, Trash2, ChevronDown, ChevronUp,
-} from "lucide-react";
+import { Loader2, Check, Mail, Video, BookOpen, Lock } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Milestone {
-  _id: string;
-  milestoneName: string;
-  milestoneDate: number;
-  deliveryStatus: string;
-  notificationsSent: string[];
-  deliveredAt?: number;
-}
-
-interface DeliveryMilestone {
-  _id: string;
-  familyId: string;
-  contributorId: string;
-  milestoneAge: number;
-  deliveryDate?: string;
-  deliveryFormat: string;
-  backupContactName?: string;
-  backupContactEmail?: string;
-  isActive: boolean;
-  createdAt: number;
-}
-
 interface VaultStats {
+  totalEntries: number;
   letters: number;
   photos: number;
   voiceMemos: number;
@@ -38,55 +14,48 @@ interface VaultStats {
   contributors: string[];
 }
 
+interface FacData {
+  childEmail?: string;
+  deliveryMilestoneChoice?: string;
+  deliveryFormatPref?: string;
+  backupContactEmail?: string;
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const COMMON_AGES = [13, 16, 18, 21, 25, 30];
-
 const FORMAT_OPTIONS = [
-  { id: "email", label: "Email", description: "Delivered to their inbox on the day", icon: Mail },
-  { id: "video", label: "Video Link", description: "A private link to your recorded messages", icon: Video },
+  { id: "email", label: "Email", description: "Delivered to their inbox when the vault opens", icon: Mail },
   { id: "letter", label: "Printed Letter", description: "A physical letter mailed to their address", icon: BookOpen },
+  { id: "video", label: "Video Compilation", description: "A private video link with all their messages", icon: Video },
 ];
 
-const AGE_LABELS: Record<number, string> = {
-  13: "13 — A teenager",
-  16: "16 — Getting a driver's license",
-  18: "18 — Heading into the world",
-  21: "21 — Fully grown",
-  25: "25 — Finding their path",
-  30: "30 — Settled into life",
-};
+const MILESTONE_OPTIONS = [
+  { id: "13", label: "13th birthday" },
+  { id: "18", label: "18th birthday" },
+  { id: "21", label: "21st birthday" },
+  { id: "all", label: "All three" },
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+function computeMilestoneDate(dob: string, age: number): Date {
+  const d = new Date(dob + "T00:00:00");
+  d.setFullYear(d.getFullYear() + age);
+  return d;
 }
 
-function formatDeliveryDate(isoDate?: string): string {
-  if (!isoDate) return "Date TBD";
-  return new Date(isoDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+function formatFull(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-function computeDeliveryDate(childDob: string, age: number): string {
-  const dob = new Date(childDob + "T00:00:00");
-  const d = new Date(dob);
-  d.setFullYear(dob.getFullYear() + age);
-  return d.toISOString().slice(0, 10);
-}
-
-function yearsUntil(isoDate?: string): string {
-  if (!isoDate) return "";
-  const target = new Date(isoDate + "T00:00:00");
-  const diff = target.getTime() - Date.now();
+function timeAway(date: Date): string {
+  const diff = date.getTime() - Date.now();
   if (diff <= 0) return "Now";
-  const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  if (years === 0) return "This year";
-  return `${years} year${years !== 1 ? "s" : ""} from now`;
-}
-
-function daysUntil(ts: number): number {
-  return Math.ceil((ts - Date.now()) / 86400000);
+  const days = Math.floor(diff / 86400000);
+  if (days < 365) return `${days} days away`;
+  const years = Math.floor(days / 365);
+  const rem = Math.floor((days % 365) / 30);
+  return rem > 0 ? `${years}y ${rem}mo away` : `${years} year${years !== 1 ? "s" : ""} away`;
 }
 
 async function convexFetch(path: string, args: Record<string, unknown>) {
@@ -109,231 +78,38 @@ async function convexMutate(path: string, args: Record<string, unknown>) {
   return res.ok;
 }
 
-// ── MilestoneCard ─────────────────────────────────────────────────────────────
+// ── Gold Divider ──────────────────────────────────────────────────────────────
 
-function MilestoneCard({ milestone, onDelete }: { milestone: DeliveryMilestone; onDelete: () => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const fmt = FORMAT_OPTIONS.find(f => f.id === milestone.deliveryFormat);
-  const Icon = fmt?.icon ?? Mail;
-
-  const handleDelete = async () => {
-    if (!confirm("Remove this delivery preference?")) return;
-    setDeleting(true);
-    await convexMutate("ourfable:deleteDeliveryMilestone", { milestoneId: milestone._id });
-    setDeleting(false);
-    onDelete();
-  };
-
+function GoldDivider() {
   return (
-    <div className="card" style={{ overflow: "hidden", borderLeft: "3px solid var(--sage)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "18px 24px" }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: 12, background: "var(--sage-dim)",
-          border: "1px solid var(--sage-border)", display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
-          <span style={{ fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 500, color: "var(--sage)", lineHeight: 1 }}>
-            {milestone.milestoneAge}
-          </span>
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 17, fontWeight: 400, color: "var(--text)", marginBottom: 4 }}>
-            {AGE_LABELS[milestone.milestoneAge] ?? `Age ${milestone.milestoneAge}`}
-          </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span className="chip chip-sage" style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
-              <Icon size={11} strokeWidth={1.5} />
-              {fmt?.label ?? milestone.deliveryFormat}
-            </span>
-            <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-              {formatDeliveryDate(milestone.deliveryDate)} · {yearsUntil(milestone.deliveryDate)}
-            </span>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={() => setExpanded(v => !v)} className="btn-ghost" style={{ padding: "6px 8px" }}>
-            {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-          </button>
-          <button onClick={handleDelete} disabled={deleting} className="btn-ghost" style={{ padding: "6px 8px", color: "var(--text-4)" }}>
-            <Trash2 size={14} strokeWidth={1.5} />
-          </button>
-        </div>
-      </div>
-      {expanded && (
-        <div style={{ padding: "0 24px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-          <div>
-            <p className="label" style={{ marginBottom: 4 }}>Delivery Format</p>
-            <p style={{ fontSize: 14, color: "var(--text-2)" }}>{fmt?.description ?? milestone.deliveryFormat}</p>
-          </div>
-          {(milestone.backupContactName || milestone.backupContactEmail) && (
-            <div>
-              <p className="label" style={{ marginBottom: 4 }}>Backup Contact</p>
-              <p style={{ fontSize: 14, color: "var(--text-2)" }}>
-                {milestone.backupContactName}{milestone.backupContactName && milestone.backupContactEmail && " · "}
-                {milestone.backupContactEmail && <span style={{ color: "var(--text-3)" }}>{milestone.backupContactEmail}</span>}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
+      <div style={{ flex: 1, height: "0.5px", background: "var(--border)" }} />
+      <span style={{ fontSize: 10, color: "#C8A87A", letterSpacing: "0.3em" }}>✦</span>
+      <div style={{ flex: 1, height: "0.5px", background: "var(--border)" }} />
     </div>
   );
 }
 
-// ── AddMilestoneForm ──────────────────────────────────────────────────────────
+// ── Saved indicator ───────────────────────────────────────────────────────────
 
-function AddMilestoneForm({ familyId, childDob, existingAges, onDone }: {
-  familyId: string; childDob: string; existingAges: Set<number>; onDone: () => void;
-}) {
-  const [selectedAges, setSelectedAges] = useState<Set<number>>(new Set());
-  const [customAge, setCustomAge] = useState("");
-  const [format, setFormat] = useState("email");
-  const [backupName, setBackupName] = useState("");
-  const [backupEmail, setBackupEmail] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [showCustom, setShowCustom] = useState(false);
-
-  const toggleAge = (age: number) => {
-    setSelectedAges(prev => {
-      const next = new Set(prev);
-      if (next.has(age)) next.delete(age); else next.add(age);
-      return next;
-    });
-  };
-
-  const allAges = (): number[] => {
-    const ages = Array.from(selectedAges);
-    const custom = parseInt(customAge, 10);
-    if (!isNaN(custom) && custom > 0 && custom <= 99) ages.push(custom);
-    return [...new Set(ages)].sort((a, b) => a - b);
-  };
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const ages = allAges();
-    if (ages.length === 0) return;
-    setSaving(true);
-    try {
-      await Promise.all(ages.map(age => convexMutate("ourfable:setDeliveryMilestone", {
-        familyId,
-        contributorId: "family",
-        milestoneAge: age,
-        deliveryFormat: format,
-        deliveryDate: computeDeliveryDate(childDob, age),
-        backupContactName: backupName.trim() || undefined,
-        backupContactEmail: backupEmail.trim() || undefined,
-      })));
-      onDone();
-    } finally {
-      setSaving(false);
-    }
-  };
-
+function SavedPill() {
   return (
-    <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px", background: "var(--bg-2)", borderRadius: 14, border: "1px solid var(--border)" }}>
-      {/* Age selection */}
-      <div>
-        <p className="label" style={{ marginBottom: 12 }}>Target ages for delivery</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {COMMON_AGES.filter(a => !existingAges.has(a)).map(age => (
-            <button
-              key={age}
-              type="button"
-              onClick={() => toggleAge(age)}
-              style={{
-                padding: "8px 16px", borderRadius: 100, fontSize: 13, cursor: "pointer",
-                border: `1.5px solid ${selectedAges.has(age) ? "var(--sage)" : "var(--border)"}`,
-                background: selectedAges.has(age) ? "var(--sage-dim)" : "var(--card)",
-                color: selectedAges.has(age) ? "var(--sage)" : "var(--text-3)",
-                fontWeight: selectedAges.has(age) ? 600 : 400,
-                fontFamily: "inherit", transition: "all 160ms",
-              }}
-            >
-              {age}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setShowCustom(v => !v)}
-            style={{
-              padding: "8px 16px", borderRadius: 100, fontSize: 13, cursor: "pointer",
-              border: "1.5px solid var(--border)", background: "var(--card)",
-              color: "var(--text-3)", fontFamily: "inherit",
-              display: "flex", alignItems: "center", gap: 4,
-            }}
-          >
-            <Plus size={12} /> Custom
-          </button>
-        </div>
-        {showCustom && (
-          <input
-            type="number" min={1} max={99} value={customAge}
-            onChange={e => setCustomAge(e.target.value)}
-            placeholder="Custom age (e.g. 40)"
-            className="input" style={{ marginTop: 10, maxWidth: 200 }}
-          />
-        )}
-      </div>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--sage)", fontWeight: 600 }}>
+      <Check size={11} strokeWidth={2.5} /> Saved
+    </span>
+  );
+}
 
-      {/* Format */}
-      <div>
-        <p className="label" style={{ marginBottom: 12 }}>Delivery format</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {FORMAT_OPTIONS.map(opt => {
-            const Icon = opt.icon;
-            return (
-              <label
-                key={opt.id}
-                style={{
-                  display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px",
-                  borderRadius: 10, border: `1.5px solid ${format === opt.id ? "var(--sage)" : "var(--border)"}`,
-                  background: format === opt.id ? "var(--sage-dim)" : "var(--card)",
-                  cursor: "pointer", transition: "all 160ms",
-                }}
-              >
-                <input type="radio" name="format" value={opt.id} checked={format === opt.id} onChange={() => setFormat(opt.id)} style={{ marginTop: 2, accentColor: "var(--sage)" }} />
-                <Icon size={16} color={format === opt.id ? "var(--sage)" : "var(--text-3)"} strokeWidth={1.5} style={{ marginTop: 1, flexShrink: 0 }} />
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", marginBottom: 2 }}>{opt.label}</p>
-                  <p style={{ fontSize: 12, color: "var(--text-3)" }}>{opt.description}</p>
-                </div>
-              </label>
-            );
-          })}
-        </div>
-      </div>
+// ── Section Header ────────────────────────────────────────────────────────────
 
-      {/* Backup contact */}
-      <div>
-        <p className="label" style={{ marginBottom: 8 }}>Backup contact <span style={{ fontSize: 10, fontWeight: 400, textTransform: "none", color: "var(--text-4)" }}>(optional)</span></p>
-        <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 10 }}>
-          If you&apos;re not around when it&apos;s time to deliver, who should make sure it reaches them?
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <input type="text" value={backupName} onChange={e => setBackupName(e.target.value)} placeholder="Name" className="input" />
-          <input type="email" value={backupEmail} onChange={e => setBackupEmail(e.target.value)} placeholder="Email address" className="input" />
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 10 }}>
-        <button
-          type="submit"
-          disabled={saving || allAges().length === 0}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "10px 22px", fontSize: 14, fontWeight: 600,
-            background: allAges().length === 0 ? "var(--border)" : "var(--sage)",
-            color: allAges().length === 0 ? "var(--text-3)" : "#fff",
-            border: "none", borderRadius: 10, cursor: allAges().length === 0 ? "default" : "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          {saving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Saving…</> : "Save delivery preferences"}
-        </button>
-        <button type="button" onClick={onDone} className="btn-ghost">Cancel</button>
-      </div>
-    </form>
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--green)", marginBottom: subtitle ? 6 : 0, letterSpacing: "-0.01em" }}>
+        {title}
+      </h2>
+      {subtitle && <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.6 }}>{subtitle}</p>}
+    </div>
   );
 }
 
@@ -342,146 +118,126 @@ function AddMilestoneForm({ familyId, childDob, existingAges, onDone }: {
 export default function DeliveryPage({ params }: { params: Promise<{ family: string }> }) {
   const { family: familyId } = use(params);
 
-  // Vault delivery state (from old delivery page)
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [stats, setStats] = useState<VaultStats | null>(null);
-  const [childEmail, setChildEmail] = useState("");
-  const [delivering, setDelivering] = useState<string | null>(null);
-  const [delivered, setDelivered] = useState<string | null>(null);
-  const [childName, setChildName] = useState("");
-  const [savingEmail, setSavingEmail] = useState(false);
-  const [emailSaved, setEmailSaved] = useState(false);
-
-  // Delivery preferences state (from old milestones page)
-  const [deliveryPrefs, setDeliveryPrefs] = useState<DeliveryMilestone[]>([]);
+  const [childName, setChildName] = useState("them");
   const [childDob, setChildDob] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-
   const [loading, setLoading] = useState(true);
+
+  // Section 1 — child email
+  const [childEmail, setChildEmail] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savedEmail, setSavedEmail] = useState(false);
+
+  // Section 3 — delivery preferences
+  const [milestoneChoice, setMilestoneChoice] = useState("18");
+  const [formatPref, setFormatPref] = useState("email");
+  const [backupEmail, setBackupEmail] = useState("");
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [savedPrefs, setSavedPrefs] = useState(false);
+
+  // Section 4 — vault stats
+  const [stats, setStats] = useState<VaultStats | null>(null);
 
   useEffect(() => {
     async function load() {
-      const [ms, family, facData, entries, letters, prefs] = await Promise.all([
-        convexFetch("ourfable:listOurFableDeliveryMilestones", { familyId }),
-        convexFetch("ourfable:getOurFableFamilyById", { familyId }),
+      const [family, facData, entries, letters] = await Promise.all([
+        convexFetch("ourfable:getFamily", { familyId }),
         convexFetch("ourfable:getOurFableFacilitators", { familyId }),
         convexFetch("ourfable:listOurFableVaultEntries", { familyId }),
         convexFetch("ourfable:listOurFableLetters", { familyId }),
-        convexFetch("ourfable:getDeliveryMilestones", { familyId }),
       ]);
-
-      setMilestones((ms as Milestone[]) ?? []);
 
       if (family) {
         const f = family as { childName: string; childDob: string };
-        setChildName(f.childName.split(" ")[0]);
+        setChildName(f.childName?.split(" ")[0] ?? "them");
         setChildDob(f.childDob ?? "");
       }
 
       if (facData) {
-        setChildEmail((facData as { childEmail?: string }).childEmail ?? "");
+        const fd = facData as FacData;
+        setChildEmail(fd.childEmail ?? "");
+        setMilestoneChoice(fd.deliveryMilestoneChoice ?? "18");
+        setFormatPref(fd.deliveryFormatPref ?? "email");
+        setBackupEmail(fd.backupContactEmail ?? "");
       }
 
       const allEntries = (entries as Array<{ type: string; authorName: string }>) ?? [];
       const allLetters = (letters as Array<unknown>) ?? [];
-      const contributors = new Set(allEntries.map(e => e.authorName));
+      const contributors = [...new Set(allEntries.map(e => e.authorName))];
       setStats({
+        totalEntries: allEntries.length + allLetters.length,
         letters: allLetters.length,
         photos: allEntries.filter(e => e.type === "photo").length,
         voiceMemos: allEntries.filter(e => e.type === "voice").length,
         videos: allEntries.filter(e => e.type === "video").length,
-        contributors: Array.from(contributors),
+        contributors,
       });
 
-      setDeliveryPrefs((prefs as DeliveryMilestone[]) ?? []);
       setLoading(false);
     }
     load();
   }, [familyId]);
 
-  const existingAges = new Set(deliveryPrefs.map(p => p.milestoneAge));
-
-  async function handleDeliver(milestoneId: string) {
-    if (!childEmail.trim()) return;
-    setDelivering(milestoneId);
-    const res = await fetch("/api/ourfable/deliver", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ familyId, milestoneId, childEmail: childEmail.trim() }),
-    });
-    if (res.ok) setDelivered(milestoneId);
-    setDelivering(null);
-  }
-
-  async function saveChildEmail() {
+  async function handleSaveEmail() {
     if (!childEmail.trim()) return;
     setSavingEmail(true);
     await convexMutate("ourfable:updateOurFableFacilitators", { familyId, childEmail: childEmail.trim() });
     setSavingEmail(false);
-    setEmailSaved(true);
-    setTimeout(() => setEmailSaved(false), 2000);
+    setSavedEmail(true);
+    setTimeout(() => setSavedEmail(false), 3000);
+  }
+
+  async function handleSavePrefs() {
+    setSavingPrefs(true);
+    await convexMutate("ourfable:updateOurFableFacilitators", {
+      familyId,
+      deliveryMilestoneChoice: milestoneChoice,
+      deliveryFormatPref: formatPref,
+      backupContactEmail: backupEmail.trim() || undefined,
+    });
+    setSavingPrefs(false);
+    setSavedPrefs(true);
+    setTimeout(() => setSavedPrefs(false), 3000);
   }
 
   if (loading) {
     return (
       <div style={{ textAlign: "center", paddingTop: 80 }}>
-        <Loader2 size={24} style={{ animation: "spin 1s linear infinite", color: "var(--text-3)" }} />
+        <Loader2 size={24} strokeWidth={1.5} color="var(--text-3)" style={{ animation: "spin 1s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  // Compute milestone dates
+  const milestoneAges = [13, 18, 21];
+  const milestoneDates = childDob
+    ? milestoneAges.map(age => ({ age, date: computeMilestoneDate(childDob, age) }))
+    : [];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 36, maxWidth: 640 }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Header */}
+      {/* Page header */}
       <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <Gift size={20} color="var(--green)" strokeWidth={1.5} />
-          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>
-            Vault Delivery
-          </h1>
-        </div>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 15, lineHeight: 1.65, color: "var(--text-3)" }}>
-          Set up when and how {childName}&apos;s vault reaches them — and who to trust if you&apos;re not around.
+        <h1 style={{ fontFamily: "var(--font-playfair)", fontSize: 32, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.02em", marginBottom: 8 }}>
+          When They&apos;re Ready
+        </h1>
+        <p style={{ fontSize: 15, color: "var(--text-3)", lineHeight: 1.7 }}>
+          Set up how {childName}&apos;s vault reaches them — and who to trust if you&apos;re not around.
         </p>
       </div>
 
-      {/* ── SECTION 1: Child email + vault stats ── */}
-      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)" }}>
-          Delivery email
-        </p>
-
-        {/* Vault stats */}
-        {stats && (
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px 20px" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-4)", marginBottom: 12 }}>
-              What&apos;s in the vault
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
-              <div><span style={{ fontSize: 22, fontWeight: 600, color: "var(--green)", fontFamily: "var(--font-cormorant)" }}>{stats.letters}</span> <span style={{ fontSize: 12, color: "var(--text-3)" }}>letters</span></div>
-              <div><span style={{ fontSize: 22, fontWeight: 600, color: "var(--green)", fontFamily: "var(--font-cormorant)" }}>{stats.photos}</span> <span style={{ fontSize: 12, color: "var(--text-3)" }}>photos</span></div>
-              <div><span style={{ fontSize: 22, fontWeight: 600, color: "var(--green)", fontFamily: "var(--font-cormorant)" }}>{stats.voiceMemos}</span> <span style={{ fontSize: 12, color: "var(--text-3)" }}>voice memos</span></div>
-              <div><span style={{ fontSize: 22, fontWeight: 600, color: "var(--green)", fontFamily: "var(--font-cormorant)" }}>{stats.videos}</span> <span style={{ fontSize: 12, color: "var(--text-3)" }}>videos</span></div>
-            </div>
-            {stats.contributors.length > 0 && (
-              <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 10 }}>
-                From: {stats.contributors.join(", ")}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Child email input */}
-        <div className="card" style={{ padding: "20px 24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <Mail size={14} color="var(--green)" />
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>
-              {childName}&apos;s delivery email address
-            </span>
-          </div>
+      {/* ── SECTION 1: Child's email ── */}
+      <section>
+        <SectionHeader
+          title="Delivery email"
+          subtitle={`We'll deliver everything here when the time comes. You can update this anytime.`}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)" }}>
+            {childName}&apos;s email address
+          </label>
           <div style={{ display: "flex", gap: 10 }}>
             <input
               type="email"
@@ -492,159 +248,253 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
               style={{ flex: 1 }}
             />
             <button
-              onClick={saveChildEmail}
+              onClick={handleSaveEmail}
               disabled={!childEmail.trim() || savingEmail}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 18px",
-                fontSize: 13, fontWeight: 600, border: "none", borderRadius: 10, cursor: "pointer",
-                background: emailSaved ? "var(--sage)" : "var(--green)", color: "#fff", fontFamily: "inherit",
-                opacity: !childEmail.trim() ? 0.5 : 1,
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "10px 20px", fontSize: 13, fontWeight: 600,
+                background: "var(--green)", color: "#fff", border: "none",
+                borderRadius: 10, cursor: !childEmail.trim() ? "default" : "pointer",
+                opacity: !childEmail.trim() ? 0.5 : 1, fontFamily: "inherit",
+                flexShrink: 0, transition: "opacity 160ms",
               }}
             >
-              {emailSaved ? <><Check size={13} /> Saved</> : savingEmail ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : "Save"}
+              {savingEmail
+                ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
+                : savedEmail ? <><Check size={13} strokeWidth={2.5} /> Saved</> : "Save"
+              }
             </button>
           </div>
-          <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 8 }}>
-            This is where {childName}&apos;s vault delivery email will be sent when the time comes.
-          </p>
         </div>
-
-        {/* Delivery milestone triggers */}
-        {milestones.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)" }}>
-              Delivery milestones
-            </p>
-            {milestones.sort((a, b) => a.milestoneDate - b.milestoneDate).map(m => {
-              const days = daysUntil(m.milestoneDate);
-              const isReady = days <= 0;
-              const isDelivered = m.deliveryStatus === "delivered" || delivered === m._id;
-              return (
-                <div key={m._id} style={{
-                  background: "var(--card)", border: `1px solid ${isDelivered ? "var(--green-border)" : "var(--border)"}`,
-                  borderRadius: 12, padding: "18px 20px", opacity: isDelivered ? 0.7 : 1,
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {isDelivered ? <Check size={15} color="var(--green)" /> : isReady ? <Gift size={15} color="var(--green)" /> : <Clock size={15} color="var(--text-3)" />}
-                      <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-cormorant)" }}>
-                        {m.milestoneName.charAt(0).toUpperCase() + m.milestoneName.slice(1)}
-                      </span>
-                    </div>
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase",
-                      color: isDelivered ? "var(--green)" : isReady ? "var(--gold)" : "var(--text-3)",
-                    }}>
-                      {isDelivered ? "Delivered" : isReady ? "Ready" : `${days} days away`}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: isReady && !isDelivered ? 14 : 0 }}>
-                    <Calendar size={12} color="var(--text-3)" />
-                    <span style={{ fontSize: 12, color: "var(--text-3)" }}>{formatDate(m.milestoneDate)}</span>
-                  </div>
-                  {isReady && !isDelivered && (
-                    <button
-                      onClick={() => handleDeliver(m._id)}
-                      disabled={!childEmail.trim() || delivering === m._id}
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: 8,
-                        padding: "9px 18px", fontSize: 13, fontWeight: 600,
-                        background: "var(--green)", color: "#fff", border: "none",
-                        borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
-                        opacity: !childEmail.trim() ? 0.5 : 1,
-                      }}
-                    >
-                      {delivering === m._id ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={13} />}
-                      {delivering === m._id ? "Delivering…" : "Deliver now"}
-                    </button>
-                  )}
-                  {isDelivered && m.deliveredAt && (
-                    <p style={{ fontSize: 12, color: "var(--green)", marginTop: 6 }}>Delivered on {formatDate(m.deliveredAt)}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </section>
 
-      {/* ── DIVIDER ── */}
-      <div style={{ borderTop: "1px solid var(--border)" }} />
+      <GoldDivider />
 
-      {/* ── SECTION 2: Delivery format preferences ── */}
-      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 4 }}>
-              Delivery preferences
+      {/* ── SECTION 2: Milestone dates ── */}
+      <section>
+        <SectionHeader
+          title="Milestone dates"
+          subtitle="These are calculated from the birthday you entered. The vault opens on the date you choose."
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {milestoneDates.map(({ age, date }) => {
+            const past = date.getTime() < Date.now();
+            return (
+              <div key={age} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 20px", borderRadius: 12,
+                border: `1px solid ${past ? "var(--border)" : "var(--green-border)"}`,
+                background: past ? "var(--surface)" : "var(--green-light)",
+                opacity: past ? 0.6 : 1,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                    background: past ? "var(--border)" : "#4A5E4C",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <span style={{ fontFamily: "var(--font-playfair)", fontSize: 16, fontWeight: 700, color: past ? "var(--text-3)" : "#fff" }}>
+                      {age}
+                    </span>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>
+                      {age === 13 ? "13th birthday" : age === 18 ? "18th birthday" : "21st birthday"}
+                    </p>
+                    <p style={{ fontSize: 12, color: "var(--text-3)" }}>{formatFull(date)}</p>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{
+                    display: "inline-block", padding: "4px 12px", borderRadius: 100, fontSize: 11, fontWeight: 600,
+                    background: past ? "var(--border)" : "rgba(74,94,76,0.12)",
+                    color: past ? "var(--text-4)" : "var(--green)",
+                  }}>
+                    {past ? "Passed" : timeAway(date)}
+                  </span>
+                  <p style={{ fontSize: 10, color: "var(--text-4)", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    Vault opens
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+
+          {!childDob && (
+            <p style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
+              Add {childName}&apos;s date of birth in settings to see milestone dates.
             </p>
-            <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Choose target ages and how you want the vault delivered at each milestone.
-            </p>
-          </div>
-          {!showAddForm && (
-            <button
-              onClick={() => setShowAddForm(true)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "9px 16px", fontSize: 13, fontWeight: 500,
-                border: "1px solid var(--border)", borderRadius: 10, cursor: "pointer",
-                background: "var(--card)", color: "var(--text-2)", fontFamily: "inherit",
-              }}
-            >
-              <Plus size={14} /> Add milestone
-            </button>
           )}
         </div>
+      </section>
 
-        {showAddForm && childDob && (
-          <AddMilestoneForm
-            familyId={familyId}
-            childDob={childDob}
-            existingAges={existingAges}
-            onDone={async () => {
-              setShowAddForm(false);
-              const prefs = await convexFetch("ourfable:getDeliveryMilestones", { familyId });
-              setDeliveryPrefs((prefs as DeliveryMilestone[]) ?? []);
-            }}
-          />
-        )}
+      <GoldDivider />
 
-        {deliveryPrefs.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {deliveryPrefs
-              .sort((a, b) => a.milestoneAge - b.milestoneAge)
-              .map(pref => (
-                <MilestoneCard
-                  key={pref._id}
-                  milestone={pref}
-                  onDelete={async () => {
-                    const prefs = await convexFetch("ourfable:getDeliveryMilestones", { familyId });
-                    setDeliveryPrefs((prefs as DeliveryMilestone[]) ?? []);
+      {/* ── SECTION 3: Delivery preferences ── */}
+      <section>
+        <SectionHeader
+          title="Delivery preferences"
+          subtitle="Choose which milestones open the vault, and how it's delivered when the time comes."
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+          {/* Which milestone */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", display: "block", marginBottom: 12 }}>
+              Which milestone opens the vault?
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {MILESTONE_OPTIONS.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => setMilestoneChoice(opt.id)}
+                  style={{
+                    padding: "9px 18px", borderRadius: 100, fontSize: 13, cursor: "pointer",
+                    border: `1.5px solid ${milestoneChoice === opt.id ? "var(--green)" : "var(--border)"}`,
+                    background: milestoneChoice === opt.id ? "var(--green-light)" : "var(--card)",
+                    color: milestoneChoice === opt.id ? "var(--green)" : "var(--text-3)",
+                    fontWeight: milestoneChoice === opt.id ? 600 : 400,
+                    fontFamily: "inherit", transition: "all 160ms",
                   }}
-                />
-              ))
-            }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
-        ) : !showAddForm && (
-          <div style={{ textAlign: "center", padding: "32px 20px", background: "var(--bg-2)", borderRadius: 12, border: "1px solid var(--border)" }}>
-            <Gift size={28} strokeWidth={1} color="var(--text-4)" style={{ marginBottom: 10 }} />
-            <p style={{ fontSize: 14, color: "var(--text-3)", marginBottom: 4 }}>No delivery preferences set yet.</p>
-            <p style={{ fontSize: 12, color: "var(--text-4)", lineHeight: 1.6 }}>
-              Choose milestone ages (13, 18, 21…) and how you want the vault delivered when {childName} reaches them.
+
+          {/* Delivery format */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", display: "block", marginBottom: 12 }}>
+              Delivery format
+            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {FORMAT_OPTIONS.map(opt => {
+                const Icon = opt.icon;
+                const selected = formatPref === opt.id;
+                return (
+                  <label key={opt.id} style={{
+                    display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
+                    borderRadius: 12, border: `1.5px solid ${selected ? "var(--green)" : "var(--border)"}`,
+                    background: selected ? "var(--green-light)" : "var(--card)",
+                    cursor: "pointer", transition: "all 160ms",
+                  }}>
+                    <input
+                      type="radio" name="format" value={opt.id}
+                      checked={selected} onChange={() => setFormatPref(opt.id)}
+                      style={{ accentColor: "var(--green)", flexShrink: 0 }}
+                    />
+                    <Icon size={16} color={selected ? "var(--green)" : "var(--text-3)"} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", marginBottom: 2 }}>{opt.label}</p>
+                      <p style={{ fontSize: 12, color: "var(--text-3)" }}>{opt.description}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Backup contact */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", display: "block", marginBottom: 6 }}>
+              Backup contact email
+            </label>
+            <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 10, lineHeight: 1.6 }}>
+              Who should we notify if {childName}&apos;s email bounces or can&apos;t be reached?
             </p>
+            <input
+              type="email"
+              value={backupEmail}
+              onChange={e => setBackupEmail(e.target.value)}
+              placeholder="backup@example.com"
+              className="input"
+            />
+          </div>
+
+          {/* Save prefs button */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
-              onClick={() => setShowAddForm(true)}
+              onClick={handleSavePrefs}
+              disabled={savingPrefs}
               style={{
-                marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "9px 18px", fontSize: 13, fontWeight: 500,
-                border: "1px solid var(--border)", borderRadius: 10, cursor: "pointer",
-                background: "var(--card)", color: "var(--text-2)", fontFamily: "inherit",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "11px 24px", fontSize: 14, fontWeight: 600,
+                background: "var(--green)", color: "#fff", border: "none",
+                borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+                transition: "opacity 160ms",
               }}
             >
-              <Plus size={13} /> Set up delivery milestones
+              {savingPrefs
+                ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Saving…</>
+                : "Save preferences"
+              }
             </button>
+            {savedPrefs && <SavedPill />}
           </div>
+        </div>
+      </section>
+
+      <GoldDivider />
+
+      {/* ── SECTION 4: Vault stats ── */}
+      <section>
+        <SectionHeader
+          title="What's in the vault"
+          subtitle={`Everything sealed and waiting for ${childName}.`}
+        />
+        {stats ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Total */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 12, padding: "16px 20px",
+              background: "var(--green-light)", border: "1px solid var(--green-border)", borderRadius: 12,
+            }}>
+              <Lock size={16} color="var(--green)" strokeWidth={1.5} />
+              <div>
+                <p style={{ fontFamily: "var(--font-playfair)", fontSize: 24, fontWeight: 700, color: "var(--green)", lineHeight: 1 }}>
+                  {stats.totalEntries}
+                </p>
+                <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>sealed items</p>
+              </div>
+            </div>
+
+            {/* Breakdown */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10 }}>
+              {[
+                { label: "letters", count: stats.letters },
+                { label: "photos", count: stats.photos },
+                { label: "voice memos", count: stats.voiceMemos },
+                { label: "videos", count: stats.videos },
+              ].map(({ label, count }) => (
+                <div key={label} style={{
+                  padding: "12px 14px", borderRadius: 10,
+                  background: "var(--surface)", border: "1px solid var(--border)", textAlign: "center",
+                }}>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: count > 0 ? "var(--green)" : "var(--text-4)", lineHeight: 1, marginBottom: 4 }}>
+                    {count}
+                  </p>
+                  <p style={{ fontSize: 10, color: "var(--text-4)", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Contributors */}
+            {stats.contributors.length > 0 && (
+              <div style={{ padding: "14px 16px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-4)", marginBottom: 6 }}>
+                  Contributors
+                </p>
+                <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6 }}>
+                  {stats.contributors.join(", ")}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p style={{ fontSize: 14, color: "var(--text-3)", fontStyle: "italic" }}>
+            Nothing in the vault yet. Circle members will add to it every month.
+          </p>
         )}
       </section>
     </div>
