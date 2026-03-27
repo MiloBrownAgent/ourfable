@@ -125,6 +125,14 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
 
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
+  // When recording video, attach stream to preview element after it renders
+  useEffect(() => {
+    if (isRecording && recordingType === "video" && streamRef.current && videoPreviewRef.current) {
+      videoPreviewRef.current.srcObject = streamRef.current;
+      videoPreviewRef.current.play().catch(() => {});
+    }
+  }, [isRecording, recordingType]);
+
   const startRecording = useCallback(async (type: "voice" | "video") => {
     try {
       const constraints = type === "voice"
@@ -132,11 +140,6 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
         : { video: { facingMode: "user" }, audio: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
-
-      if (type === "video" && videoPreviewRef.current) {
-        videoPreviewRef.current.srcObject = stream;
-        videoPreviewRef.current.play();
-      }
 
       const mimeType = type === "voice" ? "audio/webm;codecs=opus" : "video/webm";
       const recorder = MediaRecorder.isTypeSupported(mimeType)
@@ -147,19 +150,19 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       recorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
         if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+        streamRef.current = null;
         const blobType = type === "voice" ? "audio/webm" : "video/webm";
         const blob = new Blob(chunksRef.current, { type: blobType });
         setRecordedBlob(blob);
-        setRecordingType(type);
-        // Convert blob to File and set the appropriate state
-        const ext = type === "voice" ? "webm" : "webm";
-        const file = new File([blob], `${type}-${Date.now()}.${ext}`, { type: blobType });
+        const file = new File([blob], `${type}-${Date.now()}.webm`, { type: blobType });
         if (type === "voice") setVoiceFile(file);
         else setVideoFile(file);
       };
 
       mediaRecorderRef.current = recorder;
       recorder.start();
+      // Set state AFTER getUserMedia succeeds — this triggers re-render
+      // which mounts the <video> element, then useEffect attaches the stream
       setIsRecording(true);
       setRecordingType(type);
       setRecordingTime(0);
