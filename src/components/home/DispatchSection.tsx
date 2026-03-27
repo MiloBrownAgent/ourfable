@@ -21,14 +21,26 @@ export function DispatchSection() {
 
       <div className="dispatch-inner" style={{ maxWidth: 680, margin: "0 auto" }}>
         <Reveal>
-          {/* Label */}
-          <p style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
-            textTransform: "uppercase", color: "#6B8F6E",
-            marginBottom: 24,
-          }}>
-            Dispatches
-          </p>
+          {/* Premium badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "5px 12px",
+              background: "#4A5E4C",
+              borderRadius: 100,
+              fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
+              textTransform: "uppercase", color: "#fff",
+            }}>
+              ✦ Our Fable+
+            </span>
+            <p style={{
+              fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
+              textTransform: "uppercase", color: "var(--text-3)",
+              margin: 0,
+            }}>
+              Exclusive feature
+            </p>
+          </div>
 
           {/* Headline */}
           <h2 className="dispatch-h2" style={{
@@ -37,22 +49,27 @@ export function DispatchSection() {
             fontWeight: 800, lineHeight: 1.1,
             letterSpacing: "-0.025em",
             color: "var(--text)",
-            marginBottom: 40,
+            marginBottom: 16,
           }}>
             One update.<br />
             <em style={{ color: "#6B8F6E", fontStyle: "italic" }}>Everyone who matters.</em>
           </h2>
 
+          {/* Subhead — what it is in one line */}
+          <p style={{
+            fontSize: 18, color: "#6B8F6E", fontWeight: 600,
+            marginBottom: 36, lineHeight: 1.4,
+          }}>
+            Send a photo, voice memo, or video once — Our Fable delivers it to your child's entire circle.
+          </p>
+
           {/* Body copy */}
-          <div className="dispatch-body" style={{ fontSize: 18, lineHeight: 1.85, color: "var(--text-2)", maxWidth: 580 }}>
+          <div className="dispatch-body" style={{ fontSize: 17, lineHeight: 1.85, color: "var(--text-2)", maxWidth: 580 }}>
             <p style={{ marginBottom: 20 }}>
               Your mom wants photos. Your sister wants videos. Your best friend just wants to know how the baby's doing. And you're supposed to remember to send all of it, to all of them, while running on three hours of sleep.
             </p>
             <p style={{ marginBottom: 20, color: "var(--text)" }}>
               Not anymore.
-            </p>
-            <p style={{ marginBottom: 20 }}>
-              Record a voice memo. Snap a photo. Shoot a quick video. Write a few lines. Then hit send — once — and Our Fable delivers it to every person in your child's circle.
             </p>
             <p style={{ marginBottom: 20 }}>
               Grandparents. Aunts. Uncles. Godparents. The college friend who's already obsessed. Everyone gets the update. Nobody gets forgotten.
@@ -63,34 +80,8 @@ export function DispatchSection() {
             </p>
           </div>
 
-          {/* Tier callout */}
-          <div className="dispatch-tier" style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            gap: 24,
-            padding: "20px 24px",
-            background: "rgba(107,143,111,0.12)",
-            border: "1px solid rgba(107,143,111,0.25)",
-            borderRadius: 14,
-            marginBottom: 40,
-          }}>
-            <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.6, margin: 0 }}>
-              <strong style={{ color: "#6B8F6E" }}>Our Fable+</strong> — dispatch to your child's full circle, not just your inner ring.
-            </p>
-            <Link href="/reserve" style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              whiteSpace: "nowrap",
-              padding: "10px 20px", borderRadius: 100,
-              background: "#4A5E4C", color: "#fff",
-              fontSize: 13, fontWeight: 600,
-              textDecoration: "none", letterSpacing: "-0.01em",
-              flexShrink: 0,
-            }}>
-              Join the waitlist
-            </Link>
-          </div>
-
           {/* Media type chips */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 36 }}>
             {["🎙 Voice memo", "📷 Photo", "🎥 Video", "✍️ Written note"].map(label => (
               <span key={label} style={{
                 padding: "8px 16px",
@@ -103,6 +94,35 @@ export function DispatchSection() {
                 {label}
               </span>
             ))}
+          </div>
+
+          {/* Premium upgrade callout — more prominent */}
+          <div className="dispatch-tier" style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: 24,
+            padding: "24px 28px",
+            background: "#4A5E4C",
+            borderRadius: 14,
+          }}>
+            <div>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>
+                Included in Our Fable+
+              </p>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, margin: 0 }}>
+                Dispatches to your full circle. Plus everything in Our Fable.
+              </p>
+            </div>
+            <Link href="/reserve" style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              whiteSpace: "nowrap",
+              padding: "11px 22px", borderRadius: 100,
+              background: "#fff", color: "#4A5E4C",
+              fontSize: 13, fontWeight: 700,
+              textDecoration: "none", letterSpacing: "-0.01em",
+              flexShrink: 0,
+            }}>
+              Join the waitlist
+            </Link>
           </div>
         </Reveal>
       </div>

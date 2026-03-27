@@ -102,8 +102,8 @@ export default function HomeClient() {
       <HeroSection />
       <ProofStrip />
       <VignettesSection />
-      <CircleSection />
       <DispatchSection />
+      <CircleSection />
       <HowItWorksSection />
       <FeaturesSection />
       <StatsSection />
