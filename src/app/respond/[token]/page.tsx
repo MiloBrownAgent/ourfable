@@ -125,13 +125,14 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
 
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
-  // When recording video, attach stream to preview element after it renders
-  useEffect(() => {
-    if (isRecording && recordingType === "video" && streamRef.current && videoPreviewRef.current) {
-      videoPreviewRef.current.srcObject = streamRef.current;
-      videoPreviewRef.current.play().catch(() => {});
+  // Callback ref — attaches stream the instant the <video> element mounts
+  const videoRefCallback = useCallback((el: HTMLVideoElement | null) => {
+    videoPreviewRef.current = el;
+    if (el && streamRef.current) {
+      el.srcObject = streamRef.current;
+      el.play().catch(() => {});
     }
-  }, [isRecording, recordingType]);
+  }, []);
 
   const startRecording = useCallback(async (type: "voice" | "video") => {
     try {
@@ -722,7 +723,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                   background: "var(--card)", border: "1.5px solid var(--green-border)",
                   borderRadius: 14, padding: "20px", overflow: "hidden",
                 }}>
-                  <video ref={videoPreviewRef} muted playsInline style={{
+                  <video ref={videoRefCallback} muted playsInline autoPlay style={{
                     width: "100%", maxHeight: 280, borderRadius: 10,
                     background: "#000", display: "block", transform: "scaleX(-1)",
                   }} />
