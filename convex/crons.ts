@@ -52,4 +52,12 @@ crons.cron(
   internal.ourfableMilestones.checkGuardianInactivity
 );
 
+// OurFable: World Snapshot AI generation — 2nd of each month at 9 AM CT (14:00 UTC)
+// Runs after monthly prompts (1st) so snapshot is ready when parents check the dashboard
+crons.cron(
+  "ourfable-snapshot-generation",
+  "0 14 2 * *",
+  internal.ourfableSnapshots.generateMissingSnapshots
+);
+
 export default crons;

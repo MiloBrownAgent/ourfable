@@ -54,7 +54,18 @@ export async function POST(req: NextRequest) {
     const family = familyData.value;
     if (!family) return NextResponse.json({ error: "Family not found" }, { status: 404 });
 
-    const isPlus = family.planType === "plus";
+    // planType lives on ourfable_families, plan on ourfable_vault_families — check both
+    let isPlus = family.planType === "plus" || family.plan === "plus" || family.plan === "pilot";
+    if (!isPlus) {
+      // Fall back to ourfable_families for planType
+      const accountRes = await fetch(`${CONVEX_URL}/api/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "ourfable:getOurFableFamilyById", args: { familyId }, format: "json" }),
+      });
+      const accountData = await accountRes.json();
+      isPlus = accountData.value?.planType === "plus" || accountData.value?.planType === "pilot";
+    }
 
     // ── Fetch circle ──────────────────────────────────────────────────────────
     const circleRes = await fetch(`${CONVEX_URL}/api/query`, {

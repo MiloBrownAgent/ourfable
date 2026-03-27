@@ -15,6 +15,7 @@ import type * as ourfableDelivery from "../ourfableDelivery.js";
 import type * as ourfableMilestones from "../ourfableMilestones.js";
 import type * as ourfableMonthly from "../ourfableMonthly.js";
 import type * as ourfablePrompts from "../ourfablePrompts.js";
+import type * as ourfableSnapshots from "../ourfableSnapshots.js";
 import type * as questionQueue from "../questionQueue.js";
 import type * as questions from "../questions.js";
 
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   ourfableMilestones: typeof ourfableMilestones;
   ourfableMonthly: typeof ourfableMonthly;
   ourfablePrompts: typeof ourfablePrompts;
+  ourfableSnapshots: typeof ourfableSnapshots;
   questionQueue: typeof questionQueue;
   questions: typeof questions;
 }>;
