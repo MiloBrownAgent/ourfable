@@ -6,9 +6,9 @@ export function DispatchSection() {
   return (
     <section style={{
       padding: "100px 40px",
-      background: "#1A1A18",
-      borderTop: "1px solid rgba(255,255,255,0.06)",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
+      background: "var(--bg-2)",
+      borderTop: "1px solid var(--border)",
+      borderBottom: "1px solid var(--border)",
     }}>
       <style>{`
         @media (max-width: 680px) {
@@ -36,7 +36,7 @@ export function DispatchSection() {
             fontSize: "clamp(2rem, 4vw, 3rem)",
             fontWeight: 800, lineHeight: 1.1,
             letterSpacing: "-0.025em",
-            color: "#FDFBF7",
+            color: "var(--text)",
             marginBottom: 40,
           }}>
             One update.<br />
@@ -44,11 +44,11 @@ export function DispatchSection() {
           </h2>
 
           {/* Body copy */}
-          <div className="dispatch-body" style={{ fontSize: 18, lineHeight: 1.85, color: "#A09890", maxWidth: 580 }}>
+          <div className="dispatch-body" style={{ fontSize: 18, lineHeight: 1.85, color: "var(--text-2)", maxWidth: 580 }}>
             <p style={{ marginBottom: 20 }}>
               Your mom wants photos. Your sister wants videos. Your best friend just wants to know how the baby's doing. And you're supposed to remember to send all of it, to all of them, while running on three hours of sleep.
             </p>
-            <p style={{ marginBottom: 20, color: "#FDFBF7" }}>
+            <p style={{ marginBottom: 20, color: "var(--text)" }}>
               Not anymore.
             </p>
             <p style={{ marginBottom: 20 }}>
@@ -57,7 +57,7 @@ export function DispatchSection() {
             <p style={{ marginBottom: 20 }}>
               Grandparents. Aunts. Uncles. Godparents. The college friend who's already obsessed. Everyone gets the update. Nobody gets forgotten.
             </p>
-            <p style={{ marginBottom: 40, color: "#FDFBF7", fontStyle: "italic", fontFamily: "var(--font-playfair)", fontSize: 20, lineHeight: 1.6 }}>
+            <p style={{ marginBottom: 40, color: "var(--text)", fontStyle: "italic", fontFamily: "var(--font-playfair)", fontSize: 20, lineHeight: 1.6 }}>
               No group texts. No "sorry I forgot to send you that." No guilt.<br />
               Just one moment, shared with everyone who cares.
             </p>
@@ -73,7 +73,7 @@ export function DispatchSection() {
             borderRadius: 14,
             marginBottom: 40,
           }}>
-            <p style={{ fontSize: 14, color: "#8A9E8C", lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.6, margin: 0 }}>
               <strong style={{ color: "#6B8F6E" }}>Our Fable+</strong> — dispatch to your child's full circle, not just your inner ring.
             </p>
             <Link href="/reserve" style={{
@@ -94,10 +94,10 @@ export function DispatchSection() {
             {["🎙 Voice memo", "📷 Photo", "🎥 Video", "✍️ Written note"].map(label => (
               <span key={label} style={{
                 padding: "8px 16px",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(107,143,111,0.08)",
+                border: "1px solid rgba(107,143,111,0.2)",
                 borderRadius: 100,
-                fontSize: 12, color: "#A09890",
+                fontSize: 12, color: "var(--text-2)",
                 fontWeight: 500,
               }}>
                 {label}
