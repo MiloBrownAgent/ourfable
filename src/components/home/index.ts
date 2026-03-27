@@ -15,4 +15,5 @@ export { FounderNote } from "./FounderNote";
 export { FooterSection } from "./FooterSection";
 export { StickyNav, ProofStrip } from "./StickyNav";
 export { StickyBottomCTA } from "./StickyBottomCTA";
+export { DispatchSection } from "./DispatchSection";
 export { MidPageCapture } from "./MidPageCapture";

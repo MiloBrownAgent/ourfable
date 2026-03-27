@@ -13,6 +13,7 @@ import {
   FooterSection,
   StickyNav,
   ProofStrip,
+  DispatchSection,
 
   MidPageCapture,
 } from "../components/home";
@@ -100,6 +101,7 @@ export default function HomeClient() {
       <StickyNav scrolled={scrolled} showSecondNav={showSecondNav} activeSection={activeSection} />
       <HeroSection />
       <ProofStrip />
+      <DispatchSection />
       <VignettesSection />
       <MidPageCapture />
       <StatsSection />
