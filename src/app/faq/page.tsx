@@ -77,7 +77,7 @@ export const FAQS = [
   },
   {
     q: "How do I get started?",
-    a: "Join the waitlist at ourfable.ai. Our Fable is currently in founding-family mode — waitlist members get first access. Setup takes about five minutes: you add your child's name and birthday, set up a family password, and start adding people to their circle.",
+    a: "Reserve your spot at ourfable.ai/reserve. Our Fable is currently in founding-family mode — founding members get first access and locked-in pricing for life. Setup takes about five minutes: you add your child's name and birthday, set up a family password, and start adding people to their circle.",
   },
 ];
 
@@ -121,8 +121,9 @@ export default function FAQPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div className="nav-text-links" style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <Link href="/" className="nav-link" style={{ fontSize: 14 }}>Home</Link>
-              <Link href="/how-it-works" className="nav-link" style={{ fontSize: 14 }}>How it works</Link>
+              <Link href="/faq" className="nav-link" style={{ fontSize: 14, fontWeight: 600, color: "var(--green)" }}>FAQ</Link>
               <Link href="/gift" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
+              <Link href="/login" className="nav-link" style={{ fontSize: 14 }}>Sign in</Link>
             </div>
             <Link href="/reserve" className="btn-primary" style={{ padding: "9px 20px", fontSize: 14, textDecoration: "none" }}>
               Reserve your spot
@@ -164,7 +165,7 @@ export default function FAQPage() {
             Still have questions?
           </p>
           <p style={{ fontSize: 15, color: "var(--text-2)", marginBottom: 24, lineHeight: 1.7 }}>
-            Join the waitlist and we&apos;ll reach out personally to founding families.
+            Reserve your spot and we&apos;ll reach out personally to founding families.
           </p>
           <Link href="/reserve" style={{
             display: "inline-block", padding: "14px 28px", borderRadius: 100,
@@ -181,8 +182,8 @@ export default function FAQPage() {
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "var(--green)" }}>Our Fable</span>
           <div style={{ display: "flex", gap: 24 }}>
-            <Link href="/how-it-works" className="nav-link" style={{ fontSize: 13 }}>How it works</Link>
             <Link href="/gift" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
+            <Link href="/journal" className="nav-link" style={{ fontSize: 13 }}>Journal</Link>
             <Link href="/privacy" className="nav-link" style={{ fontSize: 13 }}>Privacy</Link>
             <Link href="/terms" className="nav-link" style={{ fontSize: 13 }}>Terms</Link>
           </div>

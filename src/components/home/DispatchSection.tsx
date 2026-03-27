@@ -124,7 +124,7 @@ export function DispatchSection() {
               textDecoration: "none", letterSpacing: "-0.01em",
               flexShrink: 0,
             }}>
-              Join the waitlist
+              Reserve your spot
             </Link>
           </div>
         </Reveal>

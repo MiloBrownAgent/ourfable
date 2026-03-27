@@ -50,7 +50,7 @@ const VIGNETTES = [
   {
     who: "Grandma",
     age: "Lives two states away",
-    excerpt: "She's not good with technology. She said so herself. But she called the number. She sang the lullaby her mother sang to her. In a language your child doesn't speak yet.",
+    excerpt: "She's not good with technology. She said so herself. But she clicked the link, hit record, and sang the lullaby her mother sang to her. In a language your child doesn't speak yet.",
     seal: "Sealed until age 13.",
     color: "var(--sage)",
   },
@@ -204,3 +204,4 @@ export function VideoMomentSection() {
     </section>
   );
 }
+
