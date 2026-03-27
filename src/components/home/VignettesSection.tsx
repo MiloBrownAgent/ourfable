@@ -152,7 +152,7 @@ export function VideoMomentSection() {
             color: "var(--text)",
             marginBottom: 40,
           }}>
-            What would you give to have a video of your grandfather — just talking to you?
+            What would you give to have a video of your grandmother — just talking to you?
           </p>
 
           <p style={{
@@ -162,7 +162,7 @@ export function VideoMomentSection() {
             marginBottom: 28,
             maxWidth: 580,
           }}>
-            Not a photo. Not a memory someone else told you. A video. Him, looking at the camera, saying your name. Telling you what he hoped for you. Laughing the way he laughed.
+            Not a photo. Not a memory someone else told you. A video. Her, looking at the camera, saying your name. Telling you what she hoped for you. Laughing the way she laughed.
           </p>
 
           <p style={{
