@@ -114,6 +114,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
 
   // In-browser recording state
   const [isRecording, setIsRecording] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false); // camera on but not recording yet
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingType, setRecordingType] = useState<"voice" | "video" | null>(null);
@@ -125,13 +126,65 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
 
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
-  // Callback ref — attaches stream the instant the <video> element mounts
+  // Callback ref — attaches stream the instant the <video> element mounts (preview or recording)
   const videoRefCallback = useCallback((el: HTMLVideoElement | null) => {
     videoPreviewRef.current = el;
     if (el && streamRef.current) {
       el.srcObject = streamRef.current;
       el.play().catch(() => {});
     }
+  }, []);
+
+  // Open camera for preview without recording
+  const openCameraPreview = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+      streamRef.current = stream;
+      setIsPreviewing(true);
+      setRecordingType("video");
+    } catch {
+      alert("Camera access denied. Please allow camera and microphone access in your browser settings.");
+    }
+  }, []);
+
+  // Start actual recording (camera already open from preview)
+  const beginVideoRecording = useCallback(() => {
+    const stream = streamRef.current;
+    if (!stream) return;
+
+    const mimeType = "video/webm";
+    const recorder = MediaRecorder.isTypeSupported(mimeType)
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream);
+    chunksRef.current = [];
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    recorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+      streamRef.current = null;
+      const blob = new Blob(chunksRef.current, { type: "video/webm" });
+      setRecordedBlob(blob);
+      const file = new File([blob], `video-${Date.now()}.webm`, { type: "video/webm" });
+      setVideoFile(file);
+    };
+
+    mediaRecorderRef.current = recorder;
+    recorder.start();
+    setIsPreviewing(false);
+    setIsRecording(true);
+    setRecordingTime(0);
+    timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+  }, []);
+
+  // Cancel preview without recording
+  const cancelPreview = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+    setIsPreviewing(false);
+    setRecordingType(null);
   }, []);
 
   const startRecording = useCallback(async (type: "voice" | "video") => {
@@ -187,6 +240,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
     setRecordedBlob(null);
     setRecordingType(null);
     setRecordingTime(0);
+    setIsPreviewing(false);
     setVoiceFile(null);
     setVideoFile(null);
   }, []);
@@ -716,8 +770,38 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                 </p>
               </div>
 
-              {/* Video recording controls */}
-              {isRecording && recordingType === "video" ? (
+              {/* Video recording controls — 3 states: preview / recording / done */}
+              {isPreviewing && recordingType === "video" ? (
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
+                  background: "var(--card)", border: "1.5px solid var(--green-border)",
+                  borderRadius: 14, padding: "20px", overflow: "hidden",
+                }}>
+                  <video ref={videoRefCallback} muted playsInline autoPlay style={{
+                    width: "100%", maxHeight: 280, borderRadius: 10,
+                    background: "#000", display: "block", transform: "scaleX(-1)",
+                  }} />
+                  <p style={{ fontSize: 13, color: "var(--text-3)" }}>Check your camera — when you&apos;re ready, hit record.</p>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <button onClick={cancelPreview} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "12px 20px", borderRadius: 100,
+                      background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-2)",
+                      fontSize: 14, fontWeight: 500, cursor: "pointer",
+                    }}>
+                      Cancel
+                    </button>
+                    <button onClick={beginVideoRecording} style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "12px 24px", borderRadius: 100,
+                      background: "var(--green)", border: "none", color: "#fff",
+                      fontSize: 14, fontWeight: 600, cursor: "pointer",
+                    }}>
+                      <Video size={14} /> Start recording
+                    </button>
+                  </div>
+                </div>
+              ) : isRecording && recordingType === "video" ? (
                 <div style={{
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
                   background: "var(--card)", border: "1.5px solid var(--green-border)",
@@ -760,7 +844,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <button onClick={() => startRecording("video")} style={{
+                  <button onClick={openCameraPreview} style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                     padding: "18px 24px", borderRadius: 14,
                     background: "var(--card)", border: "1.5px solid var(--border)",
