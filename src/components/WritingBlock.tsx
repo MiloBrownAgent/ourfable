@@ -8,12 +8,7 @@ interface WritingBlockProps {
   onSealed?: () => void
 }
 
-const MOCK_CIRCLE = [
-  { id: '1', name: 'Grandma' },
-  { id: '2', name: 'Grandpa' },
-  { id: '3', name: 'Uncle Paul' },
-  { id: '4', name: 'Aunt Katie' },
-]
+interface CircleMember { _id: string; name: string; email?: string }
 
 export default function WritingBlock({ childFirst, familyId, locked = false, onSealed }: WritingBlockProps) {
   const [text, setText] = useState('')
@@ -48,6 +43,19 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   // Dispatch
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [circleMembers, setCircleMembers] = useState<CircleMember[]>([])
+
+  useEffect(() => {
+    if (!familyId) return
+    fetch('/api/ourfable/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'ourfable:listCircle', args: { familyId } }),
+    })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d.value)) setCircleMembers(d.value) })
+      .catch(() => {})
+  }, [familyId])
 
   const today = new Date().toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
@@ -129,8 +137,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     setSelectedMembers(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id])
   }
   const toggleAll = () => {
-    if (selectedMembers.length === MOCK_CIRCLE.length) setSelectedMembers([])
-    else setSelectedMembers(MOCK_CIRCLE.map(m => m.id))
+    if (selectedMembers.length === circleMembers.length) setSelectedMembers([])
+    else setSelectedMembers(circleMembers.map(m => m._id))
   }
 
   const handleDispatchClick = () => {
@@ -444,22 +452,22 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
               background: 'none', border: 'none', fontSize: 11, color: 'var(--sage)', cursor: 'pointer',
               fontFamily: 'var(--font-body)', textDecoration: 'underline',
             }}>
-              {selectedMembers.length === MOCK_CIRCLE.length ? 'Deselect all' : 'Select all'}
+              {selectedMembers.length === circleMembers.length ? 'Deselect all' : 'Select all'}
             </button>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {MOCK_CIRCLE.map(m => (
-              <button key={m.id} onClick={() => toggleMember(m.id)} style={{
+            {circleMembers.map(m => (
+              <button key={m._id} onClick={() => toggleMember(m._id)} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '6px 14px', borderRadius: 100,
-                border: selectedMembers.includes(m.id) ? '1.5px solid var(--green)' : '1px solid var(--border)',
-                background: selectedMembers.includes(m.id) ? 'var(--green-light)' : 'transparent',
-                color: selectedMembers.includes(m.id) ? 'var(--green)' : 'var(--text-3)',
+                border: selectedMembers.includes(m._id) ? '1.5px solid var(--green)' : '1px solid var(--border)',
+                background: selectedMembers.includes(m._id) ? 'var(--green-light)' : 'transparent',
+                color: selectedMembers.includes(m._id) ? 'var(--green)' : 'var(--text-3)',
                 fontSize: 12, fontFamily: 'var(--font-body)', cursor: 'pointer',
-                fontWeight: selectedMembers.includes(m.id) ? 500 : 400,
+                fontWeight: selectedMembers.includes(m._id) ? 500 : 400,
                 transition: 'all 150ms ease',
               }}>
-                {selectedMembers.includes(m.id) ? '✓ ' : ''}{m.name}
+                {selectedMembers.includes(m._id) ? '✓ ' : ''}{m.name}
               </button>
             ))}
           </div>
