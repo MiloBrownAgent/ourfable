@@ -26,6 +26,7 @@ import {
   query,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { getPromptsForRelationship } from "./ourfable";
 
 const PROMPT_INTERVAL_DAYS = 30;
 
@@ -224,7 +225,6 @@ export const getPromptForIndex = internalQuery({
     }
 
     // 2. Fall back to static library if AI prompts not yet generated
-    const { getPromptsForRelationship } = await import("./ourfable");
     const prompts = getPromptsForRelationship(relationshipKey, childName, parentNames);
     if (!prompts.length) return null;
     return prompts[index % prompts.length];
