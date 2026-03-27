@@ -24,6 +24,13 @@ crons.cron(
   internal.ourfableDelivery.sendAnnualRecap
 );
 
+// OurFable: Birthday letter reminder — 7 days before birthday, 9:30 AM CT (14:30 UTC)
+crons.cron(
+  "ourfable-birthday-letter-reminder",
+  "30 14 * * *",
+  internal.ourfableDelivery.sendBirthdayLetterReminder
+);
+
 // OurFable: Monthly prompts — 1st of each month at 10 AM CT (15:00 UTC)
 crons.cron(
   "ourfable-monthly-prompts",

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
   Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
-  ChevronDown, Check, Plus, Mail, Cake, PackageOpen,
+  ChevronDown, Check, Plus, Mail, PackageOpen,
 } from "lucide-react";
 import { useChildContext, type Child } from "@/components/ChildContext";
 
@@ -30,7 +30,6 @@ function buildChildNav(familyId: string) {
     { name: "Letters", href: `/${familyId}/letters`, icon: Mail },
     { name: "The World", href: `/${familyId}/born`, icon: Sunrise },
     { name: "Before You Were Born", href: `/${familyId}/before-born`, icon: BookOpen },
-    { name: "Birthday Letters", href: `/${familyId}/birthday-letters`, icon: Cake },
   ];
 }
 

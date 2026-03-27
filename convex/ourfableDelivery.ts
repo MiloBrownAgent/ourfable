@@ -370,6 +370,71 @@ export const sendAnnualRecap = internalAction({
   },
 });
 
+// ── Birthday Letter Reminder (7 days before) ───────────────────────────────
+// Emails parents a week before their child's birthday asking if they'd like
+// circle members gently reminded that the birthday is coming up.
+
+export const sendBirthdayLetterReminder = internalAction({
+  args: {},
+  handler: async () => {
+    const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
+    if (!RESEND_API_KEY) return;
+
+    const families = (await convexQuery("ourfable:listActiveOurFableFamilies", {})) as Array<{
+      familyId: string;
+      email: string;
+      childName: string;
+      birthDate?: string;
+    }> | null;
+    if (!families) return;
+
+    const target = new Date();
+    target.setDate(target.getDate() + 7);
+    const targetMonth = target.getMonth();
+    const targetDay = target.getDate();
+
+    for (const family of families) {
+      if (!family.birthDate) continue;
+      const dob = new Date(family.birthDate + "T00:00:00");
+      if (dob.getMonth() !== targetMonth || dob.getDate() !== targetDay) continue;
+
+      const childFirst = family.childName.split(" ")[0];
+      const birthdayDate = target.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+
+      // Generate a one-time token for the "yes, remind them" action
+      const token = generateToken();
+      await convexMutation("ourfable:createOurFableDispatch", {
+        familyId: family.familyId,
+        type: "birthday_reminder_token",
+        content: token,
+        sentTo: family.email,
+      }).catch(() => {});
+
+      const remindUrl = `https://ourfable.ai/api/ourfable/birthday-remind?token=${token}&familyId=${family.familyId}`;
+
+      const html = emailWrapper(`
+        <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A87A;">One week away</p>
+        <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${childFirst}'s birthday is ${birthdayDate}</p>
+        <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Now's a great time to write a birthday letter for ${childFirst}. Open the Letters page in your dashboard — there's a Birthday Letters tab waiting for you.</p>
+        <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;"><tr><td style="border-radius:10px;background:#4A5E4C;">
+          <a href="https://ourfable.ai/${family.familyId}/letters" style="display:inline-block;padding:13px 28px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Write a birthday letter →</a>
+        </td></tr></table>
+        <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:24px;margin:0 0 28px;">
+          <p style="margin:0 0 12px;font-family:Georgia,serif;font-size:17px;color:#1A1A1A;">Want us to nudge the circle?</p>
+          <p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:14px;color:#6B6860;line-height:1.7;">We can send a gentle reminder to ${childFirst}'s circle members that the birthday is coming up — in case they'd like to write something too.</p>
+          <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#C8A87A;">
+            <a href="${remindUrl}" style="display:inline-block;padding:12px 24px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Yes, gently remind them →</a>
+          </td></tr></table>
+        </div>
+        <p style="margin:0;font-family:-apple-system,sans-serif;font-size:13px;color:#9A9590;line-height:1.7;font-style:italic;">No pressure — if you don't click, we won't send anything to the circle.</p>
+      `);
+
+      await sendResendEmail(RESEND_API_KEY, family.email, `${childFirst}'s birthday is one week away 🎂`, html);
+      console.log(`[ourfableDelivery] Sent birthday letter reminder for ${family.familyId}`);
+    }
+  },
+});
+
 // ── Cancellation Save Email ─────────────────────────────────────────────────
 // Called from webhook when customer.subscription.deleted fires
 
