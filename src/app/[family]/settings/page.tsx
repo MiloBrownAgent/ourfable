@@ -564,7 +564,7 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {[
-            { label: "Milestone Deliveries", desc: "Schedule vault deliveries for special moments", href: `/${familyId}/milestones` },
+            { label: "Milestone Deliveries", desc: "Schedule vault deliveries for special moments", href: `/${familyId}/delivery` },
             { label: "Vault Delivery", desc: "Deliver the vault when the time comes", href: `/${familyId}/delivery` },
             { label: "Year in Print", desc: "Turn a year of memories into a printed book", href: `/${familyId}/print` },
           ].map(item => (
