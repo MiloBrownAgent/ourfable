@@ -121,8 +121,9 @@ export const sendNextPrompt = internalAction({
 
     // 3. Send the email (if member has an email address)
     let emailSent = false;
+    let emailToken = "";
     if (member.email && prompt) {
-      emailSent = await sendPromptEmail({
+      const result = await sendPromptEmail({
         member: {
           name: member.name,
           email: member.email,
@@ -135,11 +136,13 @@ export const sendNextPrompt = internalAction({
         siteUrl: getOurFableUrl((family as { siteUrl?: string }).siteUrl),
         isTestMode: !!(family as { testIntervalMinutes?: number }).testIntervalMinutes,
       });
+      emailSent = result.sent;
+      emailToken = result.token;
     } else if (!member.email) {
       console.log(`[ourfable] ${member.name} has no email — recording miss, chain continues`);
     }
 
-    // 4. Record this send in the DB
+    // 4. Record this send in the DB — use the SAME token that went into the email
     if (prompt) {
       await ctx.runMutation(internal.ourfablePrompts.recordPromptSend, {
         memberId,
@@ -150,6 +153,7 @@ export const sendNextPrompt = internalAction({
         promptUnlocksAtAge: prompt.unlocksAtAge,
         promptUnlocksAtEvent: prompt.unlocksAtEvent,
         emailSent,
+        submissionToken: emailToken || undefined,
         sentAt: Date.now(),
       });
     }
@@ -246,9 +250,11 @@ export const recordPromptSend = internalMutation({
     promptUnlocksAtEvent: v.optional(v.string()),
     emailSent: v.boolean(),
     sentAt: v.number(),
+    submissionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const token = generateToken();
+    // Use the token from the email if provided, otherwise generate a new one
+    const token = args.submissionToken || generateToken();
     await ctx.db.insert("ourfable_vault_prompt_queue", {
       familyId: args.familyId,
       memberId: args.memberId,
@@ -402,20 +408,20 @@ async function sendPromptEmail({
   promptIndex: number;
   siteUrl: string;
   isTestMode?: boolean;
-}): Promise<boolean> {
+}): Promise<{ sent: boolean; token: string }> {
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
     console.error("[ourfable] No RESEND_API_KEY");
-    return false;
+    return { sent: false, token: "" };
   }
 
   const childFirst = family.childName.split(" ")[0];
   const recipientFirst = member.name.split(" ")[0];
   const parentNames = family.parentNames ?? "their parents";
 
-  // Unique token for this specific prompt send
+  // Unique token for this specific prompt send — returned to caller for DB storage
   const token = generateToken();
-  const submitUrl = `${siteUrl}/respond/${token}`;
+  const submitUrl = `${siteUrl}/respond/${token}`; 
 
   const unlockLine = prompt.unlocksAtAge
     ? `${childFirst} will receive this when they turn ${prompt.unlocksAtAge}.`
@@ -462,10 +468,10 @@ async function sendPromptEmail({
     const err = await res.text();
     console.error(`[ourfable] Resend failed for ${member.name}: ${res.status} ${err}`);
     // Don't throw — chain continues regardless, logs the failure
-    return false;
+    return { sent: false, token };
   }
 
-  return true;
+  return { sent: true, token };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
