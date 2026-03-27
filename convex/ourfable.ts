@@ -600,8 +600,30 @@ export const listVaultEntries = query({
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .order("desc")
       .collect();
-    if (includeSealed) return all;
-    return all.filter((e) => e.isOpen);
+
+    const filtered = includeSealed ? all : all.filter((e) => e.isOpen);
+
+    // Resolve Convex storage IDs into renderable URLs
+    const resolved = await Promise.all(
+      filtered.map(async (entry) => {
+        if (entry.mediaStorageId && !entry.audioUrl && !entry.photoUrl && !entry.videoUrl) {
+          const url = await ctx.storage.getUrl(entry.mediaStorageId as string);
+          if (url) {
+            const mime = entry.mediaMimeType ?? "";
+            if (mime.startsWith("audio")) return { ...entry, audioUrl: url };
+            if (mime.startsWith("video")) return { ...entry, videoUrl: url };
+            if (mime.startsWith("image")) return { ...entry, photoUrl: url };
+            // Fallback: use type field
+            if (entry.type === "voice") return { ...entry, audioUrl: url };
+            if (entry.type === "video") return { ...entry, videoUrl: url };
+            if (entry.type === "photo") return { ...entry, photoUrl: url };
+          }
+        }
+        return entry;
+      })
+    );
+
+    return resolved;
   },
 });
 
@@ -1833,10 +1855,30 @@ export const addOurFableVaultEntry = mutation({
 export const listOurFableVaultEntries = query({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
-    return await ctx.db
+    const all = await ctx.db
       .query("ourfable_vault_entries")
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .collect();
+
+    // Resolve Convex storage IDs into renderable URLs
+    const resolved = await Promise.all(
+      all.map(async (entry) => {
+        const e = entry as Record<string, unknown>;
+        if (e.mediaStorageId && !e.audioUrl && !e.photoUrl && !e.videoUrl) {
+          const url = await ctx.storage.getUrl(e.mediaStorageId as string);
+          if (url) {
+            const mime = (e.mediaMimeType as string) ?? "";
+            const type = (e.type as string) ?? "";
+            if (mime.startsWith("audio") || type === "voice") return { ...entry, audioUrl: url };
+            if (mime.startsWith("video") || type === "video") return { ...entry, videoUrl: url };
+            if (mime.startsWith("image") || type === "photo") return { ...entry, photoUrl: url };
+          }
+        }
+        return entry;
+      })
+    );
+
+    return resolved;
   },
 });
 

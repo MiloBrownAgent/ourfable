@@ -362,11 +362,29 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       if (data.promptUnlocksAtAge) entryArgs.unlocksAtAge = data.promptUnlocksAtAge;
       if (data.promptUnlocksAtEvent) entryArgs.unlocksAtEvent = data.promptUnlocksAtEvent;
 
-      await fetch(`/api/ourfable/data`, {
+      const submitRes = await fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: "ourfable:submitVaultEntry", args: entryArgs, type: "mutation" }),
       });
+      const submitData = await submitRes.json();
+
+      // Verify the entry was actually created before showing "Sealed"
+      if (!submitRes.ok || submitData.status === "error") {
+        throw new Error(submitData.errorMessage ?? "Failed to seal entry");
+      }
+
+      // Double-check: query the prompt status to confirm it was marked as responded
+      const verifyRes = await fetch(`/api/ourfable/data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "ourfable:getPromptByToken", args: { token } }),
+      });
+      const verifyData = await verifyRes.json();
+      const status = verifyData.value?.prompt?.status;
+      if (status !== "responded") {
+        console.warn("[respond] Entry submitted but prompt not marked as responded — status:", status);
+      }
 
       setSubmitted(true);
     } catch {
