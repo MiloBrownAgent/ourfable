@@ -59,10 +59,9 @@ const VIGNETTES = [
 export function VignettesSection() {
   return (
     <>
-      {/* ── EMOTIONAL VIGNETTES ── */}
       <section id="why-it-matters" style={{ padding: "100px 40px", maxWidth: 1200, margin: "0 auto" }}>
         <Reveal>
-          <div style={{ textAlign: "center", marginBottom: 72 }}>
+          <div style={{ textAlign: "center", marginBottom: 80 }}>
             <p className="label label-green" style={{ marginBottom: 16 }}>Why it matters</p>
             <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, maxWidth: 600, margin: "0 auto" }}>
               The people who love your child<br />won&apos;t always be here.
@@ -70,31 +69,69 @@ export function VignettesSection() {
           </div>
         </Reveal>
 
-        <div className="vignettes-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
+        {/* 4 pillars with single line dividers */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          borderTop: "1px solid var(--border)",
+        }} className="vignettes-pillars">
           {VIGNETTES.map((v, i) => (
             <Reveal key={i} delay={i * 80}>
-              <div className="card" style={{ padding: "32px 28px", height: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                  <div>
-                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 400, color: "var(--text)", marginBottom: 3 }}>{v.who}</p>
-                    <p style={{ fontSize: 11, color: "var(--text-3)" }}>{v.age}</p>
-                  </div>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: v.color, flexShrink: 0, marginTop: 6 }} />
+              <div style={{
+                padding: "48px 36px 48px 0",
+                borderRight: i < VIGNETTES.length - 1 ? "1px solid var(--border)" : "none",
+                paddingRight: i < VIGNETTES.length - 1 ? 36 : 0,
+                paddingLeft: i > 0 ? 36 : 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 20,
+                height: "100%",
+              }}>
+                <div>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 4, lineHeight: 1.2 }}>{v.who}</p>
+                  <p style={{ fontSize: 11, color: "var(--text-3)", letterSpacing: "0.06em" }}>{v.age}</p>
                 </div>
-                <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 15, lineHeight: 1.85, color: "var(--text-2)", flex: 1 }}>
+                <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 15, lineHeight: 1.9, color: "var(--text-2)", flex: 1 }}>
                   &ldquo;{v.excerpt}&rdquo;
                 </p>
-                <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: v.color }}>{v.seal}</p>
-                </div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: v.color, letterSpacing: "0.08em", textTransform: "uppercase" }}>{v.seal}</p>
               </div>
             </Reveal>
           ))}
         </div>
-
-
       </section>
 
+      <style>{`
+        @media (max-width: 768px) {
+          .vignettes-pillars {
+            grid-template-columns: 1fr !important;
+          }
+          .vignettes-pillars > div > div {
+            border-right: none !important;
+            border-bottom: 1px solid var(--border);
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+          }
+          .vignettes-pillars > div:last-child > div {
+            border-bottom: none !important;
+          }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .vignettes-pillars {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .vignettes-pillars > div:nth-child(2) > div {
+            border-right: none !important;
+          }
+          .vignettes-pillars > div:nth-child(3) > div {
+            border-top: 1px solid var(--border);
+          }
+          .vignettes-pillars > div:nth-child(4) > div {
+            border-top: 1px solid var(--border);
+            border-right: none !important;
+          }
+        }
+      `}</style>
     </>
   );
 }
