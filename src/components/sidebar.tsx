@@ -26,18 +26,19 @@ function buildChildNav(familyId: string) {
   return [
     { name: "Home", href: `/${familyId}`, icon: LayoutDashboard, exact: true },
     { name: "The Vault", href: `/${familyId}/vault`, icon: FolderLock },
+    { name: "Dispatches", href: `/${familyId}/outgoings`, icon: Send },
     { name: "Letters", href: `/${familyId}/letters`, icon: Mail },
-    { name: "Birthday Letters", href: `/${familyId}/birthday-letters`, icon: Cake },
     { name: "Born Day", href: `/${familyId}/born`, icon: Sunrise },
-    { name: "Your Story", href: `/${familyId}/before-born`, icon: BookOpen },
+    { name: "Before You Were Born", href: `/${familyId}/before-born`, icon: BookOpen },
     { name: "World Snapshot", href: `/${familyId}/snapshot`, icon: Globe },
+    { name: "Birthday Letters", href: `/${familyId}/birthday-letters`, icon: Cake },
   ];
 }
 
 function buildShareNav(familyId: string) {
   return [
-    { name: "Dispatches", href: `/${familyId}/outgoings`, icon: Send },
     { name: "Circle", href: `/${familyId}/circle`, icon: Users },
+    { name: "Delivery", href: `/${familyId}/delivery`, icon: PackageOpen },
   ];
 }
 
