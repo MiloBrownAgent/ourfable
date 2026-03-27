@@ -41,7 +41,7 @@ export const FAQS = [
   },
   {
     q: "Can I give Our Fable as a baby shower gift?",
-    a: "Yes. Our Fable can be gifted as a gift code — perfect for baby showers, birth announcements, or as a meaningful gift from a grandparent. Visit ourfable.ai/reserve?gift=true to send a gift code by email. The recipient activates it when they're ready.",
+    a: "Yes. Our Fable can be gifted as a gift code — perfect for baby showers, birth announcements, or as a meaningful gift from a grandparent. Visit ourfable.ai/gift to send a gift code by email. The recipient activates it when they're ready.",
   },
   {
     q: "What is the World Snapshot?",
@@ -122,7 +122,7 @@ export default function FAQPage() {
             <div className="nav-text-links" style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <Link href="/" className="nav-link" style={{ fontSize: 14 }}>Home</Link>
               <Link href="/how-it-works" className="nav-link" style={{ fontSize: 14 }}>How it works</Link>
-              <Link href="/reserve?gift=true" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
+              <Link href="/gift" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
             </div>
             <Link href="/reserve" className="btn-primary" style={{ padding: "9px 20px", fontSize: 14, textDecoration: "none" }}>
               Reserve your spot
@@ -182,7 +182,7 @@ export default function FAQPage() {
           <span style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "var(--green)" }}>Our Fable</span>
           <div style={{ display: "flex", gap: 24 }}>
             <Link href="/how-it-works" className="nav-link" style={{ fontSize: 13 }}>How it works</Link>
-            <Link href="/reserve?gift=true" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
+            <Link href="/gift" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
             <Link href="/privacy" className="nav-link" style={{ fontSize: 13 }}>Privacy</Link>
             <Link href="/terms" className="nav-link" style={{ fontSize: 13 }}>Terms</Link>
           </div>

@@ -39,7 +39,7 @@ export function MobileNav({ scrolled }: { scrolled: boolean }) {
     { label: "What's inside", href: "#whats-inside" },
     { label: "Pricing", href: "#pricing" },
     { label: "FAQ", href: "/faq" },
-    { label: "Give as a gift", href: "/reserve?gift=true" },
+    { label: "Give as a gift", href: "/gift" },
     { label: "Sign in", href: "/login" },
   ];
 
