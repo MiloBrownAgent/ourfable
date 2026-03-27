@@ -473,7 +473,7 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
                   const age = childAgeAtMonth(family.childDob, year, month);
 
                   return (
-                    <div key={`${year}-${month}`} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+                    <div key={`${year}-${month}`} className="snapshot-timeline-row" style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 6 }}>
                         <div style={{
                           width: 12, height: 12, borderRadius: "50%",
@@ -483,7 +483,7 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
                         }} />
                         <div style={{ width: 1, flex: 1, background: "var(--border)", marginTop: 8 }} />
                       </div>
-                      <div style={{
+                      <div className="snapshot-card" style={{
                         flex: 1, padding: 24, marginBottom: 16,
                         background: "var(--surface, #fff)", borderRadius: 12,
                         boxShadow: hasData ? "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)" : "0 1px 2px rgba(0,0,0,0.02)",
@@ -502,26 +502,26 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
                         {hasData && snap ? (
                           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                             {snap.topHeadline && (
-                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>Headlines</span>
+                              <div className="snapshot-content-row" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span className="snapshot-label" style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>Headlines</span>
                                 <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.65 }}>{snap.topHeadline}</p>
                               </div>
                             )}
                             {snap.topSong && (
-                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>No. 1 Song</span>
+                              <div className="snapshot-content-row" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span className="snapshot-label" style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>No. 1 Song</span>
                                 <p className="font-display" style={{ fontSize: 15, color: "var(--text-2)", fontStyle: "italic", lineHeight: 1.5 }}>{snap.topSong}</p>
                               </div>
                             )}
                             {(snap.weatherDesc || snap.tempHigh) && (
-                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>Weather</span>
+                              <div className="snapshot-content-row" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span className="snapshot-label" style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>Weather</span>
                                 <p style={{ fontSize: 14, color: "var(--text-2)" }}>{snap.weatherDesc}{snap.tempHigh ? ` · ${snap.tempHigh}°F` : ""}</p>
                               </div>
                             )}
                             {snap.funFact && (
-                              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                                <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, marginTop: 3 }}>Fun Fact</span>
+                              <div className="snapshot-content-row" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <span className="snapshot-label" style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>Fun Fact</span>
                                 <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.65 }}>{snap.funFact}</p>
                               </div>
                             )}
@@ -568,6 +568,33 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
           <div style={{ width: 40, height: 1, background: "var(--gold-border)" }} />
         </div>
       </div>
+
+      <style>{`
+        /* Mobile: snapshot timeline */
+        @media (max-width: 640px) {
+          .snapshot-card {
+            padding: 14px 16px !important;
+            margin-bottom: 10px !important;
+          }
+          .snapshot-timeline-row {
+            gap: 10px !important;
+          }
+          .snapshot-label {
+            min-width: unset !important;
+            font-size: 9px !important;
+            letter-spacing: 0.08em !important;
+            margin-top: 0 !important;
+            color: var(--sage) !important;
+          }
+          .snapshot-content-row {
+            gap: 8px !important;
+          }
+          .snapshot-content-row p,
+          .snapshot-content-row .font-display {
+            font-size: 13px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
