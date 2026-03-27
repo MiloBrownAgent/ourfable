@@ -1702,6 +1702,22 @@ export const updateOurFableSubscriptionStatus = mutation({
   },
 });
 
+export const updateOurFableEmail = mutation({
+  args: {
+    oldEmail: v.string(),
+    newEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_email", (q) => q.eq("email", args.oldEmail.toLowerCase()))
+      .first();
+    if (!family) return null;
+    await ctx.db.patch(family._id, { email: args.newEmail.toLowerCase() });
+    return family._id;
+  },
+});
+
 export const updateOurFablePasswordHash = mutation({
   args: {
     email: v.string(),
@@ -2271,6 +2287,17 @@ export const getOurFable2FAStatus = query({
 });
 
 // ── OurFable — Circle Member Missed Prompts ─────────────────────────────────
+
+export const updateCircleMemberEmail = mutation({
+  args: {
+    memberId: v.id("ourfable_vault_circle"),
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.memberId, { email: args.email.toLowerCase() });
+    return args.memberId;
+  },
+});
 
 export const updateOurFableCircleMemberMissedPrompts = mutation({
   args: {
