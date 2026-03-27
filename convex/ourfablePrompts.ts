@@ -433,6 +433,7 @@ async function sendPromptEmail({
     promptCategory: prompt.category,
     unlockLine,
     submitUrl,
+    relationshipKey: member.relationshipKey,
   });
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -482,6 +483,12 @@ function generateToken(): string {
 // EMAIL TEMPLATE
 // ─────────────────────────────────────────────────────────────────────────────
 
+const GRANDPARENT_KEYS = new Set([
+  "grandmother", "grandfather", "grandparent", "grandma", "grandpa",
+  "nana", "papa", "granny", "gran", "nanny", "grammy", "gramps",
+  "oma", "opa", "mimi", "pop-pop",
+]);
+
 function buildEmailHtml({
   recipientFirst,
   childFirst,
@@ -490,6 +497,7 @@ function buildEmailHtml({
   promptCategory,
   unlockLine,
   submitUrl,
+  relationshipKey,
 }: {
   recipientFirst: string;
   childFirst: string;
@@ -498,12 +506,19 @@ function buildEmailHtml({
   promptCategory: string;
   unlockLine: string;
   submitUrl: string;
+  relationshipKey?: string;
 }): string {
+  const isGrandparent = relationshipKey ? GRANDPARENT_KEYS.has(relationshipKey.toLowerCase()) : false;
+  const fontSize = isGrandparent ? "17px" : "14px";
+  const promptFontSize = isGrandparent ? "24px" : "20px";
+  const btnPadding = isGrandparent ? "18px 40px" : "14px 32px";
+  const btnFontSize = isGrandparent ? "16px" : "14px";
+
   const mediaNote =
-    promptCategory === "photo" ? "Upload a photo using the link below."
-    : promptCategory === "voice" ? "Record a voice memo and upload it using the link below."
-    : promptCategory === "video" ? "Upload a short video using the link below."
-    : "Write your response, or upload a photo, voice memo, or video.";
+    promptCategory === "photo" ? "Snap a photo and share it."
+    : promptCategory === "voice" ? "Hit record and just talk."
+    : promptCategory === "video" ? "Record a short video — your face, your voice, this moment."
+    : "Record a video, a voice memo, or write something.";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -548,9 +563,9 @@ function buildEmailHtml({
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td style="padding:0 36px 24px;">
               <p style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A8880;margin:0 0 14px;">This month&rsquo;s prompt</p>
-              <p style="font-family:Georgia,serif;font-size:20px;font-style:italic;color:#1A1A18;line-height:1.65;margin:0 0 16px;">&ldquo;${promptText}&rdquo;</p>
-              <p style="font-size:14px;color:#4A4A45;line-height:1.7;margin:0 0 8px;">${mediaNote}</p>
-              <p style="font-size:13px;color:#8A8880;font-style:italic;margin:0;">${unlockLine}</p>
+              <p style="font-family:Georgia,serif;font-size:${promptFontSize};font-style:italic;color:#1A1A18;line-height:1.65;margin:0 0 16px;">&ldquo;${promptText}&rdquo;</p>
+              <p style="font-size:${fontSize};color:#4A4A45;line-height:1.7;margin:0 0 8px;">${mediaNote}</p>
+              <p style="font-size:${isGrandparent ? "14px" : "13px"};color:#8A8880;font-style:italic;margin:0;">${unlockLine}</p>
             </td></tr>
           </table>
 
@@ -558,7 +573,7 @@ function buildEmailHtml({
             <tr><td style="padding:0 36px 28px;">
               <table cellpadding="0" cellspacing="0">
                 <tr><td style="border-radius:100px;background:#B8965A;">
-                  <a href="${submitUrl}" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.01em;">Submit my response &rarr;</a>
+                  <a href="${submitUrl}" style="display:inline-block;padding:${btnPadding};font-size:${btnFontSize};font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.01em;">Record for ${childFirst} &rarr;</a>
                 </td></tr>
               </table>
             </td></tr>

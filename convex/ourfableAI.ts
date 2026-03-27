@@ -30,6 +30,7 @@ import {
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { getPromptsForRelationship } from "./ourfable";
 
 const OPENAI_MODEL = "gpt-4o-mini"; // fast, cheap, more than good enough for prompts
 const PROMPTS_PER_BATCH = 12; // one year of monthly prompts per generation
@@ -74,20 +75,36 @@ export const generatePromptsForMember = internalAction({
 
     const recentEntry = recentChronicle?.miloNarrative ?? null;
 
-    const systemPrompt = `You are Our Fable, a service that helps families preserve memories for their children.
-Your job is to generate ${PROMPTS_PER_BATCH} monthly prompts for a specific circle member.
-Each prompt is a question or invitation sent to them by email, asking them to share something
-that will be stored in a time-locked vault for the child to open at a specific age.
+    const systemPrompt = `You are Our Fable. You write prompts that get emailed to family members, asking them to contribute a memory for a child's time-locked vault.
 
-Rules:
-- Make each prompt feel personal to THIS relationship, not generic
-- Vary the format: some ask for stories, some for photos, some for voice memos, some for letters
-- Some should reference the child's current life and milestones
-- Prompts unlock at different ages: 8, 13, 16, 18, graduation, wedding day
-- Never repeat the same angle twice in a batch
-- Write prompts in second person, addressed to the circle member
-- Keep each prompt to 1-3 sentences maximum
-- Be warm but not saccharine. These should feel real.`;
+Each prompt appears as a single italicized question in a beautiful email. It must feel like something the child might ask this person someday. Intimate. Specific. Real.
+
+HARD RULES — violating any of these makes a prompt unusable:
+- 1-2 sentences MAXIMUM. Never 3+.
+- Must reference the child by name (${childFirst}).
+- Must be specific to THIS relationship — something only a ${member.relationship?.toLowerCase() ?? member.relationshipKey} could answer.
+- Never start with "Dear", "Take a moment", "Think about", "Share a", or "Can you".
+- Never use the word "cherish", "treasure", "precious", or "journey".
+- No generic questions. "What's your favorite memory?" is BANNED. "What did ${(family.parentNames ?? "their parents").split("&")[0]?.trim() ?? "their parent"}'s laugh sound like when they were little?" is GOOD.
+- Video and voice prompts should suggest a specific action, not just "record a message."
+
+GOOD EXAMPLES:
+- "What did ${childFirst}'s nursery smell like the first time you walked in?"
+- "Sing the song you used to sing to ${(family.parentNames ?? "their parents").split("&")[0]?.trim() ?? "their parent"} when they were little. ${childFirst} should hear it in your voice."
+- "Record yourself telling ${childFirst} the story of how you met their grandfather."
+- "What were you doing the exact moment you found out ${childFirst} was coming?"
+
+BAD EXAMPLES (never produce anything like these):
+- "Share a cherished memory about the family." (generic, uses banned word)
+- "Take a moment to reflect on what ${childFirst} means to you." (starts with banned phrase, generic)
+- "Tell ${childFirst} about a memory you treasure." (generic, banned word)
+- "Dear ${childFirst}, I want you to know..." (starts with Dear, wrong POV — the prompt is TO the circle member, not FROM the child)
+
+VARIETY: Across ${PROMPTS_PER_BATCH} prompts, vary:
+- Format: letters, photos, voice memos, video messages
+- Unlock ages: 8, 13, 16, 18, graduation, wedding day
+- Tone: some reflective, some playful, some raw/emotional
+- Subject: family history, the member's own life, the child's parents, specific moments, songs, smells, places`;
 
     const userPrompt = `Child: ${family.childName}, currently ${childAgeMonths} months old
 Circle member: ${member.name}
@@ -156,8 +173,96 @@ Only return valid JSON. No explanation, no markdown fences.`;
       return;
     }
 
-    // Normalize nulls from AI response to undefined (schema uses optional, not null)
-    const normalized = prompts.map((p) => ({
+    // ── Quality scoring ──────────────────────────────────────────────
+    // Score each prompt with a second GPT call. Drop anything < 4.
+    // Replace dropped prompts with static library fallbacks.
+    const BANNED_WORDS = ["cherish", "treasure", "precious", "journey"];
+    const BANNED_STARTS = ["dear", "take a moment", "think about", "share a", "can you"];
+
+    // Fast local filter first (free, instant)
+    const localFiltered = prompts.map((p) => {
+      const lower = p.text.toLowerCase();
+      if (BANNED_WORDS.some(w => lower.includes(w))) return null;
+      if (BANNED_STARTS.some(s => lower.startsWith(s))) return null;
+      if (p.text.split(/[.!?]/).filter(Boolean).length > 3) return null; // more than 3 sentences
+      if (!p.text.toLowerCase().includes(childFirst.toLowerCase())) return null; // must mention child
+      return p;
+    });
+
+    // AI scoring for prompts that passed local filter
+    const toScore = localFiltered.filter(Boolean) as GeneratedPrompt[];
+    let scored: (GeneratedPrompt & { qualityScore: number })[] = [];
+
+    if (toScore.length > 0) {
+      try {
+        const scoreRes = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: OPENAI_MODEL,
+            messages: [
+              {
+                role: "system",
+                content: `Score each prompt on a 1-5 scale. 5 = intimate, specific, could only come from this relationship. 1 = generic, could be asked to anyone. A prompt that says "share a memory" is a 1. A prompt that references a specific person, place, smell, or moment is a 5. Return JSON array of scores in order: {"scores": [4, 5, 2, ...]}`
+              },
+              {
+                role: "user",
+                content: `Relationship: ${member.relationship ?? member.relationshipKey}\nChild: ${childFirst}\n\nPrompts:\n${toScore.map((p, i) => `${i + 1}. "${p.text}"`).join("\n")}`
+              },
+            ],
+            temperature: 0,
+            max_tokens: 200,
+            response_format: { type: "json_object" },
+          }),
+        });
+
+        if (scoreRes.ok) {
+          const scoreData = await scoreRes.json();
+          const scoreRaw = JSON.parse(scoreData.choices?.[0]?.message?.content ?? "{}");
+          const scores: number[] = scoreRaw.scores ?? [];
+          scored = toScore.map((p, i) => ({ ...p, qualityScore: scores[i] ?? 3 }));
+        } else {
+          // Scoring failed — accept all that passed local filter with default score
+          scored = toScore.map(p => ({ ...p, qualityScore: 3 }));
+          console.warn(`[ourfable-ai] Scoring call failed, using defaults`);
+        }
+      } catch {
+        scored = toScore.map(p => ({ ...p, qualityScore: 3 }));
+        console.warn(`[ourfable-ai] Scoring exception, using defaults`);
+      }
+    }
+
+    // Keep only prompts scoring >= 4
+    const passing = scored.filter(p => p.qualityScore >= 4);
+    const dropped = PROMPTS_PER_BATCH - passing.length;
+
+    console.log(`[ourfable-ai] Quality: ${passing.length}/${prompts.length} passed (${dropped} replaced with static)`);
+
+    // Fill gaps with static library
+    const staticPrompts = getPromptsForRelationship(
+      member.relationshipKey,
+      family.childName,
+      family.parentNames ?? "their parents"
+    );
+
+    const final: GeneratedPrompt[] = [...passing];
+    let staticIdx = 0;
+    while (final.length < PROMPTS_PER_BATCH && staticIdx < staticPrompts.length) {
+      final.push({
+        text: staticPrompts[staticIdx].text,
+        category: staticPrompts[staticIdx].category,
+        unlocksAtAge: staticPrompts[staticIdx].unlocksAtAge,
+        unlocksAtEvent: staticPrompts[staticIdx].unlocksAtEvent,
+        tone: "reflective",
+      });
+      staticIdx++;
+    }
+
+    // Normalize nulls to undefined
+    const normalized = final.map((p) => ({
       text: p.text,
       category: p.category,
       unlocksAtAge: p.unlocksAtAge ?? undefined,
