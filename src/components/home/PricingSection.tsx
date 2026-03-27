@@ -185,7 +185,16 @@ export function PricingSection() {
         </Reveal>
 
         <Reveal delay={120}>
-          <div style={{ marginTop: 24, padding: "18px 24px", background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <div style={{ marginTop: 16, padding: "16px 24px", background: "rgba(200,168,122,0.06)", border: "1px solid rgba(200,168,122,0.25)", borderRadius: 12, display: "flex", gap: 12, alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+            <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6 }}>
+              <strong style={{ color: "var(--text)" }}>Growing family?</strong>{" "}
+              Add each additional child for <strong style={{ color: "var(--green)" }}>$7/mo</strong> — or $59/yr at the founding rate.
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={160}>
+          <div style={{ marginTop: 12, padding: "18px 24px", background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", gap: 12, alignItems: "flex-start" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--green)", marginTop: 7, flexShrink: 0 }} />
             <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.7 }}>
               <strong style={{ color: "var(--text)" }}>Your vault, always yours.</strong>{" "}

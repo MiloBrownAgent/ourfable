@@ -46,6 +46,22 @@ function contentTypeLabel(type: string): string {
   return type === "voice" ? "Voice memo" : type === "photo" ? "Photo" : type === "video" ? "Video" : "Letter";
 }
 
+function getNextMilestone(dob: string): { age: number; date: Date; daysAway: number } | null {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  const milestones = [13, 18, 21];
+  const now = new Date();
+  for (const age of milestones) {
+    const milestoneDate = new Date(birth);
+    milestoneDate.setFullYear(birth.getFullYear() + age);
+    if (milestoneDate > now) {
+      const daysAway = Math.ceil((milestoneDate.getTime() - now.getTime()) / 86400000);
+      return { age, date: milestoneDate, daysAway };
+    }
+  }
+  return null;
+}
+
 interface Props {
   familyId: string;
   defaultChildName: string;
@@ -54,6 +70,8 @@ interface Props {
   defaultNotifications: Notification[];
   currentSnap?: Snapshot;
   unreadNotifs: Notification[];
+  circleCount?: number;
+  lastDispatchAt?: number;
 }
 
 export default function DashboardChildAware({
@@ -64,20 +82,19 @@ export default function DashboardChildAware({
   defaultNotifications,
   currentSnap,
   unreadNotifs: defaultUnread,
+  circleCount,
+  lastDispatchAt,
 }: Props) {
   const { selectedChild, children } = useChildContext();
 
-  // Child data state (for selected child when 2+ children exist)
   const [childName, setChildName] = useState(defaultChildName);
   const [childDob, setChildDob] = useState(defaultChildDob);
   const [vaultEntries, setVaultEntries] = useState<VaultEntry[]>(defaultVaultEntries);
   const [unreadNotifs, setUnreadNotifs] = useState<Notification[]>(defaultUnread);
   const [loadingChild, setLoadingChild] = useState(false);
 
-  // When selected child changes and there are 2+ children, fetch child-specific data
   useEffect(() => {
     if (children.length < 2 || !selectedChild) {
-      // Single child: use defaults
       setChildName(defaultChildName);
       setChildDob(defaultChildDob);
       setVaultEntries(defaultVaultEntries);
@@ -85,11 +102,8 @@ export default function DashboardChildAware({
       return;
     }
 
-    // Update name/dob immediately from context
     setChildName(selectedChild.childName);
     setChildDob(selectedChild.childDob);
-
-    // Fetch child-specific vault & notifications
     setLoadingChild(true);
     const childId = selectedChild.childId || selectedChild._id;
 
@@ -110,15 +124,19 @@ export default function DashboardChildAware({
     }).catch(() => {}).finally(() => setLoadingChild(false));
   }, [selectedChild, children.length, familyId, defaultChildName, defaultChildDob, defaultVaultEntries, defaultUnread]);
 
-  const { months, days, totalDays, weeks } = calcAge(childDob);
+  const { months, days, totalDays } = calcAge(childDob);
   const childFirst = childName.split(" ")[0];
   const ageLong = formatAgeLong(months, days);
 
   const recentEntries = vaultEntries.slice(0, 2);
   const totalVault = vaultEntries.length;
 
+  const nextMilestone = getNextMilestone(childDob);
+  const milestoneBannerVisible = nextMilestone && nextMilestone.daysAway <= 183;
+
   return (
     <div style={{ opacity: loadingChild ? 0.7 : 1, transition: "opacity 200ms" }}>
+
       {/* ── 1. GREETING HEADER ── */}
       <div style={{
         paddingBottom: 40,
@@ -155,6 +173,31 @@ export default function DashboardChildAware({
         }}>
           {ageLong}
         </p>
+
+        {/* ── MILESTONE COUNTDOWN STRIP ── */}
+        {nextMilestone && (
+          <div style={{
+            marginTop: 14,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 14px",
+            borderRadius: 100,
+            border: "0.5px solid rgba(200,168,122,0.35)",
+            background: "rgba(200,168,122,0.06)",
+          }}>
+            <span style={{ fontSize: 9, color: "var(--gold)", lineHeight: 1 }}>✦</span>
+            <p style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: "0.1em",
+              color: "var(--gold)",
+            }}>
+              {nextMilestone.age} years · {nextMilestone.daysAway.toLocaleString()} days away
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── 2. DAYS COUNTER ── */}
@@ -203,7 +246,39 @@ export default function DashboardChildAware({
         <p style={{ fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
       </div>
 
-      {/* ── 4. VAULT ── */}
+      {/* ── 4. WRITING BLOCK (primary action — moved up) ── */}
+      <div style={{
+        marginBottom: 72,
+        animation: "fadeUp 0.7s var(--spring) 0.3s both",
+      }}>
+        <WritingBlock childFirst={childFirst} familyId={familyId} />
+      </div>
+
+      {/* ── 5. MILESTONE BANNER (within 6 months of a milestone) ── */}
+      {milestoneBannerVisible && nextMilestone && (
+        <div style={{
+          width: "100vw",
+          marginLeft: "calc(-50vw + 50%)",
+          background: "linear-gradient(135deg, #C8A87A 0%, #B8944F 100%)",
+          padding: "20px 24px",
+          textAlign: "center",
+          marginBottom: 0,
+          animation: "fadeUp 0.7s var(--spring) 0.35s both",
+        }}>
+          <p className="font-display" style={{
+            fontSize: "clamp(0.95rem, 2.5vw, 1.15rem)",
+            fontWeight: 400,
+            fontStyle: "italic",
+            color: "#1C2B1E",
+            lineHeight: 1.5,
+          }}>
+            {childFirst} turns {nextMilestone.age} in {nextMilestone.daysAway} days.
+            {" "}Their vault will open.
+          </p>
+        </div>
+      )}
+
+      {/* ── 6. VAULT ── */}
       <div
         style={{
           width: "100vw",
@@ -211,7 +286,7 @@ export default function DashboardChildAware({
           position: "relative",
           background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)",
           padding: "72px 24px 80px",
-          animation: "fadeUp 0.7s var(--spring) 0.3s both",
+          animation: "fadeUp 0.7s var(--spring) 0.4s both",
         }}
       >
         <div style={{
@@ -272,6 +347,7 @@ export default function DashboardChildAware({
                     }}>
                       {contentTypeLabel(e.contentType)}
                       {e.memberRelationship ? ` · ${e.memberRelationship}` : ""}
+                      {e.createdAt ? ` · ${timeAgo(e.createdAt)}` : ""}
                     </p>
                   </div>
                   {e.isSealed && (
@@ -372,16 +448,7 @@ export default function DashboardChildAware({
         </div>
       </div>
 
-      {/* ── 5. WRITING BLOCK ── */}
-      <div style={{
-        marginTop: 64,
-        marginBottom: 64,
-        animation: "fadeUp 0.7s var(--spring) 0.4s both",
-      }}>
-        <WritingBlock childFirst={childFirst} familyId={familyId} />
-      </div>
-
-      {/* ── 6. REMAINING CARDS ── */}
+      {/* ── 7. REMAINING CARDS ── */}
       <div style={{ padding: "0 0 0" }}>
         <Link href={`/${familyId}/outgoings`} className="card-hover-luxury" style={{
           padding: "44px 32px 36px",
@@ -401,6 +468,11 @@ export default function DashboardChildAware({
           <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, fontFamily: "var(--font-body)" }}>
             Share a photo, a milestone, a quiet moment — everyone in {childFirst}&apos;s circle will see it.
           </p>
+          {lastDispatchAt && (
+            <p style={{ fontSize: 11, color: "var(--sage)", marginTop: 10, fontFamily: "var(--font-body)" }}>
+              Last dispatch {timeAgo(lastDispatchAt)}
+            </p>
+          )}
         </Link>
 
         <Link href={`/${familyId}/circle`} className="card-hover-luxury" style={{
@@ -421,6 +493,11 @@ export default function DashboardChildAware({
           <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.6, fontFamily: "var(--font-body)" }}>
             The people who love {childFirst}. Invite grandparents, family, friends to write.
           </p>
+          {circleCount !== undefined && circleCount > 0 && (
+            <p style={{ fontSize: 11, color: "var(--sage)", marginTop: 10, fontFamily: "var(--font-body)" }}>
+              {circleCount} {circleCount === 1 ? "person" : "people"} in {childFirst}&apos;s circle
+            </p>
+          )}
         </Link>
       </div>
 
