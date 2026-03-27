@@ -46,19 +46,14 @@ export function FeaturesSection() {
       </section>
 
       {/* ── PHILOSOPHY ── */}
-      <section style={{ padding: "120px 40px", maxWidth: 760, margin: "0 auto", textAlign: "center" }}>
+      <section style={{ padding: "80px 40px", maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
         <Reveal>
-          <p className="label label-green" style={{ marginBottom: 20 }}>The philosophy</p>
-          <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 4vw, 3.4rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, marginBottom: 28 }}>
-            The invite comes from{" "}
-            <em style={{ color: "var(--green)", fontStyle: "italic" }}>your child,</em>{" "}
-            not from you.
-          </h2>
-          <p style={{ fontSize: 18, lineHeight: 1.85, color: "var(--text-2)", marginBottom: 16, maxWidth: 580, margin: "0 auto 16px" }}>
-            When Grandma gets her invite, the subject line reads: <strong style={{ color: "var(--text)" }}>&ldquo;Hi — it&apos;s me.&rdquo;</strong> She&apos;s not receiving a parent newsletter. She&apos;s receiving a letter from a child.
+          <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "clamp(1.2rem, 2.5vw, 1.6rem)", fontWeight: 600, lineHeight: 1.6, color: "var(--text)", marginBottom: 16 }}>
+            When Grandma gets her invite, the subject line reads:{" "}
+            <em style={{ color: "var(--green)" }}>&ldquo;Hi — it&apos;s me.&rdquo;</em>
           </p>
-          <p style={{ fontSize: 18, lineHeight: 1.85, color: "var(--text-2)", maxWidth: 580, margin: "0 auto" }}>
-            Our Fable is built around the child. Parents are the setup. Everything else belongs to them.
+          <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--text-2)" }}>
+            She&apos;s not receiving a parent newsletter. She&apos;s receiving a letter from a child. Our Fable is built around the child. Parents are the setup. Everything else belongs to them.
           </p>
         </Reveal>
       </section>

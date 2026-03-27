@@ -3,9 +3,9 @@ import { Reveal } from "./Reveal";
 import { Counter } from "./Counter";
 
 const STATS = [
-  { value: 216, suffix: "", label: "World Snapshots by age 18" },
-  { value: 18, suffix: "", label: "Years of memories, sealed" },
-  { value: 1, suffix: "", label: "Vault. Everything in one place." },
+  { value: 216, suffix: "", label: "World Snapshots by the time they turn 18" },
+  { value: 18, suffix: "", label: "Years of memories, sealed in the Vault" },
+  { value: 10, suffix: "+", label: "People in their circle, each telling their story" },
 ];
 
 export function StatsSection() {

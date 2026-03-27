@@ -68,16 +68,7 @@ export function VignettesSection() {
           ))}
         </div>
 
-        <Reveal delay={200}>
-          <div style={{ marginTop: 56, padding: "32px 40px", background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: 16, textAlign: "center", maxWidth: 680, margin: "56px auto 0" }}>
-            <p style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.2rem, 2.5vw, 1.7rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.45, marginBottom: 16 }}>
-              You can&apos;t predict who will still be here when your child is 18.
-            </p>
-            <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.75 }}>
-              Our Fable doesn&apos;t wait. It asks now. Every month. So that when the time comes — no matter what has changed — the people who loved your child from the beginning are still speaking to them.
-            </p>
-          </div>
-        </Reveal>
+
       </section>
 
       {/* ── THE LETTER MOMENT — dark, cinematic ── */}
