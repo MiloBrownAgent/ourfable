@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
 
             // Log dispatch
             await convexMutation("ourfable:createOurFableDispatch", {
-              familyId: family.email,
+              familyId: family.familyId,
               type: "dunning",
               content: "Payment failed dunning email sent",
               sentTo: family.email,

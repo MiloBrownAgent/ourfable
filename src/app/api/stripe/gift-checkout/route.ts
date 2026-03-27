@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
     const session = await getStripe().checkout.sessions.create({
       mode: "payment",
       line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
       success_url: `${BASE_URL}/gift/success?code=${giftCode}&email=${encodeURIComponent(recipientEmail)}`,
       cancel_url: `${BASE_URL}/gift`,
       customer_email: gifterEmail || undefined,
