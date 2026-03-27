@@ -294,7 +294,7 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
           marginTop: 20,
           maxWidth: 480,
         }}>
-          It debuted at #1 on the Billboard Hot 100 the week you arrived.
+          It debuted at #1 on the Billboard Hot 100 the week they arrived.
         </p>
       </section>
 
@@ -420,5 +420,8 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
         </div>
       </div>
     </div>
+  );
+}
+</div>
   );
 }
