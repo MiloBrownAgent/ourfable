@@ -439,6 +439,18 @@ export const storeGeneratedPrompts = internalMutation({
   },
 });
 
+export const clearGeneratedPromptsForMember = internalMutation({
+  args: { memberId: v.id("ourfable_vault_circle") },
+  handler: async (ctx, { memberId }) => {
+    const all = await ctx.db
+      .query("ourfable_vault_generated_prompts")
+      .withIndex("by_memberId_index", (q) => q.eq("memberId", memberId))
+      .collect();
+    for (const p of all) await ctx.db.delete(p._id);
+    console.log(`[ourfable-ai] Cleared ${all.length} generated prompts for member ${memberId}`);
+  },
+});
+
 export const seedFromStaticLibrary = internalMutation({
   args: { memberId: v.id("ourfable_vault_circle"), familyId: v.string() },
   handler: async (ctx, { memberId, familyId }) => {
