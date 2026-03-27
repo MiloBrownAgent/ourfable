@@ -911,153 +911,168 @@ export function getPromptsForRelationship(
 const PROMPT_LIBRARY: Record<string, PromptDef[]> = {
   grandmother: [
     {
-      text: "Tell {childName} a story about when you were growing up. What was one of the most impactful moments of your life — something you'd want them to carry with them?",
-      category: "story",
-      unlocksAtAge: 13,
-    },
-    {
-      text: "Share a photo of yourself when you were young — around {childName}'s age someday — with a few lines about what life was like then. What do you wish someone had told you?",
-      category: "photo",
-      unlocksAtAge: 16,
-    },
-    {
-      text: "Record a voice memo telling {childName} how you'd like to be remembered. What do you want them to know about you — not the grandmother role, but the person you are?",
-      category: "voice",
+      text: "What did {childName}'s nursery smell like the first time you walked in? Describe everything you remember about that room.",
+      category: "letter",
       unlocksAtAge: 18,
     },
     {
-      text: "Write a letter to {childName} for their wedding day. What do you know about love, about making a life with someone, that took you years to understand?",
-      category: "memory",
+      text: "Sing the song you used to sing to {parentNames} when they were little. {childName} should hear it in your voice.",
+      category: "voice",
+      unlocksAtAge: 13,
+    },
+    {
+      text: "What were you doing the exact moment you found out {childName} was coming? Where were you standing? What did you say?",
+      category: "letter",
+      unlocksAtAge: 16,
+    },
+    {
+      text: "Record a video telling {childName} about the house you grew up in. Walk them through it room by room from memory.",
+      category: "video",
+      unlocksAtAge: 18,
+    },
+    {
+      text: "What did your own mother teach you about being a mother? What do you wish she'd told you?",
+      category: "voice",
       unlocksAtEvent: "wedding",
     },
   ],
   grandfather: [
     {
-      text: "Tell {childName} about the work of your life — what you built, what you're proud of, what you'd do differently. What does a life well-lived look like to you?",
-      category: "wisdom",
-      unlocksAtAge: 18,
-    },
-    {
-      text: "Share a photo of yourself with {parentNames} — one that tells a story. Write a sentence or two about what was happening that day.",
-      category: "photo",
-      unlocksAtAge: 13,
-    },
-    {
-      text: "Record a voice memo for {childName}. Tell them one thing about being a person in this world that you wish someone had told you when you were young.",
-      category: "voice",
+      text: "What was the first job you ever had? How old were you, what did it pay, and what did it teach {childName} should know about work?",
+      category: "letter",
       unlocksAtAge: 16,
     },
     {
-      text: "Write {childName} a letter for when they graduate. What advice do you have for someone stepping out into the world for the first time?",
-      category: "memory",
+      text: "Record yourself telling {childName} about the day their parent was born. What was going through your head?",
+      category: "voice",
+      unlocksAtAge: 18,
+    },
+    {
+      text: "What's the best meal you've ever eaten? Who made it, where were you, and why does it still matter?",
+      category: "letter",
+      unlocksAtAge: 13,
+    },
+    {
+      text: "Film yourself showing {childName} how to do something with your hands — tie a knot, fix something, build something. Anything you know how to do.",
+      category: "video",
       unlocksAtEvent: "graduation",
     },
   ],
   great_grandmother: [
     {
-      text: "Record a voice memo for {childName} explaining how you would like them to remember you when you're gone. Speak directly to them — they'll hear your voice someday.",
+      text: "Record yourself saying {childName}'s full name. Then tell them one thing about this family that nobody writes down.",
       category: "voice",
       unlocksAtAge: 18,
     },
     {
-      text: "Tell {childName} about the world as you knew it growing up. What was different? What stayed the same? What do you want them to know about where the family comes from?",
-      category: "story",
+      text: "What did your kitchen smell like when you were young? What was cooking, and who was there?",
+      category: "letter",
       unlocksAtAge: 16,
     },
   ],
   great_grandfather: [
     {
-      text: "Record a voice memo for {childName}. Tell them about the hardest thing you've ever done — and what it taught you.",
-      category: "voice",
+      text: "What's the furthest you've ever been from home? What were you doing there, and did it change you?",
+      category: "letter",
       unlocksAtAge: 18,
     },
     {
-      text: "Tell {childName} one thing about the family — where you came from, what you built, what you want them to carry forward.",
-      category: "story",
+      text: "Record yourself telling {childName} about your father. What kind of man was he?",
+      category: "voice",
       unlocksAtAge: 16,
     },
   ],
   aunt: [
     {
-      text: "Share a photo of you with {parentNames} — the sillier the better — with a story behind it. What do you want {childName} to know about who their parent was before they were a parent?",
-      category: "photo",
+      text: "What was {parentNames} like as a teenager? The stuff they'd never admit to {childName} — tell it anyway.",
+      category: "letter",
+      unlocksAtAge: 16,
+    },
+    {
+      text: "Record a video telling {childName} the funniest story you have about their parent. The one that gets told at every family gathering.",
+      category: "video",
       unlocksAtAge: 13,
     },
     {
-      text: "Write a letter to {childName} for when they're a teenager. What's something you know about growing up that would have been useful at 16?",
-      category: "memory",
-      unlocksAtAge: 16,
+      text: "What do you see in {childName} that reminds you of their parent at that age?",
+      category: "letter",
+      unlocksAtAge: 18,
     },
   ],
   uncle: [
     {
-      text: "Share a photo of you and {parentNames} — something candid, real, from before {childName} was born. Write a sentence about what was happening.",
-      category: "photo",
-      unlocksAtAge: 13,
+      text: "What was {parentNames} like before {childName} existed? Tell {childName} who their parent was when nobody was watching.",
+      category: "letter",
+      unlocksAtAge: 18,
     },
     {
-      text: "Write {childName} a letter for when they graduate. What advice do you actually wish someone had given you?",
-      category: "wisdom",
+      text: "Record yourself giving {childName} the advice you wish someone had given you at 21. Keep it honest.",
+      category: "voice",
       unlocksAtEvent: "graduation",
+    },
+    {
+      text: "Send a photo from before {childName} was born — you and their parent, doing something dumb. Write what was happening.",
+      category: "photo",
+      unlocksAtAge: 13,
     },
   ],
   family_friend: [
     {
-      text: "You've been part of {childName}'s family circle. Submit a photo of you with their parents — with a little backstory. What moment does it capture?",
-      category: "photo",
-      unlocksAtAge: 13,
-    },
-    {
-      text: "Write {childName} something for when they're older. What's one thing you know about life that took you too long to learn?",
-      category: "wisdom",
-      unlocksAtAge: 18,
-    },
-  ],
-  dads_best_friend: [
-    {
-      text: "Submit a photo of you and {parentNames}. Make sure it's age-appropriate — {childName} will see this when they turn 13. Write a little backstory behind the photo.",
-      category: "photo",
-      unlocksAtAge: 13,
-    },
-    {
-      text: "Tell {childName} a story about their dad that he'd probably never tell himself. Keep it real, keep it warm — they'll read this when they're older.",
-      category: "story",
+      text: "Tell {childName} who their parent was before they became someone's parent. The version of them that {childName} will never get to meet.",
+      category: "letter",
       unlocksAtAge: 18,
     },
     {
-      text: "Record a voice memo or write a note for {childName} about what their father was like before he was a dad. What should they know about him?",
+      text: "Record a voice memo telling {childName} about the night you met their parent. Where were you, what happened, and why did you stay friends?",
       category: "voice",
       unlocksAtAge: 16,
     },
   ],
-  moms_best_friend: [
+  dads_best_friend: [
     {
-      text: "Submit a photo of you and {parentNames} — something real, from before {childName} was born. Write a few lines about what was happening.",
+      text: "Tell {childName} the story their dad tells about you — and then tell them what actually happened.",
+      category: "letter",
+      unlocksAtAge: 18,
+    },
+    {
+      text: "Record yourself telling {childName} what their dad was like at 22. The real version, not the cleaned-up one.",
+      category: "voice",
+      unlocksAtAge: 16,
+    },
+    {
+      text: "Send a photo of you and their dad from before {childName} existed. Write one line about why it matters.",
       category: "photo",
       unlocksAtAge: 13,
     },
+  ],
+  moms_best_friend: [
     {
-      text: "Tell {childName} something about their mother that she would never say about herself. What do you see in her that they should know?",
-      category: "story",
+      text: "Tell {childName} something about their mother that she would never say about herself. What does she not see that everyone else does?",
+      category: "letter",
       unlocksAtAge: 18,
+    },
+    {
+      text: "Record yourself telling {childName} about the moment you realized their mom was going to be a great parent.",
+      category: "voice",
+      unlocksAtAge: 16,
     },
   ],
   godparent: [
     {
-      text: "You are {childName}'s godparent. Write them a letter for when they turn 18 — about what that role meant to you, and what you hope for them.",
-      category: "memory",
+      text: "Write {childName} about the moment you were asked to be their godparent. Where were you, what did you feel, and what did you promise yourself?",
+      category: "letter",
       unlocksAtAge: 18,
     },
     {
-      text: "Share something you want {childName} to know about faith, values, or how to be a good person. You can write it, record it, or send a photo — whatever feels right.",
-      category: "wisdom",
+      text: "Record a video telling {childName} what you believe in — not religion necessarily, but what you think matters in a life.",
+      category: "video",
       unlocksAtAge: 16,
     },
   ],
   cousin: [
     {
-      text: "Write {childName} a note for when they're a teenager. What's it like growing up in this family? What do you want them to know about being part of it?",
-      category: "memory",
+      text: "Write {childName} about what it's like growing up in this family — the inside jokes, the traditions, the stuff that makes you all weird in the best way.",
+      category: "letter",
       unlocksAtAge: 13,
     },
   ],

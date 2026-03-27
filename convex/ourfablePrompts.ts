@@ -537,19 +537,19 @@ function buildEmailHtml({
 
         <!-- Wordmark -->
         <tr><td align="center" style="padding-bottom:28px;">
-          <span style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#B8965A;letter-spacing:-0.01em;">Our Fable</span>
+          <span style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</span>
         </td></tr>
 
         <!-- Card -->
         <tr><td style="background:#FFFFFF;border-radius:16px;overflow:hidden;border:1.5px solid #E8E2D8;">
 
           <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td style="background:#B8965A;height:4px;font-size:0;">&nbsp;</td></tr>
+            <tr><td style="background:#4A5E4C;height:4px;font-size:0;">&nbsp;</td></tr>
           </table>
 
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td style="padding:32px 36px 20px;">
-              <p style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#B8965A;margin:0 0 12px;">${childFirst} has a question for you</p>
+              <p style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#4A5E4C;margin:0 0 12px;">${childFirst} has a question for you</p>
               <p style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:#1A1A18;line-height:1.2;margin:0;">Hi, ${recipientFirst}.</p>
             </td></tr>
           </table>
@@ -572,7 +572,7 @@ function buildEmailHtml({
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td style="padding:0 36px 28px;">
               <table cellpadding="0" cellspacing="0">
-                <tr><td style="border-radius:100px;background:#B8965A;">
+                <tr><td style="border-radius:100px;background:#4A5E4C;">
                   <a href="${submitUrl}" style="display:inline-block;padding:${btnPadding};font-size:${btnFontSize};font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.01em;">Record for ${childFirst} &rarr;</a>
                 </td></tr>
               </table>
