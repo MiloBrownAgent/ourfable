@@ -218,10 +218,15 @@ function MemberCard({ member, familyId, activeChildId }: { member: CircleMember;
 }
 
 const REL_OPTIONS = [
+  { label: "Mother", key: "mother" }, { label: "Father", key: "father" },
+  { label: "Stepmother", key: "stepmother" }, { label: "Stepfather", key: "stepfather" },
   { label: "Grandmother", key: "grandmother" }, { label: "Grandfather", key: "grandfather" },
   { label: "Aunt", key: "aunt" }, { label: "Uncle", key: "uncle" },
-  { label: "Family friend", key: "family_friend" }, { label: "Godparent", key: "godparent" },
-  { label: "Cousin", key: "cousin" }, { label: "Other", key: "other" },
+  { label: "Godparent", key: "godparent" }, { label: "Cousin", key: "cousin" },
+  { label: "Family friend", key: "family_friend" },
+  { label: "Father's best friend", key: "fathers_best_friend" },
+  { label: "Mother's best friend", key: "mothers_best_friend" },
+  { label: "Other", key: "other" },
 ];
 
 function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: () => void; onAdded: () => void }) {
