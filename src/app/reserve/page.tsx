@@ -472,7 +472,7 @@ function ReservePageInner() {
           {/* Gift intro */}
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <p style={{ fontSize: 15, color: "var(--text-2)", lineHeight: 1.7 }}>
-              We&apos;ll notify you when gifting is available. Founding member pricing ($79/yr) will apply.
+              We&apos;ll notify you when gifting is available. Founding member rates will apply.
             </p>
           </div>
 
