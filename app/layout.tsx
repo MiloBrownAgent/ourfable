@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import MetaPixel from '@/components/MetaPixel';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -186,7 +187,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        <MetaPixel />
+        {children}
+      </body>
     </html>
   );
 }

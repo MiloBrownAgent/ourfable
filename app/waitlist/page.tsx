@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { trackPixelEvent } from '@/lib/pixel'
 
 export default function WaitlistPage() {
   const [email, setEmail] = useState('')
@@ -35,6 +36,7 @@ export default function WaitlistPage() {
       setStatus('success')
       setEmail('')
       setCount((c) => (c !== null ? c + 1 : c))
+      trackPixelEvent('Lead', { content_name: 'waitlist' })
     } catch (err) {
       setStatus('error')
       setErrorMsg(err instanceof Error ? err.message : 'Something went wrong')
@@ -59,23 +61,19 @@ export default function WaitlistPage() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal-dark text-xs font-body font-bold px-4 py-1.5 rounded-full mb-8 uppercase tracking-wider">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-teal inline-block animate-pulse" />
-          Coming Soon
+          Early Access
         </div>
 
         {/* Headline */}
         <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl text-brand-ink leading-tight max-w-3xl mb-6">
-          Your child is the{' '}
-          <span
-            className="relative inline-block"
-            style={{ color: '#FF6B5A' }}
-          >
-            main character.
-          </span>
+          Their voices,{' '}
+          <span className="text-brand-teal">preserved</span>{' '}
+          for when it matters.
         </h1>
 
         {/* Subhead */}
         <p className="font-body text-lg sm:text-xl text-brand-ink-light max-w-xl mb-10 leading-relaxed">
-          OurFable creates custom AI-illustrated storybooks featuring your family. Upload a photo, pick an adventure, and watch the magic happen.
+          OurFable automatically interviews the people around your child — grandparents, godparents, old friends — one question per month. Their answers go into a private vault your child reads when they&apos;re older.
         </p>
 
         {/* Sign-up form */}
@@ -85,9 +83,9 @@ export default function WaitlistPage() {
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
-              You&apos;re on the list!
+              You&apos;re on the list.
             </div>
-            <p className="text-sm text-brand-ink-muted font-body">We&apos;ll email you the moment OurFable launches.</p>
+            <p className="text-sm text-brand-ink-muted font-body">We&apos;ll be in touch when we launch.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-md mx-auto">
@@ -129,7 +127,7 @@ export default function WaitlistPage() {
         {/* Count */}
         {count !== null && count > 0 && (
           <p className="mt-6 text-sm font-body text-brand-ink-muted">
-            🌟 <strong className="text-brand-ink">{count.toLocaleString()}</strong> famil{count === 1 ? 'y' : 'ies'} already on the list
+            🌟 <strong className="text-brand-ink">{count.toLocaleString()}</strong> famil{count === 1 ? 'y' : 'ies'} already building their vault
           </p>
         )}
 
@@ -137,19 +135,19 @@ export default function WaitlistPage() {
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl w-full text-left">
           {[
             {
-              icon: '📖',
-              title: '12 Illustrated Pages',
-              desc: 'A complete story — your child on every page.',
+              icon: '💬',
+              title: 'One question per month',
+              desc: 'Sent automatically to everyone on the list. No effort from you, no pressure on them.',
             },
             {
-              icon: '⚡',
-              title: 'Ready in Minutes',
-              desc: 'AI-written, illustrated, and delivered fast.',
+              icon: '🔒',
+              title: 'Private vault',
+              desc: 'No one sees the answers until you decide. The vault is yours to open when the time is right.',
             },
             {
-              icon: '📸',
-              title: 'Just One Photo',
-              desc: 'Upload a photo. We handle the rest.',
+              icon: '✍️',
+              title: 'Anyone can do it',
+              desc: 'Grandma doesn\'t need an account. She gets an email, clicks a link, types her answer. That\'s it.',
             },
           ].map((f) => (
             <div key={f.title} className="card flex flex-col gap-3">

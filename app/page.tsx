@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 function EmailCapture({ source = 'landing' }: { source?: string }) {
   const [email, setEmail] = useState('');
@@ -34,8 +34,10 @@ function EmailCapture({ source = 'landing' }: { source?: string }) {
   if (status === 'success') {
     return (
       <div className="flex items-center gap-2 bg-brand-teal-light text-brand-teal-dark px-6 py-3 rounded-full font-bold text-sm font-body">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-        You&apos;re on the list! We&apos;ll be in touch soon.
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        You&apos;re on the list.
       </div>
     );
   }
@@ -67,87 +69,78 @@ function EmailCapture({ source = 'landing' }: { source?: string }) {
 const STEPS = [
   {
     num: '1',
-    title: 'Upload a photo',
-    desc: 'Share a clear photo of your child. Our AI uses it to create their likeness on every page.',
+    title: 'Add the people who matter',
+    desc: 'Grandma. A godparent. An old family friend. Anyone whose voice your child should hear when they\'re older.',
     color: 'teal' as const,
   },
   {
     num: '2',
-    title: 'Choose an adventure',
-    desc: 'Pick a theme, name your hero, and add family, friends, or pets to the story.',
+    title: 'OurFable asks the questions',
+    desc: 'Every month, each person receives one carefully crafted question — tailored to their relationship with your child. No effort from you.',
     color: 'coral' as const,
   },
   {
     num: '3',
-    title: 'Watch the magic',
-    desc: 'Your animated storybook comes alive with cinematic illustrations, page-turn effects, and ambient particles.',
+    title: 'The answers go into the vault',
+    desc: 'Responses are stored privately, building over years into something your child will read when they\'re older. You decide when they get access.',
     color: 'teal' as const,
   },
 ];
 
-const SAMPLE_PAGES = [
-  { image: '/samples/story/page1.jpg', text: 'One magical evening, Lily discovered a tiny glowing door at the base of the old oak tree. Her heart raced with excitement as she reached for the golden handle.' },
-  { image: '/samples/story/page2.jpg', text: 'Through the door lay a wondrous kingdom of floating islands and rainbow bridges. A fox wearing a tiny crown bowed and said, "We\'ve been waiting for you, brave one."' },
-  { image: '/samples/story/page3.jpg', text: 'The bravest part came next — crossing the Wobbly Bridge over the Sparkling River. But Lily wasn\'t afraid. The star creatures lit the way, and she knew she could do it.' },
-  { image: '/samples/story/page4.jpg', text: 'And so, surrounded by all her new friends, Lily danced in the meadow of wildflowers. She\'d found something more precious than any treasure — a place where she truly belonged.' },
-];
-
-const FEATURES = [
-  { icon: '📖', title: '12 Illustrated Pages', desc: 'A complete story with a unique illustration on every page.' },
-  { icon: '✨', title: 'AI-Written Story', desc: 'Powered by advanced AI that crafts engaging, age-appropriate narratives.' },
-  { icon: '🎨', title: '6 Art Styles', desc: 'Watercolor, whimsical, pastel, bold, fantasy, or classic illustration styles.' },
-  { icon: '⚡', title: 'Ready in Minutes', desc: 'Your complete storybook is generated in under 3 minutes.' },
-  { icon: '📸', title: 'One Photo Needed', desc: 'Just one clear photo and our AI handles the rest.' },
-  { icon: '🔒', title: 'Photos Kept Private', desc: 'Your photos are never shared or used for anything else.' },
+const WHAT_GETS_CAPTURED = [
+  { icon: '👶', title: 'The day they first met you', desc: 'What your grandma thought the moment she held you. What your godfather felt in the waiting room.' },
+  { icon: '🌱', title: 'Who they were before you', desc: 'Stories from their own childhood. What they were afraid of. What they wanted to be.' },
+  { icon: '💌', title: 'What they hope for you', desc: 'The advice they\'ve been meaning to give. The things they want you to know about life.' },
+  { icon: '🕰️', title: 'Memories that would otherwise vanish', desc: 'The things no one thinks to write down. The moments that define a family, told in the voices that lived them.' },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: "My daughter's face when she saw herself as a princess in her own book — priceless. She asks to read it every single night.",
-    name: 'Sarah M.',
-    detail: 'Mom of a 4-year-old',
+    quote: "My dad has been answering questions for eight months. He's 74. He wrote about his first job, his parents, the day I was born. I didn't know any of it. My daughter will.",
+    name: 'Rachel K.',
+    detail: 'Mom of a 2-year-old',
   },
   {
-    quote: "My granddaughter lives two states away. I read her OurFable book over FaceTime and she squealed when she saw herself on every page. I've ordered three more for her cousins.",
-    name: 'Linda R.',
-    detail: 'Grandmother of 5',
+    quote: "I'm the one being asked the questions. I cry every time I answer one. I didn't know I had this much to say to her.",
+    name: 'Linda M.',
+    detail: 'Grandmother of 1',
   },
   {
-    quote: "The illustrations are genuinely beautiful. I was expecting generic clip-art, but these look like a real children's book.",
-    name: 'Lauren T.',
-    detail: 'Mom of a 6-year-old',
+    quote: "We lost my father-in-law six months after our son was born. He only got to answer three questions. Those three answers are the most precious thing we own.",
+    name: 'Mark T.',
+    detail: 'Dad of a 3-year-old',
   },
 ];
 
 const FAQS = [
   {
-    q: 'How long does it take to create a book?',
-    a: 'Your personalized storybook is generated in under 3 minutes. You can read it immediately on any device.',
+    q: 'How does OurFable work?',
+    a: 'You add the people in your child\'s life — grandparents, godparents, old friends. OurFable sends each of them one question per month, tailored to their relationship with your child. Their answers are stored in a private vault. You decide when your child reads them.',
   },
   {
-    q: 'What kind of photo should I upload?',
-    a: 'A clear, front-facing photo with good lighting works best. School photos, portrait-style shots, or any well-lit photo where your child is clearly visible.',
+    q: 'Do contributors need to create an account?',
+    a: 'No. They receive an email with one question. They click a link, type their answer, and submit. That\'s it. Nothing to download, nothing to log into.',
   },
   {
-    q: 'Is my child\'s photo safe?',
-    a: 'Absolutely. Photos are used only to generate your book and are never shared, sold, or used for any other purpose. You can delete them at any time.',
+    q: 'What kind of questions do people receive?',
+    a: 'Every question is crafted specifically for the contributor\'s relationship to your child. A grandmother gets different questions than a godparent or an old college friend. Questions cover memory, advice, hopes, stories — the things worth preserving.',
   },
   {
-    q: 'What ages is this for?',
-    a: 'OurFable books are perfect for children ages 2-10. The AI adapts the story complexity and vocabulary to match your child\'s age.',
+    q: 'When does my child get to read the vault?',
+    a: 'You decide. Some parents plan to give access at 18. Some at a milestone birthday. Some when a child leaves home. The vault builds quietly in the background until the moment you choose.',
   },
   {
-    q: 'Can I include other family members or pets?',
-    a: 'Yes! You can mention siblings, parents, grandparents, friends, or pets when describing your story, and they\'ll be woven into the narrative.',
+    q: 'What if someone passes away before my child reads the vault?',
+    a: 'That\'s exactly why OurFable exists. The answers are preserved privately and permanently. Your child will have them regardless of what happens.',
   },
   {
-    q: 'Can I get a printed copy?',
-    a: 'We\'re launching with our animated digital experience first — it\'s the best way to enjoy the story. After your book is created, we\'ll let you know when a premium hardcover option becomes available.',
+    q: 'How much does it cost?',
+    a: 'We\'re in early access. Join the waitlist to be notified when we launch — and to get our founding member pricing.',
   },
 ];
 
-function FAQItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
+function FAQItem({ q, a, defaultOpen = false }: { q: string; a: string; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-b border-brand-border last:border-b-0">
       <button
@@ -166,29 +159,6 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         <p className="text-brand-ink-light text-sm leading-relaxed font-body pb-5 pr-8">{a}</p>
       )}
     </div>
-  );
-}
-
-function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-0.5, 0.5], [5, -5]);
-  const rotateY = useTransform(x, [-0.5, 0.5], [-5, 5]);
-
-  return (
-    <motion.div
-      className={className}
-      style={{ rotateX, rotateY, transformPerspective: 1000 }}
-      onMouseMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        x.set((e.clientX - rect.left) / rect.width - 0.5);
-        y.set((e.clientY - rect.top) / rect.height - 0.5);
-      }}
-      onMouseLeave={() => { x.set(0); y.set(0); }}
-      transition={{ type: 'spring', stiffness: 150, damping: 15 }}
-    >
-      {children}
-    </motion.div>
   );
 }
 
@@ -216,126 +186,6 @@ function SparkleParticles() {
   );
 }
 
-function SampleBookPreview() {
-  const [page, setPage] = useState(0);
-  const [direction, setDirection] = useState(0);
-
-  const paginate = (newPage: number) => {
-    if (newPage === page) return;
-    setDirection(newPage > page ? 1 : -1);
-    setPage(newPage);
-  };
-
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? '15%' : '-15%',
-      rotateY: dir > 0 ? 15 : -15,
-      opacity: 0,
-      scale: 0.95,
-    }),
-    center: { x: 0, rotateY: 0, opacity: 1, scale: 1 },
-    exit: (dir: number) => ({
-      x: dir > 0 ? '-15%' : '15%',
-      rotateY: dir > 0 ? -15 : 15,
-      opacity: 0,
-      scale: 0.95,
-    }),
-  };
-
-  const sampleKenBurns = [
-    { scaleEnd: 1.08, xEnd: -8, yEnd: -4 },
-    { scaleEnd: 1.07, xEnd: 8, yEnd: -4 },
-    { scaleEnd: 1.08, xEnd: -6, yEnd: 6 },
-    { scaleEnd: 1.06, xEnd: 0, yEnd: -6 },
-  ];
-  const kb = sampleKenBurns[page % sampleKenBurns.length];
-
-  return (
-    <motion.div
-      className="bg-white rounded-2xl shadow-xl border border-brand-border overflow-hidden"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="relative overflow-hidden" style={{ perspective: 1200 }}>
-        <AnimatePresence initial={false} custom={direction} mode="wait">
-          <motion.div
-            key={page}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          >
-            <div className="w-full overflow-hidden">
-              <motion.div
-                initial={{ scale: 1, x: 0, y: 0 }}
-                animate={{ scale: kb.scaleEnd, x: kb.xEnd, y: kb.yEnd }}
-                transition={{ duration: 14, ease: 'linear' }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={SAMPLE_PAGES[page].image}
-                  alt={`Sample story page ${page + 1}`}
-                  className="w-full aspect-[4/3] object-cover"
-                />
-              </motion.div>
-            </div>
-            {/* Page curl shadow */}
-            <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/[0.06] to-transparent pointer-events-none" />
-          </motion.div>
-        </AnimatePresence>
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-brand-ink text-xs font-bold px-3 py-1 rounded-full font-body shadow-sm">
-          Page {page + 1} of {SAMPLE_PAGES.length}
-        </div>
-      </div>
-      <div className="p-4 sm:p-8">
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={page}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="font-body text-brand-ink text-sm sm:text-lg leading-relaxed italic"
-          >
-            &ldquo;{SAMPLE_PAGES[page].text}&rdquo;
-          </motion.p>
-        </AnimatePresence>
-        <div className="flex items-center justify-between mt-4 sm:mt-6">
-          <button
-            onClick={() => paginate(Math.max(0, page - 1))}
-            disabled={page === 0}
-            className="btn-secondary text-xs sm:text-sm disabled:opacity-40 min-h-[44px] min-w-[44px] px-3 sm:px-6"
-          >
-            ← <span className="hidden sm:inline">Previous</span>
-          </button>
-          <div className="flex gap-2">
-            {SAMPLE_PAGES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => paginate(i)}
-                className={`h-3 rounded-full transition-all min-w-[12px] ${i === page ? 'bg-brand-teal w-6' : 'bg-gray-200 hover:bg-gray-300 w-3'}`}
-              />
-            ))}
-          </div>
-          <button
-            onClick={() => paginate(Math.min(SAMPLE_PAGES.length - 1, page + 1))}
-            disabled={page === SAMPLE_PAGES.length - 1}
-            className="btn-secondary text-xs sm:text-sm disabled:opacity-40 min-h-[44px] min-w-[44px] px-3 sm:px-6"
-          >
-            <span className="hidden sm:inline">Next </span>→
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// Physical books removed — digital-only launch
-
 export default function Home() {
   return (
     <main className="min-h-screen bg-white overflow-x-hidden">
@@ -349,8 +199,8 @@ export default function Home() {
           <Link href="/auth/login" className="btn-secondary text-xs sm:text-sm py-2 px-3 sm:px-4 min-h-[44px]">
             Sign In
           </Link>
-          <Link href="/auth/signup" className="btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4 min-h-[44px]">
-            Get Started
+          <Link href="/waitlist" className="btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4 min-h-[44px]">
+            Get Early Access
           </Link>
         </div>
       </nav>
@@ -374,9 +224,9 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
-            Turn your child into the
-            <span className="text-brand-teal"> hero</span> of their own
-            <span className="text-brand-coral"> storybook</span>
+            The people who love your child
+            <span className="text-brand-coral"> won&apos;t always be here.</span>
+            <span className="text-brand-teal"> Their voices can be.</span>
           </motion.h1>
           <motion.p
             className="text-brand-ink-light text-base sm:text-xl max-w-lg mx-auto mb-8 sm:mb-10 leading-relaxed font-body"
@@ -384,7 +234,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            Upload one photo and get a beautifully animated, interactive storybook — with cinematic illustrations and page-turn animations — in under 3 minutes.
+            OurFable quietly interviews the people around your child — one question per month — and stores their answers in a vault only your child will read when they&apos;re older.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -404,112 +254,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Book Mockups */}
-      <section className="px-4 pb-12 sm:pb-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative flex flex-col sm:flex-row sm:justify-center sm:items-end gap-4 sm:gap-6">
-            {/* Left card */}
-            <motion.div
-              className="flex-1 max-w-xs mx-auto sm:mx-0"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <TiltCard className="animate-float-1">
-                <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden">
-                  <div className="h-48 sm:h-64 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/samples/underwater-kingdom.jpg" alt="Underwater Kingdom storybook illustration" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-4">
-                    <div className="font-display text-sm font-bold text-brand-ink mb-2">The Ocean Secret</div>
-                    <div className="space-y-1.5">
-                      <div className="h-1.5 bg-gray-100 rounded-full w-full" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
-                    </div>
-                  </div>
-                </div>
-              </TiltCard>
-            </motion.div>
-            {/* Middle card (highlighted) */}
-            <motion.div
-              className="flex-1 max-w-xs mx-auto sm:mx-0 sm:scale-110 sm:z-10"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
-              <TiltCard className="animate-float-2">
-                <div className="bg-white rounded-2xl shadow-xl border-2 border-brand-coral/20 overflow-hidden relative">
-                  <div className="h-48 sm:h-64 overflow-hidden relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/samples/space-adventure.jpg" alt="Space Adventure storybook illustration" className="w-full h-full object-cover" />
-                    <div className="absolute top-3 right-3 bg-brand-coral text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-body">POPULAR</div>
-                  </div>
-                  <div className="p-4">
-                    <div className="font-display text-sm font-bold text-brand-ink mb-2">Journey to the Stars</div>
-                    <div className="space-y-1.5">
-                      <div className="h-1.5 bg-gray-100 rounded-full w-full" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-4/5" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-3/4" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
-                    </div>
-                  </div>
-                  {/* Shimmer overlay */}
-                  <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                    <div className="shimmer-overlay" />
-                  </div>
-                </div>
-              </TiltCard>
-            </motion.div>
-            {/* Right card */}
-            <motion.div
-              className="flex-1 max-w-xs mx-auto sm:mx-0"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <TiltCard className="animate-float-3">
-                <div className="bg-white rounded-2xl shadow-lg border border-brand-border overflow-hidden">
-                  <div className="h-48 sm:h-64 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/samples/dragon-quest.jpg" alt="Dragon Quest storybook illustration" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-4">
-                    <div className="font-display text-sm font-bold text-brand-ink mb-2">The Dragon&apos;s Friend</div>
-                    <div className="space-y-1.5">
-                      <div className="h-1.5 bg-gray-100 rounded-full w-full" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-5/6" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-2/3" />
-                    </div>
-                  </div>
-                </div>
-              </TiltCard>
-            </motion.div>
-          </div>
+      {/* Dispatches */}
+      <section className="px-4 py-12 sm:py-20">
+        <div className="max-w-2xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-5 sm:mb-7 leading-snug">
+              One update. Everyone who matters.
+            </h2>
+            <p className="text-brand-ink-light text-base sm:text-lg leading-relaxed font-body mb-5">
+              Your mom wants photos. Your sister wants videos. Your best friend just wants to know how the baby&apos;s doing. And you&apos;re supposed to remember to send all of it, to all of them, while running on three hours of sleep.
+            </p>
+            <p className="text-brand-ink text-base sm:text-lg leading-relaxed font-body font-semibold mb-5">
+              Not anymore.
+            </p>
+            <p className="text-brand-ink-light text-base sm:text-lg leading-relaxed font-body mb-5">
+              Record a voice memo. Snap a photo. Shoot a quick video. Write a few lines. Then hit send&nbsp;&mdash; once&nbsp;&mdash; and OurFable delivers it to every person in your child&apos;s circle.
+            </p>
+            <p className="text-brand-ink-light text-base sm:text-lg leading-relaxed font-body mb-5">
+              Grandparents. Aunts. Uncles. Godparents. The college friend who&apos;s already obsessed. Everyone gets the update. Nobody gets forgotten.
+            </p>
+            <p className="text-brand-ink text-base sm:text-lg leading-relaxed font-body font-semibold">
+              No group texts. No &ldquo;sorry I forgot to send you that.&rdquo; No guilt.
+            </p>
+          </motion.div>
         </div>
       </section>
 
-      {/* Physical Book Showcase removed — digital-only launch */}
-
-      {/* Social Proof Bar */}
-      <section className="border-y border-brand-border bg-brand-bg-warm">
-        <div className="max-w-3xl mx-auto px-4 py-4 sm:py-5 flex flex-wrap justify-center gap-x-6 sm:gap-x-10 gap-y-2 sm:gap-y-3">
-          <div className="flex items-center gap-2 text-brand-ink-light text-xs sm:text-sm font-semibold font-body">
-            <span className="w-2 h-2 rounded-full bg-brand-teal shrink-0" />
-            Animated digital experience
-          </div>
-          <div className="flex items-center gap-2 text-brand-ink-light text-xs sm:text-sm font-semibold font-body">
-            <span className="w-2 h-2 rounded-full bg-brand-coral shrink-0" />
-            Unique illustrations every time
-          </div>
-          <div className="flex items-center gap-2 text-brand-ink-light text-xs sm:text-sm font-semibold font-body">
-            <span className="w-2 h-2 rounded-full bg-brand-gold shrink-0" />
-            Photos kept private &amp; secure
-          </div>
+      {/* The Problem */}
+      <section className="border-y border-brand-border bg-brand-bg-warm px-4 py-12 sm:py-20">
+        <div className="max-w-2xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-5 sm:mb-7 leading-snug">
+              Grandparents die with their stories untold.
+            </h2>
+            <p className="text-brand-ink-light text-base sm:text-lg leading-relaxed font-body mb-5">
+              Parents mean to record them. They never do. Old friends fade away. In twenty years, children want to know who loved them when they were small — and there is almost nothing left.
+            </p>
+            <p className="text-brand-ink text-base sm:text-lg leading-relaxed font-body font-semibold">
+              OurFable fixes this quietly, automatically, before it&apos;s too late.
+            </p>
+          </motion.div>
         </div>
       </section>
 
@@ -526,7 +320,7 @@ export default function Home() {
             How it works
           </h2>
           <p className="text-brand-ink-muted text-sm sm:text-base font-body">
-            Three simple steps. No artistic skills needed.
+            Set it up once. It runs for years.
           </p>
         </motion.div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
@@ -555,29 +349,44 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Sample Story Preview */}
+      {/* What Gets Captured */}
       <section className="px-4 py-12 sm:py-20 bg-brand-bg-warm border-y border-brand-border">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <motion.div
-            className="text-center mb-8 sm:mb-10"
+            className="text-center mb-8 sm:mb-14"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
             <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
-              Preview a sample story
+              What gets captured
             </h2>
-            <p className="text-brand-ink-muted text-sm sm:text-base font-body">
-              Every book is unique — and animated. Here&apos;s a peek at what yours could look like.
+            <p className="text-brand-ink-muted text-sm sm:text-base font-body max-w-lg mx-auto">
+              Not just memories. The things children actually want to know when they grow up.
             </p>
           </motion.div>
-          <SampleBookPreview />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            {WHAT_GETS_CAPTURED.map((item, i) => (
+              <motion.div
+                key={item.title}
+                className="card"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+              >
+                <div className="text-3xl mb-3">{item.icon}</div>
+                <h3 className="font-display text-base font-bold text-brand-ink mb-2">{item.title}</h3>
+                <p className="text-brand-ink-muted text-sm leading-relaxed font-body">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-12 sm:py-20">
+      <section className="px-4 py-12 sm:py-20">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-8 sm:mb-14"
@@ -587,11 +396,8 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
-              Parents love OurFable
+              Families who started early
             </h2>
-            <div className="flex items-center justify-center gap-1 text-brand-gold text-2xl font-display">
-              ★★★★★
-            </div>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {TESTIMONIALS.map((t, i) => (
@@ -604,7 +410,7 @@ export default function Home() {
                 transition={{ duration: 0.4, delay: i * 0.15 }}
               >
                 <div className="flex gap-1 text-brand-gold text-sm mb-3">★★★★★</div>
-                <p className="text-brand-ink text-sm leading-relaxed font-body mb-4">
+                <p className="text-brand-ink text-sm leading-relaxed font-body mb-4 italic">
                   &ldquo;{t.quote}&rdquo;
                 </p>
                 <div className="border-t border-brand-border-light pt-3">
@@ -617,43 +423,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="px-4 py-12 sm:py-20 max-w-4xl mx-auto">
-        <motion.div
-          className="text-center mb-8 sm:mb-14"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
-            Every book is one of a kind
-          </h2>
-          <p className="text-brand-ink-muted text-sm sm:text-base font-body max-w-lg mx-auto">
-            Powered by the same AI behind the world&apos;s best creative tools, each book is a unique masterpiece.
-          </p>
-        </motion.div>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-          {FEATURES.map((f, i) => (
-            <motion.div
-              key={f.title}
-              className="card text-center sm:text-left"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: i * 0.1 }}
-            >
-              <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">{f.icon}</div>
-              <h3 className="font-display text-sm sm:text-base font-bold text-brand-ink mb-1">{f.title}</h3>
-              <p className="text-brand-ink-muted text-xs sm:text-sm leading-relaxed font-body">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="bg-brand-bg-warm border-y border-brand-border px-4 py-12 sm:py-20">
-        <div className="max-w-3xl mx-auto">
+      {/* FAQ */}
+      <section className="px-4 py-12 sm:py-20 bg-brand-bg-warm border-y border-brand-border">
+        <div className="max-w-2xl mx-auto">
           <motion.div
             className="text-center mb-8 sm:mb-14"
             initial={{ opacity: 0, y: 20 }}
@@ -662,78 +434,14 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
-              Simple, transparent pricing
+              Frequently asked questions
             </h2>
-            <p className="text-brand-ink-muted text-sm sm:text-base font-body">
-              No subscriptions. Pay only when you love what you see.
-            </p>
           </motion.div>
-          <div className="max-w-sm mx-auto">
-            <motion.div
-              className="card text-center relative animate-border-pulse"
-              style={{ borderWidth: '2px' }}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-              whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)', transition: { duration: 0.2 } }}
-            >
-              <div className="inline-flex items-center gap-2 bg-brand-teal-light text-brand-teal px-3 py-1 rounded-full font-bold text-xs uppercase mb-4 font-body">
-                ✨ Animated Digital Storybook
-              </div>
-              <div className="font-display text-3xl sm:text-4xl font-extrabold text-brand-ink mb-1">$14.99</div>
-              <p className="text-brand-ink-muted text-xs sm:text-sm font-body mb-4 sm:mb-6">One-time purchase</p>
-              <ul className="text-xs sm:text-sm text-brand-ink-light font-body space-y-2 text-left mb-4 sm:mb-6">
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  12-page animated storybook
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Cinematic Ken Burns illustrations
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Page-turn animations & ambient effects
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  6 unique art styles to choose from
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Ready in under 3 minutes
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Read on any device, anytime
-                </li>
-              </ul>
-              <Link href="/auth/signup" className="btn-primary w-full text-sm min-h-[44px]">
-                Create Your Book
-              </Link>
-            </motion.div>
+          <div>
+            {FAQS.map((faq, i) => (
+              <FAQItem key={faq.q} q={faq.q} a={faq.a} defaultOpen={i === 0} />
+            ))}
           </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="px-4 py-12 sm:py-20 max-w-2xl mx-auto">
-        <motion.div
-          className="text-center mb-8 sm:mb-14"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="font-display text-2xl sm:text-4xl font-bold text-brand-ink mb-3">
-            Frequently asked questions
-          </h2>
-        </motion.div>
-        <div>
-          {FAQS.map((faq) => (
-            <FAQItem key={faq.q} q={faq.q} a={faq.a} />
-          ))}
         </div>
       </section>
 
@@ -748,7 +456,7 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            Ready to create something magical?
+            Start building the vault.
           </motion.h2>
           <motion.p
             className="text-white/80 text-base sm:text-lg font-body mb-8 max-w-md mx-auto"
@@ -757,7 +465,7 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
-            Join thousands of parents making bedtime unforgettable. Get early access today.
+            The best time to start was the day your child was born. The second best time is now.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -780,11 +488,11 @@ export default function Home() {
                 <span className="text-brand-ink-muted text-sm font-body">.ai</span>
               </Link>
               <p className="text-brand-ink-muted text-xs sm:text-sm font-body mt-2 max-w-xs">
-                Animated, AI-powered storybooks that make your child the hero of their own adventure.
+                A private vault of family voices, built one question at a time, for the child who will read it someday.
               </p>
             </div>
             <div className="flex flex-wrap justify-center sm:justify-end gap-x-6 sm:gap-x-8 gap-y-3 text-sm font-body">
-              <Link href="/auth/signup" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Create a Book</Link>
+              <Link href="/waitlist" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Get Early Access</Link>
               <Link href="/auth/login" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Sign In</Link>
               <Link href="/privacy" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Privacy</Link>
               <Link href="/terms" className="text-brand-ink-light hover:text-brand-teal transition-colors min-h-[44px] flex items-center">Terms</Link>
