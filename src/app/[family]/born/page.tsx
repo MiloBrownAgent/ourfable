@@ -37,7 +37,7 @@ function buildMonthRange(dob: string): Array<{ year: number; month: number }> {
     result.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
     cur.setMonth(cur.getMonth() + 1);
   }
-  return result.reverse();
+  return result;
 }
 
 interface BorndayData {

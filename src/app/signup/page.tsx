@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import SignupClient from "./SignupClient";
 
-// Signup is not available yet — redirect to waitlist
 export default function SignupPage() {
-  redirect("/reserve");
+  return (
+    <Suspense>
+      <SignupClient />
+    </Suspense>
+  );
 }

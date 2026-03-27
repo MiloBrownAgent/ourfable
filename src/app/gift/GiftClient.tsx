@@ -268,17 +268,24 @@ export default function GiftClient() {
           </form>
         </div>
 
-        {/* Features */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 56 }}>
-          {FEATURES.map(f => {
+        {/* Features — pillar layout */}
+        <div style={{ borderTop: "1px solid var(--border)", marginBottom: 56 }}>
+          {FEATURES.map((f, i) => {
             const Icon = f.icon;
             return (
-              <div key={f.title} className="card" style={{ padding: "28px 24px" }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--green-light)", border: "1px solid var(--green-border)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-                  <Icon size={18} color="var(--green)" strokeWidth={1.75} />
+              <div key={f.title} style={{
+                display: "grid",
+                gridTemplateColumns: "160px 1fr",
+                gap: "0 40px",
+                padding: "28px 0",
+                borderBottom: "1px solid var(--border)",
+                alignItems: "start",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Icon size={16} color="var(--green)" strokeWidth={1.75} />
+                  <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: 17, fontWeight: 700, margin: 0 }}>{f.title}</h3>
                 </div>
-                <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{f.title}</h3>
-                <p style={{ fontSize: 13, lineHeight: 1.75, color: "var(--text-2)" }}>{f.body}</p>
+                <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--text-2)", margin: 0 }}>{f.body}</p>
               </div>
             );
           })}

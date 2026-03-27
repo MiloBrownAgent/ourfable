@@ -261,7 +261,7 @@ function LoginForm() {
           <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--border)", textAlign: "center" }}>
             <p style={{ fontSize: 13, color: "var(--text-3)" }}>
               Don&apos;t have an account?{" "}
-              <Link href="/reserve" style={{ color: "var(--green)", textDecoration: "none" }}>Join the waitlist</Link>
+              <Link href="/signup" style={{ color: "var(--green)", textDecoration: "none" }}>Sign up</Link>
             </p>
           </div>
         </div>
