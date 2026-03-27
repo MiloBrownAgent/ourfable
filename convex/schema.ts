@@ -60,6 +60,7 @@ export default defineSchema({
     timezone: v.string(),
     plan: v.string(),
     createdAt: v.number(),
+    testIntervalMinutes: v.optional(v.number()), // test mode: override 30-day prompt interval
     stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
     borndayData: v.optional(v.object({

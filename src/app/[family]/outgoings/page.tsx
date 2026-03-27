@@ -1,8 +1,9 @@
 "use client";
 import { use, useEffect, useState } from "react";
-import { Send, ChevronDown, ChevronUp, Check, Users, User, Loader2, Sparkles, ArrowRight } from "lucide-react";
+import { Send, ChevronDown, ChevronUp, Check, Users, User, Loader2, Sparkles, ArrowRight, Paperclip, X } from "lucide-react";
 import Link from "next/link";
 import { useChildContext } from "@/components/ChildContext";
+import FileUpload, { UploadedFile } from "@/components/FileUpload";
 
 interface CircleMember {
   _id: string;
@@ -53,9 +54,32 @@ function OutgoingCard({ item }: { item: Outgoing }) {
       </button>
       {expanded && (
         <div style={{ padding: "0 24px 24px", borderTop: "1px solid var(--border)" }}>
-          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 16, fontWeight: 300, lineHeight: 1.9, color: "var(--text-2)", paddingTop: 20, whiteSpace: "pre-wrap" }}>
+          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 16, fontWeight: 300, lineHeight: 1.9, color: "var(--text-2)", paddingTop: 20, whiteSpace: "pre-wrap", marginBottom: item.mediaUrls?.length ? 16 : 0 }}>
             {item.body}
           </p>
+          {item.mediaUrls && item.mediaUrls.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {item.mediaUrls.map((url, i) => {
+                if (item.mediaType === "photo") {
+                  return <img key={i} src={url} alt="Dispatch photo" style={{ maxWidth: "100%", borderRadius: 10, display: "block" }} />;
+                }
+                if (item.mediaType === "voice") {
+                  return (
+                    <div key={i} style={{ padding: "12px 16px", background: "var(--bg-2)", borderRadius: 10, border: "1px solid var(--border)" }}>
+                      <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>🎙 Voice memo</p>
+                      <audio controls src={url} style={{ width: "100%", height: 36 }} />
+                    </div>
+                  );
+                }
+                if (item.mediaType === "video") {
+                  return (
+                    <video key={i} controls src={url} style={{ maxWidth: "100%", borderRadius: 10, display: "block" }} />
+                  );
+                }
+                return <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "var(--sage)" }}>View attachment</a>;
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -116,6 +140,8 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
   // Compose state
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
+  const [showAttach, setShowAttach] = useState(false);
   const [sentToAll, setSentToAll] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
@@ -167,14 +193,17 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
     setSending(true);
     setSendError("");
     try {
-      // Save to Convex first
       const memberIds = sentToAll ? undefined : Array.from(selectedIds);
+      const mediaUrls = attachedFiles.map(f => f.r2Url);
+      const mediaType = attachedFiles.length > 0 ? attachedFiles[0].mediaType : undefined;
+
+      // Save to Convex first
       await fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           path: "ourfable:createOutgoing",
-          args: { familyId, subject, body, sentToAll, sentToMemberIds: memberIds, sentByName: parentNames || "Your family", recipientCount },
+          args: { familyId, subject, body, sentToAll, sentToMemberIds: memberIds, sentByName: parentNames || "Your family", recipientCount, mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined, mediaType },
           type: "mutation",
         }),
       });
@@ -183,7 +212,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
       const res = await fetch(`/api/ourfable/send-outgoing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ familyId, subject, messageBody: body, sentToAll, memberIds, sentByName: parentNames || "Your family" }),
+        body: JSON.stringify({ familyId, subject, messageBody: body, sentToAll, memberIds, sentByName: parentNames || "Your family", mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined, mediaType }),
       });
       const data = await res.json();
 
@@ -192,6 +221,8 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
       setSent({ count: data.sent, total: data.total });
       setSubject("");
       setBody("");
+      setAttachedFiles([]);
+      setShowAttach(false);
       setSelectedIds(new Set());
       setSentToAll(true);
       await loadData();
@@ -395,6 +426,47 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
                       </button>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            {/* Media attachments */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: showAttach ? 16 : 0 }}>
+                <button
+                  onClick={() => setShowAttach(v => !v)}
+                  style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--text-3)", padding: 0, fontFamily: "inherit" }}
+                >
+                  <Paperclip size={14} strokeWidth={1.5} />
+                  {attachedFiles.length > 0 ? `${attachedFiles.length} file${attachedFiles.length > 1 ? "s" : ""} attached` : "Add photo, video, or voice memo"}
+                </button>
+                {attachedFiles.length > 0 && (
+                  <button onClick={() => setAttachedFiles([])} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", padding: 0 }}>
+                    <X size={14} strokeWidth={2} />
+                  </button>
+                )}
+              </div>
+              {showAttach && (
+                <FileUpload
+                  familyId={familyId}
+                  contributionType="dispatch"
+                  maxFiles={5}
+                  onUploadComplete={(files) => {
+                    setAttachedFiles(prev => [...prev, ...files]);
+                    setShowAttach(false);
+                  }}
+                />
+              )}
+              {attachedFiles.length > 0 && !showAttach && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  {attachedFiles.map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "var(--sage-dim)", border: "1px solid rgba(107,143,111,0.25)", borderRadius: 8, fontSize: 12, color: "var(--sage)" }}>
+                      {f.mediaType === "photo" ? "📷" : f.mediaType === "video" ? "🎥" : "🎙"} {f.fileName}
+                      <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-3)", lineHeight: 1 }}>
+                        <X size={11} strokeWidth={2} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

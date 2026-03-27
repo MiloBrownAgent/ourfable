@@ -132,6 +132,7 @@ export const sendNextPrompt = internalAction({
         familyId,
         promptIndex,
         siteUrl: getOurFableUrl((family as { siteUrl?: string }).siteUrl),
+        isTestMode: !!(family as { testIntervalMinutes?: number }).testIntervalMinutes,
       });
     } else if (!member.email) {
       console.log(`[ourfable] ${member.name} has no email — recording miss, chain continues`);
@@ -152,9 +153,12 @@ export const sendNextPrompt = internalAction({
       });
     }
 
-    // 5. Schedule the NEXT prompt — regardless of whether this one succeeded
-    // The chain must continue. If email failed, next month's will retry.
-    const nextFireAt = Date.now() + PROMPT_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+    // 5. Schedule the NEXT prompt — check for test mode interval
+    const testMinutes = (family as { testIntervalMinutes?: number }).testIntervalMinutes;
+    const nextIntervalMs = testMinutes
+      ? testMinutes * 60 * 1000
+      : PROMPT_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+    const nextFireAt = Date.now() + nextIntervalMs;
     await ctx.scheduler.runAt(
       nextFireAt,
       internal.ourfablePrompts.sendNextPrompt,
@@ -165,7 +169,8 @@ export const sendNextPrompt = internalAction({
       }
     );
 
-    console.log(`[ourfable] Sent prompt ${promptIndex} to ${member.name}, next scheduled in ${PROMPT_INTERVAL_DAYS}d`);
+    const intervalDesc = testMinutes ? `${testMinutes}min (TEST MODE)` : `${PROMPT_INTERVAL_DAYS}d`;
+    console.log(`[ourfable] Sent prompt ${promptIndex} to ${member.name}, next scheduled in ${intervalDesc}`);
   },
 });
 
@@ -330,6 +335,54 @@ export const getMemberHistory = query({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TEST MODE: Speed up prompt interval for testing
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const setTestMode = mutation({
+  args: {
+    familyId: v.string(),
+    intervalMinutes: v.optional(v.number()), // pass null/undefined to disable test mode
+  },
+  handler: async (ctx, { familyId, intervalMinutes }) => {
+    const family = await ctx.db
+      .query("ourfable_vault_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family) throw new Error("Family not found");
+
+    if (intervalMinutes !== undefined && intervalMinutes !== null) {
+      await ctx.db.patch(family._id, { testIntervalMinutes: intervalMinutes });
+      console.log(`[ourfable] Test mode ON for ${familyId}: ${intervalMinutes} min intervals`);
+      return { testMode: true, intervalMinutes };
+    } else {
+      await ctx.db.patch(family._id, { testIntervalMinutes: undefined });
+      console.log(`[ourfable] Test mode OFF for ${familyId}: back to 30-day intervals`);
+      return { testMode: false };
+    }
+  },
+});
+
+// Fire the next prompt for a specific member immediately (for testing)
+export const firePromptNow = mutation({
+  args: {
+    memberId: v.id("ourfable_vault_circle"),
+    familyId: v.string(),
+    promptIndex: v.optional(v.number()),
+  },
+  handler: async (ctx, { memberId, familyId, promptIndex }) => {
+    const nextIndex = promptIndex ?? 0;
+
+    await ctx.scheduler.runAfter(0, internal.ourfablePrompts.sendNextPrompt, {
+      memberId,
+      familyId,
+      promptIndex: nextIndex,
+    });
+
+    return { fired: true, promptIndex: nextIndex };
+  },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // EMAIL SENDER
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -340,6 +393,7 @@ async function sendPromptEmail({
   familyId,
   promptIndex,
   siteUrl,
+  isTestMode = false,
 }: {
   member: { name: string; email: string; relationshipKey: string };
   family: { childName: string; parentNames?: string | null; childEmailAlias?: string | null };
@@ -347,6 +401,7 @@ async function sendPromptEmail({
   familyId: string;
   promptIndex: number;
   siteUrl: string;
+  isTestMode?: boolean;
 }): Promise<boolean> {
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
@@ -391,7 +446,7 @@ async function sendPromptEmail({
           ? `${childFirst} <${family.childEmailAlias}>`
           : `${childFirst} via Our Fable <hello@ourfable.ai>`,
       to: member.email,
-      subject: `${childFirst} has a question for you`,
+      subject: isTestMode ? `[TEST] ${childFirst} has a question for you` : `${childFirst} has a question for you`,
       html,
       reply_to: family.childEmailAlias ?? `hello@ourfable.ai`,
       tags: [
