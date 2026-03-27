@@ -551,15 +551,6 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
 
       {/* === FOOTER === */}
       <div style={{ textAlign: "center", paddingBottom: 80, paddingTop: 20 }}>
-        <p style={{
-          fontSize: 13,
-          color: "var(--text-3)",
-          lineHeight: 1.7,
-          fontStyle: "italic",
-          marginBottom: 24,
-        }}>
-          This page is permanent. It will be here when you read it.
-        </p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
           <div style={{ width: 40, height: 1, background: "var(--gold-border)" }} />
           <span className="font-display" style={{ fontSize: 13, color: "var(--gold)", letterSpacing: "0.18em", fontWeight: 700, textTransform: "uppercase" }}>
