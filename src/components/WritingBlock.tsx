@@ -30,6 +30,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
   // Voice recording
   const [recording, setRecording] = useState(false)
+  const [recordingVideo, setRecordingVideo] = useState(false)
   const [recorderError, setRecorderError] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -39,6 +40,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const videoCameraRef = useRef<HTMLVideoElement | null>(null)
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
 
   // Dispatch
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
@@ -88,8 +91,36 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop()
     setRecording(false)
+    setRecordingVideo(false)
     if (timerRef.current) clearInterval(timerRef.current)
+    if (videoCameraRef.current) videoCameraRef.current.srcObject = null
   }, [])
+
+  const startVideoRecording = useCallback(async () => {
+    setRecorderError('')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      if (videoCameraRef.current) { videoCameraRef.current.srcObject = stream; videoCameraRef.current.play() }
+      const recorder = new MediaRecorder(stream)
+      chunksRef.current = []
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop())
+        if (videoCameraRef.current) videoCameraRef.current.srcObject = null
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+        setVideoBlob(blob)
+        setVideo({ name: `video-${Date.now()}.webm` })
+        setAudioDuration(recordingTime)
+      }
+      mediaRecorderRef.current = recorder
+      recorder.start()
+      setRecordingVideo(true)
+      setRecordingTime(0)
+      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
+    } catch {
+      setRecorderError('Camera access denied. Please allow access in your browser settings.')
+    }
+  }, [recordingTime])
 
   const removeAudio = () => {
     setAudioBlob(null)
@@ -159,8 +190,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
   const getContentType = (): string => {
     if (audioBlob) return 'voice'
+    if (videoBlob || video) return 'video'
     if (photos.length > 0) return 'photo'
-    if (video) return 'video'
     return 'letter'
   }
 
@@ -229,8 +260,13 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         boxShadow: focused ? '0 0 12px rgba(74,94,76,0.25)' : 'none',
       }} />
 
+      {/* Video camera preview */}
+      {recordingVideo && (
+        <video ref={videoCameraRef} muted style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block' }} />
+      )}
+
       {/* Recording overlay */}
-      {recording && (
+      {(recording || recordingVideo) && (
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -261,7 +297,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
             {formatTime(recordingTime)}
           </span>
           <span style={{ fontSize: 12, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Recording...
+            {recordingVideo ? 'Recording video...' : 'Recording voice...'}
           </span>
           <button
             onClick={stopRecording}
@@ -405,7 +441,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         {[
           { label: 'Voice', icon: '🎙', onClick: () => audioBlob ? undefined : startRecording() },
           { label: 'Photo', icon: '📷', onClick: () => photoRef.current?.click() },
-          { label: 'Video', icon: '🎥', onClick: () => videoRef.current?.click() },
+          { label: 'Video', icon: '🎥', onClick: () => videoBlob ? undefined : startVideoRecording() },
         ].map(btn => (
           <button key={btn.label} onClick={btn.onClick} style={{
             display: 'inline-flex',
