@@ -1,6 +1,6 @@
 "use client";
-import { use, useEffect, useState, useRef } from "react";
-import { Check, Upload, X } from "lucide-react";
+import { use, useEffect, useState, useRef, useCallback } from "react";
+import { Check, Upload, X, Mic, Video, Square } from "lucide-react";
 import Image from "next/image";
 
 // All Convex calls go through /api/ourfable/data proxy
@@ -111,6 +111,81 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
   const [caption, setCaption] = useState("");
   const [voiceFile, setVoiceFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+
+  // In-browser recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordingType, setRecordingType] = useState<"voice" | "video" | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+
+  const startRecording = useCallback(async (type: "voice" | "video") => {
+    try {
+      const constraints = type === "voice"
+        ? { audio: true }
+        : { video: { facingMode: "user" }, audio: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+
+      if (type === "video" && videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = stream;
+        videoPreviewRef.current.play();
+      }
+
+      const mimeType = type === "voice" ? "audio/webm;codecs=opus" : "video/webm";
+      const recorder = MediaRecorder.isTypeSupported(mimeType)
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+        const blobType = type === "voice" ? "audio/webm" : "video/webm";
+        const blob = new Blob(chunksRef.current, { type: blobType });
+        setRecordedBlob(blob);
+        setRecordingType(type);
+        // Convert blob to File and set the appropriate state
+        const ext = type === "voice" ? "webm" : "webm";
+        const file = new File([blob], `${type}-${Date.now()}.${ext}`, { type: blobType });
+        if (type === "voice") setVoiceFile(file);
+        else setVideoFile(file);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+      setRecordingType(type);
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch {
+      alert(type === "voice"
+        ? "Microphone access denied. Please allow access in your browser settings."
+        : "Camera access denied. Please allow camera and microphone access in your browser settings."
+      );
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+  }, []);
+
+  const discardRecording = useCallback(() => {
+    setRecordedBlob(null);
+    setRecordingType(null);
+    setRecordingTime(0);
+    setVoiceFile(null);
+    setVideoFile(null);
+  }, []);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -554,15 +629,72 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                 borderRadius: 14, padding: "20px 22px",
               }}>
                 <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.7 }}>
-                  Record a voice memo on your phone and upload it here. Your voice — preserved exactly as it sounds today.
+                  Your voice — preserved exactly as it sounds today. Hit record and just talk.
                 </p>
               </div>
-              <FileDropZone
-                accept=".m4a,.mp3,.wav,.ogg,audio/*"
-                label="Tap to upload your voice memo"
-                note=".m4a · .mp3 · .wav · .ogg"
-                onFile={setVoiceFile}
-              />
+
+              {/* Recording controls */}
+              {isRecording && recordingType === "voice" ? (
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
+                  background: "var(--card)", border: "1.5px solid var(--green-border)",
+                  borderRadius: 14, padding: "28px 20px",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#E07070", animation: "pulse 1.5s ease infinite" }} />
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 20, fontWeight: 600, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{formatTime(recordingTime)}</span>
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--text-3)" }}>Recording…</p>
+                  <button onClick={stopRecording} style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "12px 24px", borderRadius: 100,
+                    background: "#E07070", border: "none", color: "#fff",
+                    fontSize: 14, fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <Square size={12} fill="#fff" /> Stop recording
+                  </button>
+                </div>
+              ) : voiceFile && !isRecording ? (
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+                  background: "var(--card)", border: "1.5px solid var(--green-border)",
+                  borderRadius: 14, padding: "24px 20px",
+                }}>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--green-light)", border: "1.5px solid var(--green-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Check size={22} color="var(--green)" strokeWidth={2} />
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)" }}>Voice memo recorded</p>
+                  {recordingTime > 0 && <p style={{ fontSize: 12, color: "var(--text-3)" }}>{formatTime(recordingTime)}</p>}
+                  <button onClick={discardRecording} style={{
+                    fontSize: 12, color: "var(--text-3)", background: "none",
+                    border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                  }}>
+                    <X size={12} /> Discard and re-record
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <button onClick={() => startRecording("voice")} style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    padding: "18px 24px", borderRadius: 14,
+                    background: "var(--card)", border: "1.5px solid var(--border)",
+                    cursor: "pointer", fontSize: 15, fontWeight: 500, color: "var(--text)",
+                    transition: "all 180ms",
+                  }}>
+                    <Mic size={18} color="var(--green)" strokeWidth={1.5} /> Record a voice memo
+                  </button>
+                  <div style={{ textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "var(--text-4)", marginBottom: 8 }}>or upload a file</p>
+                  </div>
+                  <FileDropZone
+                    accept=".m4a,.mp3,.wav,.ogg,audio/*"
+                    label="Upload a voice memo"
+                    note=".m4a · .mp3 · .wav · .ogg"
+                    onFile={setVoiceFile}
+                  />
+                </div>
+              )}
+              <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
             </div>
           )}
 
@@ -577,12 +709,71 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                   A video message — your face, your voice, this moment. {childFirst} will watch it when the time comes.
                 </p>
               </div>
-              <FileDropZone
-                accept=".mp4,.mov,video/*"
-                label="Tap to upload a video"
-                note=".mp4 · .mov · max 100MB"
-                onFile={setVideoFile}
-              />
+
+              {/* Video recording controls */}
+              {isRecording && recordingType === "video" ? (
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
+                  background: "var(--card)", border: "1.5px solid var(--green-border)",
+                  borderRadius: 14, padding: "20px", overflow: "hidden",
+                }}>
+                  <video ref={videoPreviewRef} muted playsInline style={{
+                    width: "100%", maxHeight: 280, borderRadius: 10,
+                    background: "#000", display: "block", transform: "scaleX(-1)",
+                  }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#E07070", animation: "pulse 1.5s ease infinite" }} />
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 20, fontWeight: 600, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{formatTime(recordingTime)}</span>
+                  </div>
+                  <button onClick={stopRecording} style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "12px 24px", borderRadius: 100,
+                    background: "#E07070", border: "none", color: "#fff",
+                    fontSize: 14, fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <Square size={12} fill="#fff" /> Stop recording
+                  </button>
+                </div>
+              ) : videoFile && !isRecording ? (
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+                  background: "var(--card)", border: "1.5px solid var(--green-border)",
+                  borderRadius: 14, padding: "24px 20px",
+                }}>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--green-light)", border: "1.5px solid var(--green-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Check size={22} color="var(--green)" strokeWidth={2} />
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)" }}>Video recorded</p>
+                  {recordingTime > 0 && <p style={{ fontSize: 12, color: "var(--text-3)" }}>{formatTime(recordingTime)}</p>}
+                  <button onClick={discardRecording} style={{
+                    fontSize: 12, color: "var(--text-3)", background: "none",
+                    border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                  }}>
+                    <X size={12} /> Discard and re-record
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <button onClick={() => startRecording("video")} style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    padding: "18px 24px", borderRadius: 14,
+                    background: "var(--card)", border: "1.5px solid var(--border)",
+                    cursor: "pointer", fontSize: 15, fontWeight: 500, color: "var(--text)",
+                    transition: "all 180ms",
+                  }}>
+                    <Video size={18} color="var(--green)" strokeWidth={1.5} /> Record a video message
+                  </button>
+                  <div style={{ textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "var(--text-4)", marginBottom: 8 }}>or upload a file</p>
+                  </div>
+                  <FileDropZone
+                    accept=".mp4,.mov,video/*"
+                    label="Upload a video"
+                    note=".mp4 · .mov · max 100MB"
+                    onFile={setVideoFile}
+                  />
+                </div>
+              )}
             </div>
           )}
 
