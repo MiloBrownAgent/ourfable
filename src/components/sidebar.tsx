@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
   Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
-  ChevronDown, Check, Plus, Mail, Cake,
+  ChevronDown, Check, Plus, Mail, Cake, PackageOpen,
 } from "lucide-react";
 import { useChildContext, type Child } from "@/components/ChildContext";
 
