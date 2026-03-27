@@ -96,7 +96,7 @@ function UpgradePrompt({ childName }: { childName: string }) {
         Dispatches
       </h2>
       <p style={{ fontFamily: "var(--font-body)", fontSize: 15, lineHeight: 1.65, color: "var(--text-2)", maxWidth: 380, margin: "0 auto 8px" }}>
-        Send photos, milestones, and updates from {childName} directly to your circle — beautiful emails they&apos;ll keep forever.
+        Send photos, updates, and moments to {childName}&apos;s circle — beautiful emails they&apos;ll keep forever.
       </p>
       <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, maxWidth: 380, margin: "0 auto 28px" }}>
         Dispatches are available on <strong style={{ color: "var(--sage)" }}>Our Fable+</strong>.
@@ -333,10 +333,10 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
         </div>
         <div>
           <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>
-            Updates from {childName}
+            Dispatches
           </h1>
           <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2, lineHeight: 1.5 }}>
-            Send photos, videos, letters, or moments to your circle — straight from {childName}.
+            Share a photo, video, or update with everyone in {childName}&apos;s circle.
           </p>
         </div>
       </div>
@@ -429,7 +429,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
               <input
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
-                placeholder={`Something from ${childName}…`}
+                placeholder={`A subject line…`}
                 className="input"
                 style={{ fontFamily: "var(--font-cormorant)", fontSize: 17 }}
               />
