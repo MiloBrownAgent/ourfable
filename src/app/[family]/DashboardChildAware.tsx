@@ -157,50 +157,22 @@ export default function DashboardChildAware({
         </p>
       </div>
 
-      {/* ── 2. WRITING BLOCK ── */}
-      <div style={{
-        marginBottom: 64,
-        animation: "fadeUp 0.7s var(--spring) 0.1s both",
-      }}>
-        <WritingBlock childFirst={childFirst} familyId={familyId} />
-      </div>
-
-      {/* ── 3. DAYS COUNTER ── */}
+      {/* ── 2. DAYS COUNTER ── */}
       <div style={{
         textAlign: "center",
         padding: "16px 0 64px",
-        animation: "fadeUp 0.7s var(--spring) 0.2s both",
+        animation: "fadeUp 0.7s var(--spring) 0.1s both",
       }}>
         <CountUpNumber target={totalDays} label={"days of " + childFirst} />
       </div>
 
-      {/* ── 4. STATS ROW ── */}
-      <div style={{
-        textAlign: "center",
-        marginBottom: 64,
-        animation: "fadeUp 0.7s var(--spring) 0.25s both",
-      }}>
-        <p style={{
-          fontFamily: "var(--font-body)",
-          fontSize: 11,
-          letterSpacing: "0.16em",
-          color: "var(--text-3)",
-        }}>
-          <span>{months} month{months !== 1 ? "s" : ""}</span>
-          <span style={{ color: "var(--gold)", margin: "0 10px" }}>·</span>
-          <span>{weeks} week{weeks !== 1 ? "s" : ""}</span>
-          <span style={{ color: "var(--gold)", margin: "0 10px" }}>·</span>
-          <span>{totalDays} day{totalDays !== 1 ? "s" : ""}</span>
-        </p>
-      </div>
-
-      {/* ── 5. PULL QUOTE ── */}
+      {/* ── 3. PULL QUOTE ── */}
       <div style={{
         padding: "0 0 56px",
         textAlign: "center",
         maxWidth: 480,
         margin: "0 auto 8px",
-        animation: "fadeUp 0.7s var(--spring) 0.3s both",
+        animation: "fadeUp 0.7s var(--spring) 0.2s both",
       }}>
         <div style={{
           width: 48,
@@ -231,7 +203,7 @@ export default function DashboardChildAware({
         <p style={{ fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
       </div>
 
-      {/* ── 6. VAULT ── */}
+      {/* ── 4. VAULT ── */}
       <div
         style={{
           width: "100vw",
@@ -239,7 +211,7 @@ export default function DashboardChildAware({
           position: "relative",
           background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)",
           padding: "72px 24px 80px",
-          animation: "fadeUp 0.7s var(--spring) 0.35s both",
+          animation: "fadeUp 0.7s var(--spring) 0.3s both",
         }}
       >
         <div style={{
@@ -400,8 +372,17 @@ export default function DashboardChildAware({
         </div>
       </div>
 
-      {/* ── 7. REMAINING CARDS ── */}
-      <div style={{ padding: "64px 0 0" }}>
+      {/* ── 5. WRITING BLOCK ── */}
+      <div style={{
+        marginTop: 64,
+        marginBottom: 64,
+        animation: "fadeUp 0.7s var(--spring) 0.4s both",
+      }}>
+        <WritingBlock childFirst={childFirst} familyId={familyId} />
+      </div>
+
+      {/* ── 6. REMAINING CARDS ── */}
+      <div style={{ padding: "0 0 0" }}>
         <Link href={`/${familyId}/outgoings`} className="card-hover-luxury" style={{
           padding: "44px 32px 36px",
           borderTop: "0.5px solid var(--border)",
