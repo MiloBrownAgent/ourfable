@@ -494,6 +494,49 @@ export const sendBirthdayLetterReminderForFamily = internalAction({
   },
 });
 
+// ── Vault Receipt Email ─────────────────────────────────────────────────────
+// Sent to circle members after a successful vault submission.
+// Confirms the entry was sealed — serves as proof + re-engagement.
+
+export const sendVaultReceipt = internalAction({
+  args: {
+    memberName: v.string(),
+    memberEmail: v.string(),
+    childName: v.string(),
+    contentType: v.string(),
+    unlocksAtAge: v.optional(v.number()),
+    unlocksAtEvent: v.optional(v.string()),
+  },
+  handler: async (ctx, { memberName, memberEmail, childName, contentType, unlocksAtAge, unlocksAtEvent }) => {
+    const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
+    if (!RESEND_API_KEY) return;
+
+    const childFirst = childName.split(" ")[0];
+    const memberFirst = memberName.split(" ")[0];
+    const typeLabel = contentType === "voice" ? "voice memo" : contentType === "video" ? "video message" : contentType === "photo" ? "photo" : "letter";
+
+    const unlockLine = unlocksAtAge
+      ? `${childFirst} will open it when they turn ${unlocksAtAge}.`
+      : unlocksAtEvent === "graduation"
+      ? `${childFirst} will open it when they graduate.`
+      : unlocksAtEvent === "wedding"
+      ? `${childFirst} will open it on their wedding day.`
+      : `It's sealed until the time is right.`;
+
+    const html = emailWrapper(`
+      <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">Sealed. ✓</p>
+      <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Your ${typeLabel} for ${childFirst} has been sealed in the vault. It's safe, it's private, and it's waiting.</p>
+      <p style="margin:0 0 28px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${unlockLine}</p>
+      <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:20px 24px;margin:0 0 28px;">
+        <p style="margin:0;font-family:-apple-system,sans-serif;font-size:13px;color:#6B6860;line-height:1.7;">This is your confirmation that the entry was received and stored. No action needed — ${childFirst} will find it when the time comes.</p>
+      </div>
+    `);
+
+    await sendResendEmail(RESEND_API_KEY, memberEmail, `Your ${typeLabel} for ${childFirst} is sealed`, html);
+    console.log(`[ourfableDelivery] Sent vault receipt to ${memberFirst} (${memberEmail})`);
+  },
+});
+
 // ── Cancellation Save Email ─────────────────────────────────────────────────
 // Called from webhook when customer.subscription.deleted fires
 

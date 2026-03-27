@@ -719,6 +719,25 @@ export const submitVaultEntry = mutation({
           });
         }
       }
+
+      // Send receipt email to the circle member confirming their entry was sealed
+      if (member.email) {
+        const family = await ctx.db
+          .query("ourfable_vault_families")
+          .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+          .first();
+        if (family) {
+          await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendVaultReceipt, {
+            memberName: member.name,
+            memberEmail: member.email,
+            childName: family.childName,
+            contentType: args.type,
+            unlocksAtAge: args.unlocksAtAge,
+            unlocksAtEvent: args.unlocksAtEvent,
+          });
+        }
+      }
+
     }
 
     return id;
