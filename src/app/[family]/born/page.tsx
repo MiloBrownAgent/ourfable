@@ -573,25 +573,31 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
         /* Mobile: snapshot timeline */
         @media (max-width: 640px) {
           .snapshot-card {
-            padding: 14px 16px !important;
-            margin-bottom: 10px !important;
+            padding: 14px 14px !important;
+            margin-bottom: 8px !important;
+            border-radius: 10px !important;
           }
           .snapshot-timeline-row {
-            gap: 10px !important;
+            gap: 8px !important;
+          }
+          .snapshot-content-row {
+            flex-direction: column !important;
+            gap: 2px !important;
+            margin-bottom: 10px !important;
+          }
+          .snapshot-content-row:last-child {
+            margin-bottom: 0 !important;
           }
           .snapshot-label {
             min-width: unset !important;
-            font-size: 9px !important;
-            letter-spacing: 0.08em !important;
+            font-size: 8px !important;
+            letter-spacing: 0.1em !important;
             margin-top: 0 !important;
-            color: var(--sage) !important;
-          }
-          .snapshot-content-row {
-            gap: 8px !important;
           }
           .snapshot-content-row p,
           .snapshot-content-row .font-display {
             font-size: 13px !important;
+            line-height: 1.5 !important;
           }
         }
       `}</style>
