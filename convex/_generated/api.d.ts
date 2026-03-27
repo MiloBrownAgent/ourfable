@@ -11,6 +11,7 @@
 import type * as crons from "../crons.js";
 import type * as ourfable from "../ourfable.js";
 import type * as ourfableAI from "../ourfableAI.js";
+import type * as ourfableAudit from "../ourfableAudit.js";
 import type * as ourfableDelivery from "../ourfableDelivery.js";
 import type * as ourfableMilestones from "../ourfableMilestones.js";
 import type * as ourfableMonthly from "../ourfableMonthly.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   ourfable: typeof ourfable;
   ourfableAI: typeof ourfableAI;
+  ourfableAudit: typeof ourfableAudit;
   ourfableDelivery: typeof ourfableDelivery;
   ourfableMilestones: typeof ourfableMilestones;
   ourfableMonthly: typeof ourfableMonthly;

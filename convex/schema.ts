@@ -643,4 +643,41 @@ export default defineSchema({
     .index("by_familyId", ["familyId"])
     .index("by_childId", ["childId"])
     .index("by_sent", ["sent"]),
+
+  // ---------------------------------------------------------------------------
+  // Vault Audit Log — enterprise-grade submission tracking
+  // Every vault submission (success or failure) writes one row.
+  // Independent from the contribution itself — even if the contribution
+  // insert fails, the audit log captures the attempt.
+  // ---------------------------------------------------------------------------
+  ourfable_vault_audit_log: defineTable({
+    familyId: v.string(),
+    memberId: v.optional(v.string()),
+    memberName: v.optional(v.string()),
+    childName: v.optional(v.string()),
+    contentType: v.string(),               // "write" | "voice" | "video" | "photo"
+    status: v.string(),                     // "success" | "upload_failed" | "mutation_failed" | "storage_missing"
+    errorMessage: v.optional(v.string()),
+    mediaStorageId: v.optional(v.string()),
+    mediaVerified: v.optional(v.boolean()), // true if storage URL resolves after insert
+    submissionToken: v.optional(v.string()),
+    receiptEmailSent: v.optional(v.boolean()),
+    timestamp: v.number(),
+    source: v.optional(v.string()),         // "respond_page" | "dashboard" | "canary"
+  })
+    .index("by_timestamp", ["timestamp"])
+    .index("by_status", ["status", "timestamp"])
+    .index("by_familyId", ["familyId", "timestamp"]),
+
+  // ---------------------------------------------------------------------------
+  // Canary — synthetic test results
+  // ---------------------------------------------------------------------------
+  ourfable_vault_canary: defineTable({
+    testType: v.string(),                   // "write" | "voice" | "video" | "photo" | "full"
+    status: v.string(),                     // "pass" | "fail"
+    errorMessage: v.optional(v.string()),
+    durationMs: v.number(),
+    timestamp: v.number(),
+  })
+    .index("by_timestamp", ["timestamp"]),
 });

@@ -61,4 +61,20 @@ crons.cron(
   internal.ourfableSnapshots.generateMissingSnapshots
 );
 
+// OurFable: Vault canary — daily at 6 AM CT (11:00 UTC)
+// Synthetic submission + read-back test. Catches system-level failures.
+crons.cron(
+  "ourfable-vault-canary",
+  "0 11 * * *",
+  internal.ourfableAudit.runCanary
+);
+
+// OurFable: Vault health check — hourly
+// Aggregates audit log failures, alerts on anomalies.
+crons.cron(
+  "ourfable-vault-health-check",
+  "0 * * * *",
+  internal.ourfableAudit.hourlyHealthCheck
+);
+
 export default crons;

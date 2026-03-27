@@ -721,21 +721,46 @@ export const submitVaultEntry = mutation({
       }
 
       // Send receipt email to the circle member confirming their entry was sealed
-      if (member.email) {
-        const family = await ctx.db
-          .query("ourfable_vault_families")
-          .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
-          .first();
-        if (family) {
-          await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendVaultReceipt, {
-            memberName: member.name,
-            memberEmail: member.email,
-            childName: family.childName,
-            contentType: args.type,
-            unlocksAtAge: args.unlocksAtAge,
-            unlocksAtEvent: args.unlocksAtEvent,
-          });
-        }
+      const family = await ctx.db
+        .query("ourfable_vault_families")
+        .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+        .first();
+
+      if (member.email && family) {
+        await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendVaultReceipt, {
+          memberName: member.name,
+          memberEmail: member.email,
+          childName: family.childName,
+          contentType: args.type,
+          unlocksAtAge: args.unlocksAtAge,
+          unlocksAtEvent: args.unlocksAtEvent,
+        });
+      }
+
+      // ── AUDIT: Log successful submission ──
+      const auditLogId = await ctx.db.insert("ourfable_vault_audit_log", {
+        familyId: args.familyId,
+        memberId: args.memberId as string,
+        memberName: member.name,
+        childName: family?.childName,
+        contentType: args.type,
+        status: "success",
+        mediaStorageId: args.mediaStorageId,
+        submissionToken: args.submissionToken,
+        timestamp: Date.now(),
+        source: "respond_page",
+      });
+
+      // If there's media, schedule verification that it actually exists in storage
+      if (args.mediaStorageId && family) {
+        await ctx.scheduler.runAfter(5000, internal.ourfableAudit.verifyMediaStorage, {
+          auditLogId,
+          mediaStorageId: args.mediaStorageId,
+          familyId: args.familyId,
+          memberName: member.name,
+          childName: family.childName,
+          contentType: args.type,
+        });
       }
 
     }
