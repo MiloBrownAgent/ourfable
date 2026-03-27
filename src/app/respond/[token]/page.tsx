@@ -1,6 +1,6 @@
 "use client";
 import { use, useEffect, useState, useRef, useCallback } from "react";
-import { Check, Upload, X, Mic, Video, Square } from "lucide-react";
+import { Check, Upload, X, Mic, Video, Square, Pen, Camera, Lock } from "lucide-react";
 import Image from "next/image";
 
 // All Convex calls go through /api/ourfable/data proxy
@@ -402,11 +402,11 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
 
   if (!data) return null;
 
-  const TABS: { id: ResponseTab; emoji: string; label: string }[] = [
-    { id: "write", emoji: "✍️", label: "Write" },
-    { id: "photo", emoji: "📷", label: "Photo" },
-    { id: "voice", emoji: "🎙️", label: "Voice" },
-    { id: "video", emoji: "🎥", label: "Video" },
+  const TABS: { id: ResponseTab; icon: typeof Pen; label: string }[] = [
+    { id: "write", icon: Pen, label: "Write" },
+    { id: "photo", icon: Camera, label: "Photo" },
+    { id: "voice", icon: Mic, label: "Voice" },
+    { id: "video", icon: Video, label: "Video" },
   ];
 
   return (
@@ -421,8 +421,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
         @media (max-width: 480px) {
           .respond-hero-name { font-size: 2.4rem !important; }
           .respond-prompt { font-size: 1.25rem !important; }
-          .tabs-row { gap: 6px !important; }
-          .tab-label { display: none; }
+          .tabs-row { gap: 3px !important; padding: 3px !important; }
         }
 
         /* ── Grandparent accessibility mode ── */
@@ -453,7 +452,6 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
         @media (max-width: 480px) {
           .gp-mode .respond-hero-name { font-size: 2.8rem !important; }
           .gp-mode .respond-prompt { font-size: 1.4rem !important; }
-          .gp-mode .tab-label { display: inline !important; }
         }
       `}</style>
 
@@ -509,7 +507,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
           </p>
 
           <p className="respond-seal-line gp-enhance" style={{ fontSize: 12, color: "var(--text-3)", display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 14 }}>🔒</span>
+            <Lock size={13} strokeWidth={1.5} color="var(--green)" />
             {unlockLabel(data)}
           </p>
         </div>
@@ -529,26 +527,30 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
               padding: 4, border: "1px solid var(--border)",
             }}
           >
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                className="tab-btn"
-                onClick={() => setTab(t.id)}
-                style={{
-                  flex: 1,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                  padding: "10px 4px",
-                  borderRadius: 9,
-                  fontSize: 13, fontWeight: tab === t.id ? 600 : 400,
-                  color: tab === t.id ? "var(--text)" : "var(--text-3)",
-                  background: tab === t.id ? "var(--card)" : "transparent",
-                  boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                }}
-              >
-                <span style={{ fontSize: 15 }}>{t.emoji}</span>
-                <span className="tab-label">{t.label}</span>
-              </button>
-            ))}
+            {TABS.map(t => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  className="tab-btn"
+                  onClick={() => setTab(t.id)}
+                  style={{
+                    flex: 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "10px 6px",
+                    borderRadius: 9,
+                    fontSize: 13, fontWeight: tab === t.id ? 600 : 400,
+                    color: tab === t.id ? "var(--text)" : "var(--text-3)",
+                    background: tab === t.id ? "var(--card)" : "transparent",
+                    boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                    minWidth: 0,
+                  }}
+                >
+                  <Icon size={15} strokeWidth={tab === t.id ? 2 : 1.5} />
+                  <span className="tab-label">{t.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* ── Write tab ── */}
