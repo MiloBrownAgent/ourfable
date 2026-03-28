@@ -365,31 +365,39 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
 
           {/* Delivery format */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", display: "block", marginBottom: 12 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 12 }}>
               Delivery format
-            </label>
+            </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {FORMAT_OPTIONS.map(opt => {
                 const Icon = opt.icon;
                 const selected = formatPref === opt.id;
                 return (
-                  <label key={opt.id} style={{
-                    display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-                    borderRadius: 12, border: `1.5px solid ${selected ? "var(--green)" : "var(--border)"}`,
+                  <button key={opt.id} onClick={() => setFormatPref(opt.id)} style={{
+                    display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
+                    borderRadius: 12, cursor: "pointer", textAlign: "left",
+                    border: `1.5px solid ${selected ? "var(--green)" : "var(--border)"}`,
                     background: selected ? "var(--green-light)" : "var(--card)",
-                    cursor: "pointer", transition: "all 160ms",
+                    transition: "all 160ms", fontFamily: "inherit", width: "100%",
                   }}>
-                    <input
-                      type="radio" name="format" value={opt.id}
-                      checked={selected} onChange={() => setFormatPref(opt.id)}
-                      style={{ accentColor: "var(--green)", flexShrink: 0 }}
-                    />
-                    <Icon size={16} color={selected ? "var(--green)" : "var(--text-3)"} strokeWidth={1.75} style={{ flexShrink: 0 }} />
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", marginBottom: 2 }}>{opt.label}</p>
-                      <p style={{ fontSize: 12, color: "var(--text-3)" }}>{opt.description}</p>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                      background: selected ? "rgba(74,94,76,0.12)" : "var(--bg)",
+                      border: `1px solid ${selected ? "var(--green-border)" : "var(--border)"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Icon size={16} color={selected ? "var(--green)" : "var(--text-3)"} strokeWidth={1.75} />
                     </div>
-                  </label>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: selected ? 600 : 500, color: selected ? "var(--green)" : "var(--text)", marginBottom: 2 }}>{opt.label}</p>
+                      <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.5 }}>{opt.description}</p>
+                    </div>
+                    {selected && (
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Check size={12} strokeWidth={3} color="#fff" />
+                      </div>
+                    )}
+                  </button>
                 );
               })}
             </div>
