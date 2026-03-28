@@ -529,9 +529,21 @@ export default function DashboardChildAware({
                 </p>
               )}
               {currentSnap.topSong && (
-                <a href={`https://odesli.co/?q=${encodeURIComponent(currentSnap.topSong.replace(" — ", " "))}`} target="_blank" rel="noopener noreferrer" className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, borderBottom: "0.5px solid var(--border)", transition: "border-color 160ms" }}>
-                  <Music size={13} strokeWidth={1.5} /> {currentSnap.topSong}
-                </a>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    <Music size={13} strokeWidth={1.5} /> {currentSnap.topSong}
+                  </p>
+                  <a href={`https://odesli.co/?q=${encodeURIComponent(currentSnap.topSong.replace(" — ", " "))}`} target="_blank" rel="noopener noreferrer" style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "4px 10px", borderRadius: 100,
+                    border: "0.5px solid var(--border)", background: "transparent",
+                    fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const,
+                    color: "var(--sage)", textDecoration: "none", fontFamily: "var(--font-body)",
+                    transition: "border-color 160ms, color 160ms", flexShrink: 0,
+                  }}>
+                    <Music size={10} strokeWidth={2} /> Listen
+                  </a>
+                </div>
               )}
             </div>
           </Link>
