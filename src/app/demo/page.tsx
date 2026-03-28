@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import CountUpNumber from "@/components/CountUpNumber";
 import Greeting from "@/components/Greeting";
-import { getMusicLink } from "@/lib/music-link";
+import ListenButton from "@/components/ListenButton";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
   Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
@@ -619,16 +619,7 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
                     {snap.topSong}
                   </p>
                   {snap.topSong !== "Check the charts" && (
-                    <a href={`${getMusicLink(snap.topSong)}`} target="_blank" rel="noopener noreferrer" style={{
-                      display: "inline-flex", alignItems: "center", gap: 4,
-                      padding: "4px 10px", borderRadius: 100,
-                      border: "0.5px solid var(--border)", background: "transparent",
-                      fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const,
-                      color: "var(--sage)", textDecoration: "none", fontFamily: "var(--font-body)",
-                      transition: "border-color 160ms, color 160ms", flexShrink: 0,
-                    }}>
-                      <Music size={10} strokeWidth={2} /> Listen
-                    </a>
+                    <ListenButton song={snap.topSong} />
                   )}
                 </div>
               </>
@@ -888,16 +879,7 @@ function WorldSection() {
                         <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>No. 1 Song</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <p className="font-display" style={{ fontSize: 15, color: "var(--text-2)", fontStyle: "italic", lineHeight: 1.5 }}>{snap.topSong}</p>
-                          <a href={`${getMusicLink(snap.topSong)}`} target="_blank" rel="noopener noreferrer" style={{
-                            display: "inline-flex", alignItems: "center", gap: 4,
-                            padding: "4px 10px", borderRadius: 100,
-                            border: "0.5px solid var(--border)", background: "transparent",
-                            fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const,
-                            color: "var(--sage)", textDecoration: "none", fontFamily: "var(--font-body)",
-                            transition: "border-color 160ms, color 160ms", flexShrink: 0,
-                          }}>
-                            <Music size={10} strokeWidth={2} /> Listen
-                          </a>
+                          {snap.topSong !== "Check the charts" && <ListenButton song={snap.topSong} />}
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
