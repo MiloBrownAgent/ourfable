@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { AnimatedHeadline } from "./AnimatedHeadline";
 import Link from "next/link";
+import { Mic, Image as ImageIcon, Video, Music, Globe, Cloud } from "lucide-react";
 
 // ── Product screenshot mockups ─────────────────────────────────────────────────
 function VaultMockup() {
@@ -14,11 +15,11 @@ function VaultMockup() {
         <div style={{ position: "absolute", bottom: -20, left: "50%", transform: "translateX(-50%)", width: "60%", height: 60, pointerEvents: "none", background: "radial-gradient(ellipse, rgba(200,168,122,0.09), transparent 70%)" }} />
         <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 10, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "#C8A87A", marginBottom: 8 }}>THE VAULT</p>
         <div style={{ width: 36, height: "0.5px", background: "rgba(200,168,122,0.4)", marginBottom: 18 }} />
-        <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 400, color: "#FDFBF7", marginBottom: 24, lineHeight: 1.25 }}>Sealed memories for Leo</h2>
+        <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 400, color: "#FDFBF7", marginBottom: 24, lineHeight: 1.25 }}>Sealed memories for Noah</h2>
         {[
           { name: "Grandma", rel: "Grandmother", type: "Letter" },
-          { name: "Uncle Paul", rel: "Uncle", type: "Voice memo" },
-          { name: "Godmother Sarah", rel: "Godparent", type: "Photo" },
+          { name: "Uncle", rel: "Uncle", type: "Voice memo" },
+          { name: "Godmother", rel: "Godparent", type: "Photo" },
         ].map((entry, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: i < 2 ? "0.5px solid rgba(253,251,247,0.07)" : "none" }}>
             <div>
@@ -51,7 +52,7 @@ function WritingBlockMockup() {
       {/* Greeting + child name — matches dashboard hero */}
       <div style={{ background: "#FDFBF7", padding: "28px 24px 0" }}>
         <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(107,143,111,0.7)", marginBottom: 10 }}>Good evening</p>
-        <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: 36, color: "#4A5E4C", letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 14 }}>Leo</h1>
+        <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: 36, color: "#4A5E4C", letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 14 }}>Noah</h1>
         <div style={{ width: 40, height: "0.5px", background: "linear-gradient(90deg, #C8A87A, transparent)", marginBottom: 8 }} />
         <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(107,143,111,0.7)" }}>9 months, 3 days</p>
       </div>
@@ -62,15 +63,19 @@ function WritingBlockMockup() {
           <div style={{ height: 3, background: "linear-gradient(90deg, #4A5E4C 0%, rgba(107,143,111,0.5) 50%, #C8A87A 100%)" }} />
           <div style={{ padding: "16px 20px 0" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
-              <span style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 16, fontWeight: 400, color: "#4A5E4C" }}>Dear Leo,</span>
+              <span style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 16, fontWeight: 400, color: "#4A5E4C" }}>Dear Noah,</span>
               <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: 10, color: "rgba(107,143,111,0.7)", letterSpacing: "0.04em" }}>March 25, 2026</span>
             </div>
             <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 12, lineHeight: 1.85, color: "#6A6A65", fontStyle: "italic" }}>Something happened today I want you to know about…</p>
           </div>
           {/* Attachment strip */}
           <div style={{ display: "flex", gap: 6, padding: "10px 20px", borderTop: "0.5px solid #E8E2D8", marginTop: 12 }}>
-            {["🎙 Voice", "📷 Photo", "🎥 Video"].map(btn => (
-              <span key={btn} style={{ display: "inline-flex", alignItems: "center", padding: "4px 10px", borderRadius: 100, border: "1px solid #E8E2D8", fontSize: 10, color: "#9A9590" }}>{btn}</span>
+            {[
+              { label: "Voice", icon: <Mic size={10} strokeWidth={1.5} /> },
+              { label: "Photo", icon: <ImageIcon size={10} strokeWidth={1.5} /> },
+              { label: "Video", icon: <Video size={10} strokeWidth={1.5} /> },
+            ].map(btn => (
+              <span key={btn.label} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 100, border: "1px solid #E8E2D8", fontSize: 10, color: "#9A9590" }}>{btn.icon} {btn.label}</span>
             ))}
           </div>
           {/* Footer */}
@@ -95,8 +100,8 @@ export function SnapshotMockup() {
         <div style={{ borderTop: "2px solid #C8A87A", paddingTop: 16, marginBottom: 20 }}>
           <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9A9590", marginBottom: 4 }}>The World</p>
           <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 400, color: "#1A1A18", lineHeight: 1.25, marginBottom: 10 }}>March 2026</h3>
-          <p style={{ fontSize: 11, color: "#6A6A65", lineHeight: 1.75, marginBottom: 6 }}>A season of change — countries and communities navigating new relationships with one another.</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 11, color: "#9A9590", fontStyle: "italic" }}>🎵 Not Like Us — Kendrick Lamar</p>
+          <p style={{ fontSize: 11, color: "#6A6A65", lineHeight: 1.75, marginBottom: 6 }}>Spring is arriving early — cherry blossoms ahead of schedule, everyone stepping outside again.</p>
+          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 11, color: "#9A9590", fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}><Music size={10} strokeWidth={1.5} /> Choosin&apos; Texas — Ella Langley</p>
         </div>
         {/* Ornament */}
         <p style={{ fontSize: 7, letterSpacing: "0.5em", color: "#C8A87A", textAlign: "center", marginBottom: 20 }}>✦ ✦ ✦</p>
@@ -105,9 +110,9 @@ export function SnapshotMockup() {
           {
             month: "February 2026", age: "8m 1d",
             items: [
-              { icon: "🌍", label: "In the world", text: "Global conversations about trade and what countries owe each other." },
-              { icon: "🎵", label: "Everyone was singing", text: "Pink Pony Club — Chappell Roan" },
-              { icon: "🌤", label: "The weather", text: "18°F · Cold and grey across the Midwest" },
+              { icon: "globe", label: "In the world", text: "Valentine's month — love songs everywhere, the Super Bowl bringing everyone together." },
+              { icon: "music", label: "Everyone was singing", text: "Choosin' Texas — Ella Langley" },
+              { icon: "cloud", label: "The weather", text: "18°F · Heavy snow, but the days are getting longer" },
             ]
           },
         ].map((snap, i) => (
@@ -123,7 +128,7 @@ export function SnapshotMockup() {
               </div>
               {snap.items.map((item, j) => (
                 <div key={j} style={{ display: "flex", gap: 7, marginBottom: j < snap.items.length - 1 ? 7 : 0, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 10, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
+                  <span style={{ flexShrink: 0, marginTop: 1, color: "#9A9590" }}>{item.icon === "globe" ? <Globe size={10} strokeWidth={1.5} /> : item.icon === "music" ? <Music size={10} strokeWidth={1.5} /> : <Cloud size={10} strokeWidth={1.5} />}</span>
                   <p style={{ fontSize: 9, color: "#6A6660", lineHeight: 1.5 }}>
                     <span style={{ color: "#9A9590", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: 8 }}>{item.label} · </span>
                     {item.text}
@@ -145,7 +150,7 @@ function BornMockup() {
         <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 8, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "#9A9590", marginBottom: 8, textAlign: "center" }}>The Our Fable Gazette</p>
         <div style={{ borderTop: "1px solid #E8E2D8", borderBottom: "1px solid #E8E2D8", padding: "16px 0", textAlign: "center", marginBottom: 14 }}>
           <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 7, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9A9590", marginBottom: 8 }}>Born into this world</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 24, fontWeight: 700, color: "#4A5E4C", lineHeight: 1.1, marginBottom: 6 }}>Their Name</p>
+          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 24, fontWeight: 700, color: "#4A5E4C", lineHeight: 1.1, marginBottom: 6 }}>Noah Ellis</p>
           <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 8, color: "#9A9590", letterSpacing: "0.1em" }}>March 15, 2025 · Portland, Oregon</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
@@ -174,7 +179,7 @@ const MOCKUPS = [
   { label: "Dashboard", component: <WritingBlockMockup /> },
   { label: "The Vault", component: <VaultMockup /> },
   { label: "World Snapshot", component: <SnapshotMockup /> },
-  { label: "Day They Were Born", component: <BornMockup /> },
+  { label: "The Day They Were Born", component: <BornMockup /> },
 ];
 
 export function HeroSection() {
