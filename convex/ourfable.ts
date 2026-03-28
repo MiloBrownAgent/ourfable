@@ -3703,3 +3703,35 @@ export const getLegacySettings = query({
   },
 });
 
+
+// ── F&F Gift Code — creates a pre-paid Plus gift for friends & family ────────
+export const createFFGiftCode = mutation({
+  args: {
+    giftCode: v.string(),
+    recipientName: v.string(),
+    recipientEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Check for duplicate
+    const existing = await ctx.db
+      .query("ourfable_gifts")
+      .withIndex("by_giftCode", (q) => q.eq("giftCode", args.giftCode))
+      .first();
+    if (existing) throw new Error("Gift code already exists");
+
+    return await ctx.db.insert("ourfable_gifts", {
+      giftCode: args.giftCode,
+      purchaserName: "Dave & Amanda Sweeney",
+      purchaserEmail: "hello@ourfable.ai",
+      recipientName: args.recipientName,
+      recipientEmail: args.recipientEmail,
+      message: "A gift from The Sweeneys — premium founding member, completely free.",
+      plan: "annual",
+      purchasedAt: Date.now(),
+      planType: "plus",
+      billingPeriod: "annual",
+      status: "paid",
+      createdAt: Date.now(),
+    });
+  },
+});
