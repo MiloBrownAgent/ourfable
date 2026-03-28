@@ -256,6 +256,8 @@ function DemoSidebarContent({
 function DemoWritingBlock({ childFirst }: { childFirst: string }) {
   const [focused, setFocused] = useState(false);
   const [mode, setMode] = useState<"seal" | "dispatch">("seal");
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [allSelected, setAllSelected] = useState(false);
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   return (
@@ -311,6 +313,71 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
           </button>
         ))}
       </div>
+      {/* Dispatch member selector — shown when dispatch mode is active */}
+      {mode === "dispatch" && (
+        <div style={{
+          padding: "12px 24px",
+          borderTop: "0.5px solid var(--border)",
+          background: "var(--bg)",
+        }}>
+          {/* Plus badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "3px 10px", borderRadius: 100,
+              background: "linear-gradient(135deg, rgba(200,168,122,0.15), rgba(200,168,122,0.08))",
+              border: "0.5px solid rgba(200,168,122,0.35)",
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" as const,
+              color: "var(--gold)", fontFamily: "var(--font-body)",
+            }}>
+              ✦ Our Fable+
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-3)", fontFamily: "var(--font-body)" }}>Premium feature</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
+              Send to
+            </span>
+            <button onClick={() => setAllSelected(!allSelected)} style={{
+              background: "none", border: "none", fontSize: 11, color: "var(--sage)", cursor: "pointer",
+              fontFamily: "var(--font-body)", textDecoration: "underline",
+            }}>
+              {allSelected ? "Deselect all" : "Select all"}
+            </button>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {[
+              { id: "1", name: "Grandma" },
+              { id: "2", name: "Grandpa" },
+              { id: "3", name: "Nana" },
+              { id: "4", name: "Papa" },
+              { id: "5", name: "Auntie" },
+              { id: "6", name: "Uncle" },
+              { id: "7", name: "Godmother" },
+              { id: "8", name: "Family Friend" },
+            ].map(m => {
+              const selected = allSelected || selectedMembers.includes(m.id);
+              return (
+                <button key={m.id} onClick={() => {
+                  setAllSelected(false);
+                  setSelectedMembers(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id]);
+                }} style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "6px 14px", borderRadius: 100,
+                  border: selected ? "1.5px solid var(--green)" : "1px solid var(--border)",
+                  background: selected ? "var(--green-light)" : "transparent",
+                  color: selected ? "var(--green)" : "var(--text-3)",
+                  fontSize: 12, fontFamily: "var(--font-body)", cursor: "pointer",
+                  fontWeight: selected ? 500 : 400,
+                  transition: "all 150ms ease",
+                }}>
+                  {selected ? "✓ " : ""}{m.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {/* Footer */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -325,15 +392,15 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
             background: mode === "seal" ? "var(--green)" : "transparent",
             color: mode === "seal" ? "#fff" : "var(--text-3)",
             fontFamily: "var(--font-body)", fontSize: 11, fontWeight: mode === "seal" ? 600 : 400,
-            letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+            letterSpacing: "0.06em", textTransform: "uppercase" as const, cursor: "pointer",
             transition: "all 160ms",
           }}>Seal</button>
-          <button onClick={() => setMode("dispatch")} style={{
+          <button onClick={() => { setMode("dispatch"); setAllSelected(true); }} style={{
             padding: "6px 14px", border: "none",
             background: mode === "dispatch" ? "var(--green)" : "transparent",
             color: mode === "dispatch" ? "#fff" : "var(--text-3)",
             fontFamily: "var(--font-body)", fontSize: 11, fontWeight: mode === "dispatch" ? 600 : 400,
-            letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+            letterSpacing: "0.06em", textTransform: "uppercase" as const, cursor: "pointer",
             transition: "all 160ms",
           }}>Dispatch</button>
         </div>
