@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { Loader2, Check, Mail, Video, BookOpen, Lock } from "lucide-react";
+import { Loader2, Check, Mail, Video, BookOpen, Lock, Trash2, Plus } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,6 +19,17 @@ interface FacData {
   deliveryMilestoneChoice?: string;
   deliveryFormatPref?: string;
   backupContactEmail?: string;
+}
+
+interface DeliveryMilestone {
+  _id: string;
+  familyId: string;
+  milestoneName: string;
+  milestoneDate: number;
+  deliveryStatus: string;
+  notificationsSent: string[];
+  deliveredAt?: number;
+  deliveryToken?: string;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -127,6 +138,13 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
   const [savingEmail, setSavingEmail] = useState(false);
   const [savedEmail, setSavedEmail] = useState(false);
 
+  // Custom milestones
+  const [customMilestones, setCustomMilestones] = useState<DeliveryMilestone[]>([]);
+  const [newMilestoneName, setNewMilestoneName] = useState("");
+  const [newMilestoneDate, setNewMilestoneDate] = useState("");
+  const [addingMilestone, setAddingMilestone] = useState(false);
+  const [deletingMilestoneId, setDeletingMilestoneId] = useState<string | null>(null);
+
   // Section 3 — delivery preferences
   const [milestoneChoice, setMilestoneChoice] = useState("18");
   const [formatPref, setFormatPref] = useState("email");
@@ -139,11 +157,12 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
 
   useEffect(() => {
     async function load() {
-      const [family, facData, entries, letters] = await Promise.all([
+      const [family, facData, entries, letters, milestoneList] = await Promise.all([
         convexFetch("ourfable:getFamily", { familyId }),
         convexFetch("ourfable:getOurFableFacilitators", { familyId }),
         convexFetch("ourfable:listOurFableVaultEntries", { familyId }),
         convexFetch("ourfable:listOurFableLetters", { familyId }),
+        convexFetch("ourfable:listDeliveryMilestones", { familyId }),
       ]);
 
       if (family) {
@@ -158,6 +177,10 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
         setMilestoneChoice(fd.deliveryMilestoneChoice ?? "18");
         setFormatPref(fd.deliveryFormatPref ?? "email");
         setBackupEmail(fd.backupContactEmail ?? "");
+      }
+
+      if (milestoneList && Array.isArray(milestoneList)) {
+        setCustomMilestones(milestoneList as DeliveryMilestone[]);
       }
 
       const allEntries = (entries as Array<{ type: string; authorName: string }>) ?? [];
@@ -184,6 +207,30 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
     setSavingEmail(false);
     setSavedEmail(true);
     setTimeout(() => setSavedEmail(false), 3000);
+  }
+
+  async function handleAddMilestone() {
+    if (!newMilestoneName.trim() || !newMilestoneDate) return;
+    setAddingMilestone(true);
+    const milestoneDate = new Date(newMilestoneDate + "T00:00:00").getTime();
+    await convexMutate("ourfable:addCustomDeliveryMilestone", {
+      familyId,
+      milestoneName: newMilestoneName.trim(),
+      milestoneDate,
+    });
+    // Refresh list
+    const updated = await convexFetch("ourfable:listDeliveryMilestones", { familyId });
+    if (updated && Array.isArray(updated)) setCustomMilestones(updated as DeliveryMilestone[]);
+    setNewMilestoneName("");
+    setNewMilestoneDate("");
+    setAddingMilestone(false);
+  }
+
+  async function handleDeleteMilestone(id: string) {
+    setDeletingMilestoneId(id);
+    await convexMutate("ourfable:deleteOurFableDeliveryMilestone", { id });
+    setCustomMilestones(prev => prev.filter(m => m._id !== id));
+    setDeletingMilestoneId(null);
   }
 
   async function handleSavePrefs() {
@@ -330,7 +377,133 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
 
       <GoldDivider />
 
-      {/* ── SECTION 3: Delivery preferences ── */}
+      {/* ── SECTION 3: Vault Milestones (custom) ── */}
+      <section>
+        <SectionHeader
+          title="Vault Milestones"
+          subtitle="Choose when your child's vault opens. Add preset or custom milestones."
+        />
+
+        {/* Preset quick-add buttons */}
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 10 }}>
+            Quick presets
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {["Graduation", "Wedding Day", "First Job", "Sweet 16"].map(preset => (
+              <button
+                key={preset}
+                onClick={() => setNewMilestoneName(preset)}
+                style={{
+                  padding: "8px 16px", borderRadius: 100, fontSize: 12, cursor: "pointer",
+                  border: `1.5px solid ${newMilestoneName === preset ? "var(--green)" : "var(--border)"}`,
+                  background: newMilestoneName === preset ? "var(--green-light)" : "var(--card)",
+                  color: newMilestoneName === preset ? "var(--green)" : "var(--text-3)",
+                  fontWeight: newMilestoneName === preset ? 600 : 400,
+                  fontFamily: "inherit", transition: "all 160ms",
+                }}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Existing milestone cards */}
+        {customMilestones.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+            {customMilestones
+              .slice()
+              .sort((a, b) => a.milestoneDate - b.milestoneDate)
+              .map(m => {
+                const date = new Date(m.milestoneDate);
+                const past = date.getTime() < Date.now();
+                const isDeleting = deletingMilestoneId === m._id;
+                return (
+                  <div key={m._id} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 18px", borderRadius: 12,
+                    border: `1px solid ${past ? "var(--border)" : "var(--green-border)"}`,
+                    background: past ? "var(--surface)" : "var(--green-light)",
+                    opacity: past ? 0.6 : 1,
+                    transition: "opacity 160ms",
+                  }}>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>
+                        {m.milestoneName}
+                      </p>
+                      <p style={{ fontSize: 12, color: "var(--text-3)" }}>
+                        {formatFull(date)} · {past ? "Passed" : timeAway(date)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteMilestone(m._id)}
+                      disabled={isDeleting}
+                      title="Delete milestone"
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 32, height: 32, borderRadius: 8, border: "1px solid var(--border)",
+                        background: "var(--card)", cursor: "pointer", flexShrink: 0,
+                        opacity: isDeleting ? 0.4 : 1, transition: "opacity 160ms",
+                      }}
+                    >
+                      {isDeleting
+                        ? <Loader2 size={13} strokeWidth={2} color="var(--text-3)" style={{ animation: "spin 1s linear infinite" }} />
+                        : <Trash2 size={13} strokeWidth={1.75} color="var(--text-3)" />
+                      }
+                    </button>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+
+        {/* Add milestone form */}
+        <div style={{
+          padding: "18px 20px", borderRadius: 12,
+          border: "1px dashed var(--border)", background: "var(--surface)",
+        }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-3)", marginBottom: 12 }}>
+            Add a milestone
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input
+              type="text"
+              value={newMilestoneName}
+              onChange={e => setNewMilestoneName(e.target.value)}
+              placeholder="e.g. Graduation, First day of high school…"
+              className="input"
+            />
+            <input
+              type="date"
+              value={newMilestoneDate}
+              onChange={e => setNewMilestoneDate(e.target.value)}
+              className="input"
+            />
+            <button
+              onClick={handleAddMilestone}
+              disabled={!newMilestoneName.trim() || !newMilestoneDate || addingMilestone}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+                padding: "10px 20px", fontSize: 13, fontWeight: 600,
+                background: !newMilestoneName.trim() || !newMilestoneDate ? "var(--border)" : "var(--green)",
+                color: !newMilestoneName.trim() || !newMilestoneDate ? "var(--text-3)" : "#fff",
+                border: "none", borderRadius: 10, cursor: !newMilestoneName.trim() || !newMilestoneDate ? "default" : "pointer",
+                fontFamily: "inherit", transition: "all 160ms",
+              }}
+            >
+              {addingMilestone
+                ? <><Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> Adding…</>
+                : <><Plus size={13} strokeWidth={2.5} /> Add milestone</>
+              }
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <GoldDivider />
+
+      {/* ── SECTION 4: Delivery preferences (age milestones + format) ── */}
       <section>
         <SectionHeader
           title="Delivery preferences"
@@ -445,7 +618,7 @@ export default function DeliveryPage({ params }: { params: Promise<{ family: str
 
       <GoldDivider />
 
-      {/* ── SECTION 4: Vault stats ── */}
+      {/* ── SECTION 5: Vault stats ── */}
       <section>
         <SectionHeader
           title="What's in the vault"

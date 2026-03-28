@@ -2454,6 +2454,42 @@ export const updateOurFableDeliveryMilestoneStatus = mutation({
   },
 });
 
+// ── OurFable — Custom Delivery Milestones ───────────────────────────────────
+
+export const addCustomDeliveryMilestone = mutation({
+  args: {
+    familyId: v.string(),
+    milestoneName: v.string(),
+    milestoneDate: v.number(),
+  },
+  handler: async (ctx, { familyId, milestoneName, milestoneDate }) => {
+    return await ctx.db.insert("ourfable_delivery_milestones", {
+      familyId,
+      milestoneName,
+      milestoneDate,
+      deliveryStatus: "pending",
+      notificationsSent: [],
+    });
+  },
+});
+
+export const deleteOurFableDeliveryMilestone = mutation({
+  args: { id: v.id("ourfable_delivery_milestones") },
+  handler: async (ctx, { id }) => {
+    await ctx.db.delete(id);
+  },
+});
+
+export const listDeliveryMilestones = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    return await ctx.db
+      .query("ourfable_delivery_milestones")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+  },
+});
+
 // ── OurFable — Delivery Tokens ──────────────────────────────────────────────
 
 export const createOurFableDeliveryToken = mutation({

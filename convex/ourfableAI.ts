@@ -56,7 +56,7 @@ export const generatePromptsForMember = internalAction({
       return;
     }
 
-    const { member, family, milestones, recentChronicle, existingPromptCount } = context;
+    const { member, family, milestones, recentChronicle, existingPromptCount, deliveryMilestones } = context;
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -106,6 +106,13 @@ VARIETY: Across ${PROMPTS_PER_BATCH} prompts, vary:
 - Tone: some reflective, some playful, some raw/emotional
 - Subject: family history, the member's own life, the child's parents, specific moments, songs, smells, places`;
 
+    const deliveryMilestoneList = (deliveryMilestones ?? [])
+      .filter((m: { deliveryStatus: string; milestoneName: string; milestoneDate: number }) => m.deliveryStatus === "pending")
+      .map((m: { deliveryStatus: string; milestoneName: string; milestoneDate: number }) =>
+        `- ${m.milestoneName} (${new Date(m.milestoneDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })})`
+      )
+      .join("\n");
+
     const userPrompt = `Child: ${family.childName}, currently ${childAgeMonths} months old
 Circle member: ${member.name}
 Their relationship: ${member.relationship} (${member.relationshipKey})
@@ -116,6 +123,11 @@ ${existingPromptCount > 0 ? `This is prompt batch #${Math.floor(existingPromptCo
 Milestones ${childFirst} has reached:
 ${milestoneList}
 
+Upcoming vault delivery milestones set by parents:
+${deliveryMilestoneList || "Standard milestones only (13, 18, 21)"}
+
+IMPORTANT: Some prompts should reference these specific milestones. For example, if parents added "Graduation - June 2043", generate prompts like "Write something for ${childFirst} to read on graduation day." Use the milestone name and context naturally.
+
 ${recentEntry ? `Recent Chronicle entry (for context on ${childFirst}'s current life):\n"${recentEntry.slice(0, 400)}"` : ""}
 
 Generate exactly ${PROMPTS_PER_BATCH} prompts. Return as a JSON array with this shape:
@@ -124,10 +136,12 @@ Generate exactly ${PROMPTS_PER_BATCH} prompts. Return as a JSON array with this 
     "text": "the prompt text addressed to the member",
     "category": "letter" | "photo" | "voice" | "video" | "any",
     "unlocksAtAge": 8 | 13 | 16 | 18 | null,
-    "unlocksAtEvent": "graduation" | "wedding" | null,
+    "unlocksAtEvent": string | null,
     "tone": "reflective" | "playful" | "practical" | "emotional"
   }
 ]
+
+For "unlocksAtEvent", use the exact milestone name from the parents' custom milestones (e.g., "Graduation", "Wedding Day", "Sweet 16") or null. Do not limit to only "graduation" or "wedding".
 
 Only return valid JSON. No explanation, no markdown fences.`;
 
@@ -374,12 +388,19 @@ export const getGenerationContext = internalQuery({
       .withIndex("by_memberId", (q) => q.eq("memberId", memberId))
       .collect();
 
+    // Delivery milestones set by parents (custom vault open dates)
+    const deliveryMilestones = await ctx.db
+      .query("ourfable_delivery_milestones")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+
     return {
       member,
       family,
       milestones,
       recentChronicle,
       existingPromptCount: existingPrompts.length,
+      deliveryMilestones,
     };
   },
 });

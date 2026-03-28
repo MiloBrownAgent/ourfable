@@ -71,6 +71,9 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:createReferralCodes",
   "ourfable:redeemReferral",
   "ourfable:sealParentLetter",
+  "ourfable:addCustomDeliveryMilestone",
+  "ourfable:deleteOurFableDeliveryMilestone",
+  "ourfable:listDeliveryMilestones",
 ]);
 
 // Public — no session required (join/share flows)
