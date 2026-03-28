@@ -1336,8 +1336,19 @@ export const createOutgoing = mutation({
       mediaUrl: args.mediaUrls?.[0],
       authorEmail: family?.email ?? "parent@ourfable.ai",
       authorName: args.sentByName,
-      isSealed: false, // dispatches are visible immediately
+      isSealed: false,
       createdAt: Date.now(),
+    });
+
+    // Schedule email delivery to circle members
+    await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendDispatchEmails, {
+      familyId: args.familyId,
+      body: args.body,
+      mediaUrls: args.mediaUrls,
+      mediaType: args.mediaType,
+      sentToAll: args.sentToAll,
+      sentToMemberIds: args.sentToMemberIds,
+      sentByName: args.sentByName,
     });
 
     return outgoingId;

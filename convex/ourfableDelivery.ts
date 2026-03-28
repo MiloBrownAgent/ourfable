@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values";
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 const CONVEX_URL = process.env.CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
@@ -599,5 +599,96 @@ export const sendDeletionReminders = internalAction({
 
     console.log(`[deletion-reminders] Sent ${sent} reminders to ${deletedFamilies.length} deleted families`);
     return { sent, total: deletedFamilies.length };
+  },
+});
+
+// ── Send dispatch emails to circle members ──────────────────────────────────
+export const sendDispatchEmails = internalAction({
+  args: {
+    familyId: v.string(),
+    body: v.string(),
+    mediaUrls: v.optional(v.array(v.string())),
+    mediaType: v.optional(v.string()),
+    sentToAll: v.boolean(),
+    sentToMemberIds: v.optional(v.array(v.string())),
+    sentByName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const RESEND_KEY = process.env.RESEND_FULL_API_KEY;
+    if (!RESEND_KEY) { console.error("[dispatch-email] No RESEND_FULL_API_KEY"); return; }
+
+    // Get family info
+    const family = await ctx.runQuery(internal.ourfableDelivery.getFamilyForDelivery, { familyId: args.familyId });
+    if (!family) { console.error("[dispatch-email] Family not found"); return; }
+
+    const childFirst = family.childName?.split(" ")[0] ?? "your child";
+    const parentNames = family.parentNames ?? args.sentByName;
+
+    // Get circle members
+    const members = await ctx.runQuery(internal.ourfableDelivery.getCircleMembersForDelivery, { familyId: args.familyId });
+    if (!members || members.length === 0) { console.log("[dispatch-email] No circle members"); return; }
+
+    // Filter to selected members if not sentToAll
+    const recipients = args.sentToAll
+      ? members
+      : members.filter((m: { _id: string; email?: string }) => args.sentToMemberIds?.includes(String(m._id)));
+
+    let sent = 0;
+    for (const member of recipients) {
+      if (!member.email) continue;
+
+      const memberFirst = member.name?.split(" ")[0] ?? "there";
+      const mediaHtml = args.mediaUrls?.[0]
+        ? args.mediaType === "photo"
+          ? `<img src="${args.mediaUrls[0]}" style="max-width:100%;border-radius:12px;margin:16px 0;" alt="Photo from ${parentNames}" />`
+          : args.mediaType === "video"
+          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">🎬 Video attached — <a href="${args.mediaUrls[0]}" style="color:#4A5E4C;">Watch now</a></p>`
+          : args.mediaType === "voice"
+          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">🎙 Voice memo — <a href="${args.mediaUrls[0]}" style="color:#4A5E4C;">Listen now</a></p>`
+          : ""
+        : "";
+
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="color-scheme" content="light"/></head><body style="margin:0;padding:0;background:#FDFBF7;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:48px 20px;background:#FDFBF7;"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;"><tr><td align="center" style="padding-bottom:20px;"><span style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#4A5E4C;">Our Fable</span></td></tr><tr><td style="background:#FFFFFF;border-radius:16px;border:1px solid #EAE7E1;padding:36px;"><p style="margin:0 0 6px;font-family:-apple-system,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Dispatch from ${parentNames}</p><p style="margin:0 0 20px;font-family:Georgia,serif;font-size:22px;color:#1A1A1A;line-height:1.3;">Hi ${memberFirst} —</p><p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${args.body}</p>${mediaHtml}<div style="border-top:1px solid #EAE7E1;padding-top:16px;margin-top:20px;"><p style="margin:0;font-family:-apple-system,sans-serif;font-size:12px;color:#9A9590;line-height:1.6;">Sent to ${childFirst}'s circle via Our Fable</p></div></td></tr><tr><td align="center" style="padding-top:20px;"><p style="font-family:-apple-system,sans-serif;font-size:11px;color:#B0A9A0;">Our Fable · ourfable.ai</p></td></tr></table></td></tr></table></body></html>`;
+
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: `${parentNames} via Our Fable <hello@ourfable.ai>`,
+            to: member.email,
+            subject: `${parentNames} sent an update about ${childFirst}`,
+            html,
+          }),
+        });
+        sent++;
+      } catch (err) {
+        console.error(`[dispatch-email] Failed for ${member.email}:`, err);
+      }
+      // Rate limit
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    console.log(`[dispatch-email] Sent ${sent} dispatch emails for family ${args.familyId}`);
+  },
+});
+
+// Helper queries for dispatch delivery
+export const getFamilyForDelivery = internalQuery({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const vaultFamily = await ctx.db.query("ourfable_vault_families").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).first();
+    if (vaultFamily) return vaultFamily;
+    return await ctx.db.query("ourfable_families").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).first();
+  },
+});
+
+export const getCircleMembersForDelivery = internalQuery({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    // Try vault circle first, then ourfable circle
+    const vaultCircle = await ctx.db.query("ourfable_vault_circle").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
+    if (vaultCircle.length > 0) return vaultCircle;
+    return await ctx.db.query("ourfable_circle_members").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
   },
 });
