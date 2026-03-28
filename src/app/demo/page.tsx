@@ -17,6 +17,44 @@ const CHILD_FIRST = "Noah";
 const CHILD_DOB = "2025-06-25";
 const FAMILY_NAME = "The Ellis Family";
 
+// Snapshot data — hardcoded for known months, seasonal fallbacks for future
+const DEMO_SNAPSHOTS: Record<string, { topHeadline: string; topSong: string; weatherDesc: string; tempHigh: number }> = {
+  "2025-6": { topHeadline: "The longest days of the year — summer solstice light, backyard sprinklers, the sound of ice cream trucks", topSong: "luther — Kendrick Lamar & SZA", weatherDesc: "Warm and golden, the kind of June evening that lasts forever", tempHigh: 82 },
+  "2025-7": { topHeadline: "Summer is here — long days, fireflies, and the whole country moving a little slower", topSong: "luther — Kendrick Lamar & SZA", weatherDesc: "Hot and humid, thunderstorms rolling through late afternoons", tempHigh: 92 },
+  "2025-8": { topHeadline: "Back-to-school season — yellow buses rolling again, the smell of new notebooks, summer fading", topSong: "Ordinary — Alex Warren", weatherDesc: "Warm with occasional showers, humidity finally dropping", tempHigh: 88 },
+  "2025-9": { topHeadline: "The leaves are turning — fall foliage peaks a week early, apple orchards opening everywhere", topSong: "Ordinary — Alex Warren", weatherDesc: "Mild autumn conditions, crisp mornings and warm afternoons", tempHigh: 72 },
+  "2025-10": { topHeadline: "Pumpkin patches and costume prep — the whole country gearing up for Halloween", topSong: "Golden — Huntrix", weatherDesc: "Cool and crisp, fall colors at their peak", tempHigh: 58 },
+  "2025-11": { topHeadline: "The holidays arrive early — families gathering, the first big snow blanketing the northern states", topSong: "The Fate of Ophelia — Taylor Swift", weatherDesc: "First snowfall of the season, temperatures dropping sharply", tempHigh: 38 },
+  "2025-12": { topHeadline: "The year comes to a close — a season of lights, family gatherings, and looking ahead", topSong: "All I Want for Christmas Is You — Mariah Carey", weatherDesc: "Cold and snowy, perfect for staying in by the fire", tempHigh: 22 },
+  "2026-1": { topHeadline: "A new year begins — resolutions, fresh starts, and the quiet hope that comes with turning the calendar", topSong: "I Just Might — Bruno Mars", weatherDesc: "Bitter cold, the kind of January that makes you grateful for warm coats", tempHigh: 12 },
+  "2026-2": { topHeadline: "Valentine's month — love songs everywhere, the Super Bowl bringing everyone together for one night", topSong: "Choosin' Texas — Ella Langley", weatherDesc: "Heavy snow and ice, but the days are getting noticeably longer", tempHigh: 18 },
+  "2026-3": { topHeadline: "Spring is arriving early — cherry blossoms ahead of schedule, everyone stepping outside again", topSong: "Choosin' Texas — Ella Langley", weatherDesc: "Early spring thaw, the first warm days hinting at what's coming", tempHigh: 42 },
+};
+
+const SEASONAL_FALLBACKS: Record<number, { topHeadline: string; topSong: string; weatherDesc: string; tempHigh: number }> = {
+  1: { topHeadline: "A new year — fresh starts, cold mornings, and the quiet optimism of a blank calendar", topSong: "Check the charts", weatherDesc: "Deep winter, short days and long nights", tempHigh: 15 },
+  2: { topHeadline: "Valentine's month — love songs on every playlist, winter still holding on", topSong: "Check the charts", weatherDesc: "Still cold, but the days are getting longer", tempHigh: 22 },
+  3: { topHeadline: "The first signs of spring — crocuses pushing through, daylight saving bringing longer evenings", topSong: "Check the charts", weatherDesc: "Thawing slowly, spring teasing its arrival", tempHigh: 40 },
+  4: { topHeadline: "Spring in full bloom — rain showers, open windows, the smell of fresh-cut grass returning", topSong: "Check the charts", weatherDesc: "Warm rain and sunshine alternating, flowers everywhere", tempHigh: 58 },
+  5: { topHeadline: "Almost summer — school winding down, barbecues starting up, evenings that last forever", topSong: "Check the charts", weatherDesc: "Warm and bright, the best of spring weather", tempHigh: 70 },
+  6: { topHeadline: "Summer solstice — the longest days of the year, fireflies, sprinklers, bare feet on warm pavement", topSong: "Check the charts", weatherDesc: "Hot and golden, summer in full swing", tempHigh: 82 },
+  7: { topHeadline: "Peak summer — fireworks, road trips, lazy afternoons by the water", topSong: "Check the charts", weatherDesc: "Hot and humid, thunderstorms rolling through", tempHigh: 90 },
+  8: { topHeadline: "The last stretch of summer — back-to-school shopping, one more trip to the lake", topSong: "Check the charts", weatherDesc: "Warm but starting to shift, summer's last breath", tempHigh: 85 },
+  9: { topHeadline: "Fall is here — the leaves are turning, apple orchards opening, sweater weather arriving", topSong: "Check the charts", weatherDesc: "Crisp mornings, warm afternoons, perfect fall days", tempHigh: 68 },
+  10: { topHeadline: "Pumpkin season — costumes, hayrides, and the whole country lit up in orange", topSong: "Check the charts", weatherDesc: "Cool and colorful, peak autumn", tempHigh: 55 },
+  11: { topHeadline: "Gratitude month — families gathering, the first fires lit, holiday lights going up", topSong: "Check the charts", weatherDesc: "Cold arriving, first frost on the windows", tempHigh: 40 },
+  12: { topHeadline: "The year comes to a close — twinkling lights, wrapping paper, cocoa, and counting down", topSong: "All I Want for Christmas Is You — Mariah Carey", weatherDesc: "Cold and snowy, perfect for staying in", tempHigh: 25 },
+};
+
+function getDemoSnapshot(year: number, month: number) {
+  return DEMO_SNAPSHOTS[`${year}-${month}`] || SEASONAL_FALLBACKS[month] || SEASONAL_FALLBACKS[6];
+}
+
+function getCurrentDemoSnapshot() {
+  const n = new Date();
+  return getDemoSnapshot(n.getFullYear(), n.getMonth() + 1);
+}
+
 // Age calculation
 function calcAge(dob: string) {
   const birth = new Date(dob + "T00:00:00");
@@ -498,26 +536,36 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
           }}>The World</p>
           <h3 className="font-display" style={{
             fontSize: 22, fontWeight: 400, color: "var(--text)", lineHeight: 1.25, marginBottom: 12,
-          }}>March 2026</h3>
-          <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 8, fontFamily: "var(--font-body)" }}>
-            Spring is arriving early across the Pacific Northwest — cherry blossoms two weeks ahead of schedule.
-          </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
-              <Music size={13} strokeWidth={1.5} style={{ display: "inline", verticalAlign: "-2px", marginRight: 4 }} />
-              Choosin&apos; Texas — Ella Langley
-            </p>
-            <a href="https://odesli.co/?q=Choosin%20Texas%20Ella%20Langley" target="_blank" rel="noopener noreferrer" style={{
-              display: "inline-flex", alignItems: "center", gap: 4,
-              padding: "4px 10px", borderRadius: 100,
-              border: "0.5px solid var(--border)", background: "transparent",
-              fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const,
-              color: "var(--sage)", textDecoration: "none", fontFamily: "var(--font-body)",
-              transition: "border-color 160ms, color 160ms", flexShrink: 0,
-            }}>
-              <Music size={10} strokeWidth={2} /> Listen
-            </a>
-          </div>
+          }}>{(() => { const n = new Date(); return n.toLocaleDateString("en-US", { month: "long", year: "numeric" }); })()}</h3>
+          {(() => {
+            const n = new Date();
+            const snap = getCurrentDemoSnapshot();
+            return (
+              <>
+                <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 8, fontFamily: "var(--font-body)" }}>
+                  {snap.topHeadline}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
+                    <Music size={13} strokeWidth={1.5} style={{ display: "inline", verticalAlign: "-2px", marginRight: 4 }} />
+                    {snap.topSong}
+                  </p>
+                  {snap.topSong !== "Check the charts" && (
+                    <a href={`https://odesli.co/?q=${encodeURIComponent(snap.topSong.replace(" — ", " "))}`} target="_blank" rel="noopener noreferrer" style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      padding: "4px 10px", borderRadius: 100,
+                      border: "0.5px solid var(--border)", background: "transparent",
+                      fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const,
+                      color: "var(--sage)", textDecoration: "none", fontFamily: "var(--font-body)",
+                      transition: "border-color 160ms, color 160ms", flexShrink: 0,
+                    }}>
+                      <Music size={10} strokeWidth={2} /> Listen
+                    </a>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 
@@ -652,69 +700,6 @@ function WorldSection() {
 
   const months = buildMonthRange(CHILD_DOB);
 
-  // Demo snapshot data
-  const snapshots: Record<string, { topHeadline: string; topSong: string; weatherDesc: string; tempHigh: number }> = {
-    "2025-6": {
-      topHeadline: "The longest days of the year — summer solstice light, backyard sprinklers, the sound of ice cream trucks",
-      topSong: "luther — Kendrick Lamar & SZA",
-      weatherDesc: "Warm and golden, the kind of June evening that lasts forever",
-      tempHigh: 82,
-    },
-    "2025-7": {
-      topHeadline: "Summer is here — long days, fireflies, and the whole country moving a little slower",
-      topSong: "luther — Kendrick Lamar & SZA",
-      weatherDesc: "Hot and humid, thunderstorms rolling through late afternoons",
-      tempHigh: 92,
-    },
-    "2025-8": {
-      topHeadline: "Back-to-school season — yellow buses rolling again, the smell of new notebooks, summer fading",
-      topSong: "Ordinary — Alex Warren",
-      weatherDesc: "Warm with occasional showers, humidity finally dropping",
-      tempHigh: 88,
-    },
-    "2025-9": {
-      topHeadline: "The leaves are turning — fall foliage peaks a week early, apple orchards opening everywhere",
-      topSong: "Ordinary — Alex Warren",
-      weatherDesc: "Mild autumn conditions, crisp mornings and warm afternoons",
-      tempHigh: 72,
-    },
-    "2025-10": {
-      topHeadline: "Pumpkin patches and costume prep — the whole country gearing up for Halloween",
-      topSong: "Golden — Huntrix",
-      weatherDesc: "Cool and crisp, fall colors at their peak",
-      tempHigh: 58,
-    },
-    "2025-11": {
-      topHeadline: "The holidays arrive early — families gathering, the first big snow blanketing the northern states",
-      topSong: "The Fate of Ophelia — Taylor Swift",
-      weatherDesc: "First snowfall of the season, temperatures dropping sharply",
-      tempHigh: 38,
-    },
-    "2025-12": {
-      topHeadline: "The year comes to a close — a season of lights, family gatherings, and looking ahead",
-      topSong: "All I Want for Christmas Is You — Mariah Carey",
-      weatherDesc: "Cold and snowy, perfect for staying in by the fire",
-      tempHigh: 22,
-    },
-    "2026-1": {
-      topHeadline: "A new year begins — resolutions, fresh starts, and the quiet hope that comes with turning the calendar",
-      topSong: "I Just Might — Bruno Mars",
-      weatherDesc: "Bitter cold, the kind of January that makes you grateful for warm coats",
-      tempHigh: 12,
-    },
-    "2026-2": {
-      topHeadline: "Valentine's month — love songs everywhere, the Super Bowl bringing everyone together for one night",
-      topSong: "Choosin' Texas — Ella Langley",
-      weatherDesc: "Heavy snow and ice, but the days are getting noticeably longer",
-      tempHigh: 18,
-    },
-    "2026-3": {
-      topHeadline: "Spring is arriving early — cherry blossoms ahead of schedule, everyone stepping outside again",
-      topSong: "Choosin' Texas — Ella Langley",
-      weatherDesc: "Early spring thaw, the first warm days hinting at what's coming",
-      tempHigh: 42,
-    },
-  };
 
   function GoldDivider() {
     return (
@@ -794,8 +779,7 @@ function WorldSection() {
 
         <div style={{ paddingLeft: 6 }}>
           {months.map(({ year, month }) => {
-            const key = `${year}-${month}`;
-            const snap = snapshots[key];
+            const snap = getDemoSnapshot(year, month);
             const label = `${monthName(month)} ${year}`;
             const age = childAgeAtMonth(CHILD_DOB, year, month);
 
