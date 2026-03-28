@@ -1,705 +1,628 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import CountUpNumber from "@/components/CountUpNumber";
+import Greeting from "@/components/Greeting";
 import {
-  Lock,
-  FileText,
-  Mic,
-  Video,
-  Image as ImageIcon,
-  Heart,
-  GraduationCap,
-  Users,
-  BookOpen,
-  Globe,
-  Newspaper,
-  Mail,
-  Sun,
-  Music,
-  MapPin,
-  Calendar,
-  Star,
-  ChevronRight,
-  ArrowRight,
-  Sparkles,
-  Clock,
+  LayoutDashboard, FolderLock, Users, Menu, X, Send,
+  Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
+  Mail, PackageOpen, Lock, FileText, Mic, Video,
+  Image as ImageIcon, MapPin, Check, GraduationCap,
 } from "lucide-react";
 
-// ─── Demo Data ───────────────────────────────────────────────────────────────
+// ─── Demo constants ───────────────────────────────────────────────────────────
 
-const CHILD = {
-  name: "Noah Ellis",
-  firstName: "Noah",
-  dob: new Date("2025-06-25"),
-  location: "Minneapolis, MN",
-  family: "Sarah & James Ellis",
-};
+const CHILD_NAME = "Noah Ellis";
+const CHILD_FIRST = "Noah";
+const CHILD_DOB = "2025-06-25";
+const FAMILY_NAME = "The Ellis Family";
 
-function getDaysAlive(): number {
+// Age calculation
+function calcAge(dob: string) {
+  const birth = new Date(dob + "T00:00:00");
   const now = new Date();
-  const diff = now.getTime() - CHILD.dob.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
+  let months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+  const dayNow = now.getDate();
+  const dayBirth = birth.getDate();
+  let days = dayNow - dayBirth;
+  if (days < 0) { months--; const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0); days += prevMonth.getDate(); }
+  const totalDays = Math.floor((now.getTime() - birth.getTime()) / 86400000);
+  return { months, days, totalDays };
 }
 
-function getAgeStr(): string {
-  const now = new Date();
-  const months =
-    (now.getFullYear() - CHILD.dob.getFullYear()) * 12 +
-    (now.getMonth() - CHILD.dob.getMonth());
-  const days = Math.floor(
-    (now.getTime() - new Date(CHILD.dob.getFullYear(), CHILD.dob.getMonth() + months, CHILD.dob.getDate()).getTime()) /
-      86400000
-  );
-  if (months < 1) return `${Math.floor((now.getTime() - CHILD.dob.getTime()) / 86400000)} days old`;
+function formatAgeLong(months: number, days: number): string {
+  if (months === 0) return `${days} days old`;
   if (months < 12) return days > 0 ? `${months} months, ${days} days old` : `${months} months old`;
-  const yrs = Math.floor(months / 12);
+  const years = Math.floor(months / 12);
   const rem = months % 12;
-  return rem > 0 ? `${yrs} year${yrs > 1 ? "s" : ""}, ${rem} month${rem > 1 ? "s" : ""} old` : `${yrs} year${yrs > 1 ? "s" : ""} old`;
+  if (rem === 0) return `${years} year${years !== 1 ? "s" : ""} old`;
+  return `${years} year${years !== 1 ? "s" : ""}, ${rem} month${rem !== 1 ? "s" : ""} old`;
 }
 
-interface VaultEntry {
-  id: string;
+function getNextMilestone(dob: string) {
+  const birth = new Date(dob);
+  const milestones = [13, 18, 21];
+  const now = new Date();
+  for (const age of milestones) {
+    const d = new Date(birth);
+    d.setFullYear(birth.getFullYear() + age);
+    if (d > now) {
+      const daysAway = Math.ceil((d.getTime() - now.getTime()) / 86400000);
+      return { age, daysAway };
+    }
+  }
+  return null;
+}
+
+function monthName(m: number) {
+  return new Date(2000, m - 1, 1).toLocaleDateString("en-US", { month: "long" });
+}
+
+function childAgeAtMonth(dob: string, year: number, month: number): string {
+  const born = new Date(dob + "T00:00:00");
+  const target = new Date(`${year}-${String(month).padStart(2, "0")}-01T00:00:00`);
+  let months = (target.getFullYear() - born.getFullYear()) * 12 + (target.getMonth() - born.getMonth());
+  if (target.getDate() < born.getDate()) months--;
+  if (months <= 0) return "Newborn";
+  return `${months}m`;
+}
+
+function buildMonthRange(dob: string) {
+  const start = new Date(dob + "T00:00:00");
+  const now = new Date();
+  const result: Array<{ year: number; month: number }> = [];
+  const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur <= now) {
+    result.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return result;
+}
+
+// ─── Section label ────────────────────────────────────────────────────────────
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{
+      fontFamily: "var(--font-body)", fontSize: 9, fontWeight: 600,
+      letterSpacing: "0.14em", textTransform: "uppercase" as const,
+      color: "var(--sage)", padding: "12px 16px 6px", margin: 0,
+    }}>{children}</p>
+  );
+}
+
+// ─── Demo nav item ────────────────────────────────────────────────────────────
+function NavItem({
+  name, icon: Icon, active, onClick,
+}: {
   name: string;
-  relationship: string;
-  contentType: "letter" | "voice" | "photo" | "video";
-  sealedUntil: string;
-  sealIcon: "13" | "18" | "graduation" | "wedding" | "21";
-  date: string;
-  snippet: string;
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "10px 12px", borderRadius: 6,
+        fontSize: 13, fontWeight: active ? 500 : 400,
+        letterSpacing: "0.01em", fontFamily: "var(--font-body)",
+        textDecoration: "none", color: active ? "var(--green)" : "#9A9590",
+        background: "transparent", border: "none", cursor: "pointer",
+        position: "relative" as const, transition: "color 160ms ease",
+        width: "100%", textAlign: "left" as const,
+      }}
+    >
+      <Icon size={15} strokeWidth={active ? 1.8 : 1.4} />
+      {name}
+      {active && (
+        <span style={{
+          position: "absolute", bottom: 4, left: 12, right: 12,
+          height: "0.5px", background: "var(--gold)", borderRadius: 1,
+        }} />
+      )}
+    </button>
+  );
 }
 
-const VAULT_ENTRIES: VaultEntry[] = [
-  {
-    id: "1",
-    name: "Grandma Betty",
-    relationship: "Paternal grandmother",
-    contentType: "letter",
-    sealedUntil: "13th birthday",
-    sealIcon: "13",
-    date: "July 2025",
-    snippet: "Letter sealed",
-  },
-  {
-    id: "2",
-    name: "Grandpa Jim",
-    relationship: "Maternal grandfather",
-    contentType: "voice",
-    sealedUntil: "18th birthday",
-    sealIcon: "18",
-    date: "August 2025",
-    snippet: "Voice memo sealed",
-  },
-  {
-    id: "3",
-    name: "Uncle Paul",
-    relationship: "Uncle",
-    contentType: "letter",
-    sealedUntil: "Graduation day",
-    sealIcon: "graduation",
-    date: "September 2025",
-    snippet: "Letter sealed",
-  },
-  {
-    id: "4",
-    name: "Godmother Sarah",
-    relationship: "Godmother",
-    contentType: "photo",
-    sealedUntil: "18th birthday",
-    sealIcon: "18",
-    date: "October 2025",
-    snippet: "Photo + letter sealed",
-  },
-  {
-    id: "5",
-    name: "Aunt Rachel",
-    relationship: "Maternal aunt",
-    contentType: "video",
-    sealedUntil: "Wedding day",
-    sealIcon: "wedding",
-    date: "November 2025",
-    snippet: "Video sealed",
-  },
-  {
-    id: "6",
-    name: "Family friend Mike",
-    relationship: "Family friend",
-    contentType: "letter",
-    sealedUntil: "21st birthday",
-    sealIcon: "21",
-    date: "December 2025",
-    snippet: "Letter sealed",
-  },
-  {
-    id: "7",
-    name: "Neighbor Joan",
-    relationship: "Neighbor",
-    contentType: "voice",
-    sealedUntil: "13th birthday",
-    sealIcon: "13",
-    date: "January 2026",
-    snippet: "Voice memo sealed",
-  },
-  {
-    id: "8",
-    name: "College friend Emma",
-    relationship: "Family friend",
-    contentType: "letter",
-    sealedUntil: "18th birthday",
-    sealIcon: "18",
-    date: "February 2026",
-    snippet: "Letter sealed",
-  },
-];
+// ─── Sidebar content ──────────────────────────────────────────────────────────
+type SectionKey = "home" | "vault" | "dispatches" | "letters" | "world" | "before-born" | "circle" | "delivery";
 
-interface MonthSnapshot {
-  year: number;
-  month: number;
-  label: string;
-  headline?: string;
-  song?: string;
-  artist?: string;
-  weather?: string;
-  temp?: string;
-  funFact?: string;
-  age: string;
-  isBirth?: boolean;
-  isCurrent?: boolean;
-}
-
-const SNAPSHOTS: MonthSnapshot[] = [
-  {
-    year: 2025, month: 6, label: "June 2025",
-    headline: "Noah Ellis enters the world",
-    song: "Espresso", artist: "Sabrina Carpenter",
-    weather: "Sunny & warm", temp: "82°F",
-    age: "Newborn", isBirth: true,
-  },
-  {
-    year: 2025, month: 7, label: "July 2025",
-    headline: "Heat wave grips Minneapolis as Noah turns 1 month",
-    song: "Good Luck, Babe!", artist: "Chappell Roan",
-    weather: "Hot & humid", temp: "91°F",
-    age: "1 month",
-  },
-  {
-    year: 2025, month: 8, label: "August 2025",
-    headline: "State Fair opens as Noah begins smiling",
-    song: "Die With A Smile", artist: "Lady Gaga & Bruno Mars",
-    weather: "Warm, late summer", temp: "85°F",
-    age: "2 months",
-  },
-  {
-    year: 2025, month: 9, label: "September 2025",
-    headline: "Fall arrives; Noah discovers his hands",
-    song: "APT.", artist: "ROSE & Bruno Mars",
-    weather: "Cool & crisp", temp: "67°F",
-    age: "3 months",
-  },
-  {
-    year: 2025, month: 10, label: "October 2025",
-    headline: "Noah's first Halloween — dressed as a little pumpkin",
-    song: "luther", artist: "Kendrick Lamar & SZA",
-    weather: "Chilly & windy", temp: "52°F",
-    age: "4 months",
-  },
-  {
-    year: 2025, month: 11, label: "November 2025",
-    headline: "First snowflakes spotted in Minneapolis",
-    song: "That's So True", artist: "Gracie Abrams",
-    weather: "First snow", temp: "34°F",
-    age: "5 months",
-  },
-  {
-    year: 2025, month: 12, label: "December 2025",
-    headline: "Noah's first Christmas — wide eyes at the tree lights",
-    song: "All I Want for Christmas Is You", artist: "Mariah Carey",
-    weather: "Snowy & cold", temp: "18°F",
-    age: "6 months",
-  },
-  {
-    year: 2026, month: 1, label: "January 2026",
-    headline: "New Year brings new rolls — Noah rolls over for the first time",
-    song: "BIRDS OF A FEATHER", artist: "Billie Eilish",
-    weather: "Deep freeze", temp: "7°F",
-    age: "7 months",
-  },
-  {
-    year: 2026, month: 2, label: "February 2026",
-    headline: "Super Bowl LX comes to Minneapolis; Noah naps through halftime",
-    song: "Now And Then", artist: "The Beatles",
-    weather: "Cold & clear", temp: "22°F",
-    age: "8 months",
-  },
-  {
-    year: 2026, month: 3, label: "March 2026",
-    headline: "Spring thaw begins; Noah starts pulling up to stand",
-    song: "Not Like Us", artist: "Kendrick Lamar",
-    weather: "Thawing, partly cloudy", temp: "41°F",
-    age: "9 months",
-    isCurrent: true,
-  },
-];
-
-const CIRCLE_MEMBERS = [
-  { name: "James Ellis", role: "Dad", initials: "JE", color: "#4A5E4C" },
-  { name: "Sarah Ellis", role: "Mom", initials: "SE", color: "#6B8F6F" },
-  { name: "Grandma Betty", role: "Paternal grandmother", initials: "GB", color: "#C8A87A" },
-  { name: "Grandpa Jim", role: "Maternal grandfather", initials: "GJ", color: "#8B7355" },
-  { name: "Uncle Paul", role: "Uncle", initials: "UP", color: "#7A8FA6" },
-  { name: "Godmother Sarah", role: "Godmother", initials: "GS", color: "#B07BAC" },
-  { name: "Aunt Rachel", role: "Maternal aunt", initials: "AR", color: "#C8A87A" },
-  { name: "Family friend Mike", role: "Family friend", initials: "FM", color: "#6B8F6F" },
-];
-
-// ─── Sub-Components ──────────────────────────────────────────────────────────
-
-function ContentTypeIcon({ type, size = 14 }: { type: string; size?: number }) {
-  const props = { size, strokeWidth: 1.5, color: "var(--gold)" };
-  if (type === "letter") return <FileText {...props} />;
-  if (type === "voice") return <Mic {...props} />;
-  if (type === "photo") return <ImageIcon {...props} />;
-  if (type === "video") return <Video {...props} />;
-  return <FileText {...props} />;
-}
-
-function SealIcon({ until }: { until: string }) {
-  if (until === "graduation") return <GraduationCap size={12} strokeWidth={1.5} color="var(--gold)" />;
-  if (until === "wedding") return <Heart size={12} strokeWidth={1.5} color="var(--gold)" />;
-  return <Lock size={12} strokeWidth={1.5} color="var(--gold)" />;
-}
-
-function SealLabel({ until }: { until: string }) {
-  const map: Record<string, string> = {
-    "13": "Opens at 13",
-    "18": "Opens at 18",
-    "21": "Opens at 21",
-    "graduation": "Opens at graduation",
-    "wedding": "Opens on wedding day",
-  };
-  return <>{map[until] ?? `Opens at ${until}`}</>;
-}
-
-// ─── Tabs ────────────────────────────────────────────────────────────────────
-
-type Tab = "dashboard" | "vault" | "world" | "born" | "prompts";
-
-const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: "dashboard", label: "Dashboard", icon: <BookOpen size={15} strokeWidth={1.5} /> },
-  { key: "vault", label: "Vault", icon: <Lock size={15} strokeWidth={1.5} /> },
-  { key: "world", label: "World", icon: <Globe size={15} strokeWidth={1.5} /> },
-  { key: "born", label: "Born Day", icon: <Newspaper size={15} strokeWidth={1.5} /> },
-  { key: "prompts", label: "How Prompts Work", icon: <Mail size={15} strokeWidth={1.5} /> },
-];
-
-// ─── Screen: Dashboard ───────────────────────────────────────────────────────
-
-function DashboardScreen() {
-  const daysAlive = getDaysAlive();
-  const ageStr = getAgeStr();
+function DemoSidebarContent({
+  activeSection, onSectionChange, onClose,
+}: {
+  activeSection: SectionKey;
+  onSectionChange: (s: SectionKey) => void;
+  onClose?: () => void;
+}) {
+  const childNav: Array<{ name: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; key: SectionKey }> = [
+    { name: "Home", icon: LayoutDashboard, key: "home" },
+    { name: "The Vault", icon: FolderLock, key: "vault" },
+    { name: "Dispatches", icon: Send, key: "dispatches" },
+    { name: "Letters", icon: Mail, key: "letters" },
+    { name: "The World", icon: Sunrise, key: "world" },
+    { name: "Before You Were Born", icon: BookOpen, key: "before-born" },
+  ];
+  const shareNav: Array<{ name: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; key: SectionKey }> = [
+    { name: "Circle", icon: Users, key: "circle" },
+    { name: "Delivery", icon: PackageOpen, key: "delivery" },
+  ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Greeting */}
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Logo */}
       <div style={{
-        background: "linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%)",
-        borderRadius: "var(--radius-lg)",
-        padding: "32px 28px",
-        color: "#fff",
+        padding: "22px 20px 18px", borderBottom: "0.5px solid var(--border)",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 6, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          Good morning, Sarah & James
-        </p>
-        <h2 style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 28,
-          fontWeight: 700,
-          marginBottom: 4,
-          lineHeight: 1.2,
-        }}>
-          {CHILD.firstName}&apos;s Fable
-        </h2>
-        <p style={{ fontSize: 14, opacity: 0.8, marginBottom: 20 }}>{ageStr}</p>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 12,
-        }}>
-          <div style={{
-            background: "rgba(255,255,255,0.12)",
-            borderRadius: 12,
-            padding: "16px 20px",
-            backdropFilter: "blur(10px)",
-          }}>
-            <p style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 36,
-              fontWeight: 700,
-              lineHeight: 1,
-              marginBottom: 4,
-            }}>
-              {daysAlive.toLocaleString()}
-            </p>
-            <p style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Days alive
-            </p>
-          </div>
-          <div style={{
-            background: "rgba(255,255,255,0.12)",
-            borderRadius: 12,
-            padding: "16px 20px",
-            backdropFilter: "blur(10px)",
-          }}>
-            <p style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 36,
-              fontWeight: 700,
-              lineHeight: 1,
-              marginBottom: 4,
-            }}>
-              47
-            </p>
-            <p style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Vault entries
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Writing Block */}
-      <div style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "20px 20px",
-        boxShadow: "var(--shadow-sm)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <Sparkles size={16} color="var(--gold)" strokeWidth={1.5} />
-          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Your monthly prompt</p>
+        <div>
           <span style={{
-            marginLeft: "auto",
-            fontSize: 10,
-            color: "var(--text-3)",
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 100,
-            padding: "3px 10px",
-          }}>
-            Due April 1
-          </span>
+            fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 700,
+            color: "var(--green)", letterSpacing: "0.02em",
+          }}>Our Fable</span>
+          <p style={{
+            fontSize: 10, color: "var(--text-3)", letterSpacing: "0.12em",
+            textTransform: "uppercase", marginTop: 3,
+          }}>{FAMILY_NAME}</p>
         </div>
-        <p style={{ fontSize: 15, fontStyle: "italic", color: "var(--text-2)", lineHeight: 1.7, marginBottom: 16 }}>
-          &ldquo;What was the moment you realized your whole world had changed — the second you heard {CHILD.firstName} cry for the first time?&rdquo;
-        </p>
-        <div style={{
-          border: "1.5px dashed var(--border)",
-          borderRadius: 10,
-          padding: "14px 16px",
-          color: "var(--text-3)",
-          fontSize: 14,
-          background: "var(--bg-2)",
-          cursor: "default",
-        }}>
-          <span style={{ opacity: 0.6 }}>Write your memory here… (demo mode)</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button style={{ position: "relative", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", padding: 4 }}>
+            <Bell size={15} strokeWidth={1.5} />
+            <span style={{ position: "absolute", top: 1, right: 1, width: 6, height: 6, borderRadius: "50%", background: "var(--gold)", border: "1.5px solid var(--surface)" }} />
+          </button>
+          {onClose && (
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", padding: 4 }}>
+              <X size={17} strokeWidth={1.5} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Vault Preview */}
-      <div style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "20px 20px",
-        boxShadow: "var(--shadow-sm)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <Lock size={16} color="var(--gold)" strokeWidth={1.5} />
-          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>The Vault</p>
-          <span style={{
-            marginLeft: "auto",
-            fontSize: 12,
-            fontWeight: 700,
-            fontFamily: "var(--font-display)",
-            color: "var(--gold)",
-          }}>
-            47 sealed
-          </span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {VAULT_ENTRIES.slice(0, 3).map(e => (
-            <div key={e.id} style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "10px 12px",
-              background: "var(--gold-dim)",
-              border: "1px solid var(--gold-border)",
-              borderRadius: 10,
-            }}>
-              <div style={{
-                width: 32, height: 32,
-                borderRadius: 8,
-                background: "rgba(200,168,122,0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <Lock size={14} color="var(--gold)" strokeWidth={1.5} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>{e.name}</p>
-                <p style={{ fontSize: 11, color: "var(--text-3)" }}>{e.contentType} · {e.sealedUntil}</p>
-              </div>
-            </div>
-          ))}
-          <p style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center", marginTop: 4 }}>
-            +44 more sealed entries
-          </p>
-        </div>
-      </div>
-
-      {/* Dispatches Card */}
-      <div style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "20px 20px",
-        boxShadow: "var(--shadow-sm)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <Mail size={16} color="var(--sage)" strokeWidth={1.5} />
-          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Dispatches</p>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{
-            display: "flex", gap: 12, padding: "12px 0",
-            borderBottom: "1px solid var(--border)",
-          }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: "var(--green)", marginTop: 5, flexShrink: 0,
-            }} />
-            <div>
-              <p style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>Grandma Betty responded</p>
-              <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>March prompt · Sealed until Noah turns 13</p>
-            </div>
-            <Clock size={12} color="var(--text-4)" style={{ marginLeft: "auto", marginTop: 4, flexShrink: 0 }} />
-          </div>
-          <div style={{
-            display: "flex", gap: 12, padding: "12px 0",
-            borderBottom: "1px solid var(--border)",
-          }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: "var(--gold)", marginTop: 5, flexShrink: 0,
-            }} />
-            <div>
-              <p style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>Uncle Paul sealed a letter</p>
-              <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>For graduation day</p>
-            </div>
-            <Clock size={12} color="var(--text-4)" style={{ marginLeft: "auto", marginTop: 4, flexShrink: 0 }} />
-          </div>
-          <div style={{ display: "flex", gap: 12, padding: "12px 0" }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: "var(--border-dark)", marginTop: 5, flexShrink: 0,
-            }} />
-            <div>
-              <p style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>April prompts sending in 4 days</p>
-              <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>8 circle members will receive prompts</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Circle Card */}
-      <div style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "20px 20px",
-        boxShadow: "var(--shadow-sm)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <Users size={16} color="var(--sage)" strokeWidth={1.5} />
-          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{CHILD.firstName}&apos;s Circle</p>
-          <span style={{
-            marginLeft: "auto",
-            fontSize: 11,
-            color: "var(--text-3)",
-          }}>
-            8 members
-          </span>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {CIRCLE_MEMBERS.map(m => (
-            <div key={m.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, width: 64 }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: "50%",
-                background: m.color,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#fff", fontSize: 13, fontWeight: 700,
-                flexShrink: 0,
-              }}>
-                {m.initials}
-              </div>
-              <p style={{ fontSize: 10, color: "var(--text-2)", textAlign: "center", lineHeight: 1.3 }}>
-                {m.name.split(" ")[0]}
-              </p>
-            </div>
+      {/* Nav */}
+      <nav style={{ flex: 1, overflowY: "auto", padding: "12px 10px 12px" }}>
+        <SectionLabel>For Noah</SectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {childNav.map(item => (
+            <NavItem key={item.key} name={item.name} icon={item.icon} active={activeSection === item.key}
+              onClick={() => { onSectionChange(item.key); onClose?.(); }} />
           ))}
         </div>
+        <SectionLabel>Share</SectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {shareNav.map(item => (
+            <NavItem key={item.key} name={item.name} icon={item.icon} active={activeSection === item.key}
+              onClick={() => { onSectionChange(item.key); onClose?.(); }} />
+          ))}
+        </div>
+        <div style={{ borderTop: "0.5px solid var(--border)", marginTop: 16, paddingTop: 8 }}>
+          <NavItem name="Settings" icon={Settings} active={false} onClick={() => {}} />
+        </div>
+      </nav>
+
+      {/* Footer */}
+      <div style={{ padding: "10px 10px 14px", borderTop: "0.5px solid var(--border)" }}>
+        <button style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "11px 16px",
+          borderRadius: 10, fontSize: 13, fontWeight: 400, letterSpacing: "0.01em",
+          color: "#9A9590", background: "none", border: "none", cursor: "pointer", width: "100%",
+        }}>
+          <LogOut size={16} strokeWidth={1.4} /> Log out
+        </button>
+        <p style={{ fontSize: 10, color: "var(--text-4)", letterSpacing: "0.08em", padding: "4px 16px 0" }}>ourfable.ai</p>
       </div>
     </div>
   );
 }
 
-// ─── Screen: Vault ───────────────────────────────────────────────────────────
+// ─── Writing Block (visual-only recreation) ───────────────────────────────────
+function DemoWritingBlock({ childFirst }: { childFirst: string }) {
+  const [text, setText] = useState("");
+  const [focused, setFocused] = useState(false);
+  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
-function VaultScreen() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Header */}
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
-            display: "flex", alignItems: "center", justifyContent: "center",
+    <div style={{
+      background: "#FFFFFF", borderRadius: 12,
+      boxShadow: "0 2px 24px rgba(26,26,24,0.07), 0 1px 4px rgba(26,26,24,0.04)",
+      overflow: "hidden", position: "relative",
+    }}>
+      {/* top accent bar */}
+      <div style={{
+        height: 3,
+        background: focused
+          ? "linear-gradient(90deg, var(--green) 0%, var(--sage) 50%, var(--gold) 100%)"
+          : "linear-gradient(90deg, rgba(74,94,76,0.4) 0%, rgba(107,143,111,0.3) 50%, rgba(200,168,122,0.35) 100%)",
+        transition: "background 300ms ease",
+      }} />
+      <div style={{ padding: "20px 24px 0" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
+          <span style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 20, fontWeight: 400, color: "var(--green)" }}>
+            Dear {childFirst},
+          </span>
+          <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--sage)", letterSpacing: "0.04em" }}>
+            {today}
+          </span>
+        </div>
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="Something happened today I want you to know about…"
+          rows={6}
+          style={{
+            width: "100%", border: "none", outline: "none", resize: "none",
+            fontFamily: "var(--font-body)", fontSize: 15, lineHeight: 1.85,
+            color: "var(--text)", background: "transparent", padding: 0,
+            caretColor: "var(--sage)",
+          }}
+        />
+      </div>
+      {/* Attachment strip */}
+      <div style={{ display: "flex", gap: 8, padding: "12px 24px", borderTop: "0.5px solid var(--border)" }}>
+        {[
+          { label: "Voice", icon: "🎙" },
+          { label: "Photo", icon: "📷" },
+          { label: "Video", icon: "🎥" },
+        ].map(btn => (
+          <button key={btn.label} style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            padding: "5px 12px", borderRadius: 100,
+            border: "1px solid var(--border)", background: "transparent",
+            fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
+            cursor: "pointer", letterSpacing: "0.02em",
           }}>
-            <Lock size={20} color="var(--gold)" strokeWidth={1.5} />
-          </div>
-          <div>
-            <h2 style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 24,
-              fontWeight: 700,
-              color: "var(--text)",
+            <span style={{ fontSize: 13 }}>{btn.icon}</span>
+            {btn.label}
+          </button>
+        ))}
+      </div>
+      {/* Footer */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 24px", borderTop: "0.5px solid var(--border)", background: "var(--bg)",
+      }}>
+        <div style={{
+          display: "inline-flex", alignItems: "center",
+          border: "1px solid var(--border)", borderRadius: 100, overflow: "hidden",
+        }}>
+          <button style={{
+            padding: "6px 14px", border: "none", background: "var(--green)", color: "#fff",
+            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+            letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+          }}>Seal</button>
+          <button style={{
+            padding: "6px 14px", border: "none", background: "transparent", color: "var(--text-3)",
+            fontFamily: "var(--font-body)", fontSize: 11, letterSpacing: "0.06em",
+            textTransform: "uppercase", cursor: "pointer",
+          }}>Dispatch</button>
+        </div>
+        <button className="btn-primary" style={{ padding: "8px 20px", fontSize: 13 }}>
+          Seal letter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HOME / DASHBOARD SECTION ─────────────────────────────────────────────────
+function HomeSection() {
+  const { months, days, totalDays } = calcAge(CHILD_DOB);
+  const ageLong = formatAgeLong(months, days);
+  const nextMilestone = getNextMilestone(CHILD_DOB);
+  const totalVault = 47;
+
+  const vaultEntries = [
+    { id: "1", memberName: "Grandma Betty", memberRelationship: "Grandmother", contentType: "Letter", isSealed: true },
+    { id: "2", memberName: "Grandpa Jim", memberRelationship: "Grandfather", contentType: "Voice memo", isSealed: true },
+  ];
+
+  return (
+    <div>
+      {/* 1. GREETING HEADER */}
+      <div style={{ paddingBottom: 40, animation: "fadeUp 0.7s var(--spring) both" }}>
+        <Greeting />
+        <h1 className="font-display" style={{
+          fontWeight: 700, fontStyle: "normal",
+          fontSize: "clamp(2.5rem, 7vw, 4rem)",
+          color: "var(--green)", letterSpacing: "-0.02em",
+          lineHeight: 1, marginBottom: 20,
+        }}>{CHILD_NAME}</h1>
+        <div style={{ width: 48, height: "0.5px", background: "linear-gradient(90deg, var(--gold), transparent)", marginBottom: 12 }} />
+        <p style={{
+          fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+          letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--sage)",
+        }}>{ageLong}</p>
+        {nextMilestone && (
+          <div style={{
+            marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "6px 14px", borderRadius: 100,
+            border: "0.5px solid rgba(200,168,122,0.35)", background: "rgba(200,168,122,0.06)",
+          }}>
+            <span style={{ fontSize: 9, color: "var(--gold)", lineHeight: 1 }}>✦</span>
+            <p style={{
+              fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 500,
+              letterSpacing: "0.1em", color: "var(--gold)",
             }}>
-              {CHILD.firstName}&apos;s Vault
-            </h2>
-            <p style={{ fontSize: 12, color: "var(--text-3)" }}>
-              Every sealed entry, waiting for its moment.
+              {nextMilestone.age} years · {nextMilestone.daysAway.toLocaleString()} days away
             </p>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 16 }}>
-          {[
-            { label: "Total", value: 47, color: "var(--text)" },
-            { label: "Sealed", value: 47, color: "var(--gold)" },
-            { label: "Open", value: 0, color: "var(--sage)" },
-          ].map(s => (
-            <div key={s.label} style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: 12, padding: "14px 0", textAlign: "center",
-            }}>
-              <p style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 26, fontWeight: 300,
-                color: s.color, lineHeight: 1,
+      {/* 2. DAYS COUNTER */}
+      <div style={{ textAlign: "center", padding: "16px 0 64px", animation: "fadeUp 0.7s var(--spring) 0.1s both" }}>
+        <CountUpNumber target={totalDays} label={"days of " + CHILD_FIRST} />
+      </div>
+
+      {/* 3. PULL QUOTE */}
+      <div style={{
+        padding: "0 0 56px", textAlign: "center",
+        maxWidth: 480, margin: "0 auto 8px",
+        animation: "fadeUp 0.7s var(--spring) 0.2s both",
+      }}>
+        <div style={{ width: 48, height: "0.5px", background: "rgba(200,168,122,0.5)", margin: "0 auto 28px" }} />
+        <p className="font-display" style={{
+          fontStyle: "italic", fontSize: "clamp(1.1rem, 3vw, 1.45rem)",
+          fontWeight: 400, color: "var(--green)", lineHeight: 1.6,
+        }}>
+          The vault holds {totalVault} sealed memories, waiting for {CHILD_FIRST}.
+        </p>
+        <div style={{ width: 48, height: "0.5px", background: "rgba(200,168,122,0.5)", margin: "28px auto 24px" }} />
+        <p style={{ fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
+      </div>
+
+      {/* 4. WRITING BLOCK */}
+      <div style={{ marginBottom: 72, animation: "fadeUp 0.7s var(--spring) 0.3s both" }}>
+        <DemoWritingBlock childFirst={CHILD_FIRST} />
+      </div>
+
+      {/* 5. VAULT — dark section */}
+      <div style={{
+        width: "100vw", marginLeft: "calc(-50vw + 50%)",
+        position: "relative",
+        background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)",
+        padding: "72px 24px 80px",
+        animation: "fadeUp 0.7s var(--spring) 0.4s both",
+      }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", position: "relative" }}>
+          <p style={{
+            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+            letterSpacing: "0.2em", textTransform: "uppercase",
+            color: "var(--gold)", marginBottom: 10,
+          }}>THE VAULT</p>
+          <div style={{ width: 40, height: "0.5px", background: "rgba(200,168,122,0.4)", marginBottom: 24 }} />
+          <h2 className="font-display" style={{
+            fontSize: 24, fontWeight: 400, color: "#FDFBF7", marginBottom: 32, lineHeight: 1.25,
+          }}>Sealed memories for {CHILD_FIRST}</h2>
+
+          <div style={{ marginBottom: 32 }}>
+            {vaultEntries.map((e, i) => (
+              <div key={e.id} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "18px 0",
+                borderBottom: i < vaultEntries.length - 1 ? "0.5px solid rgba(253,251,247,0.07)" : "none",
               }}>
-                {s.value}
-              </p>
-              <p style={{ fontSize: 10, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 4 }}>
-                {s.label}
-              </p>
-            </div>
-          ))}
+                <div>
+                  <p className="font-display" style={{
+                    fontSize: 18, fontStyle: "italic", color: "#FDFBF7", marginBottom: 5,
+                  }}>{e.memberName}</p>
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "rgba(253,251,247,0.45)" }}>
+                    {e.contentType} · {e.memberRelationship}
+                  </p>
+                </div>
+                {e.isSealed && (
+                  <span style={{
+                    display: "inline-flex", alignItems: "center",
+                    border: "0.5px solid rgba(200,168,122,0.45)", borderRadius: 100,
+                    padding: "4px 12px", fontSize: 10, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "var(--gold)",
+                    fontFamily: "var(--font-body)", flexShrink: 0, marginLeft: 16,
+                  }}>Sealed</span>
+                )}
+              </div>
+            ))}
+            <p style={{ fontSize: 12, color: "rgba(253,251,247,0.3)", marginTop: 14 }}>
+              +{totalVault - 2} more sealed
+            </p>
+          </div>
+
+          <button onClick={() => {}} style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontSize: 13, color: "rgba(107,143,111,0.9)",
+            textDecoration: "none", letterSpacing: "0.04em",
+            fontFamily: "var(--font-body)", background: "none", border: "none", cursor: "pointer",
+          }}>
+            See the vault →
+          </button>
         </div>
       </div>
 
-      {/* Vault entries */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {VAULT_ENTRIES.map(entry => (
-          <div key={entry.id} style={{
-            background: "var(--card)",
-            border: "1px solid var(--gold-border)",
-            borderLeft: "3px solid var(--gold-border)",
-            borderRadius: "var(--radius)",
-            padding: "18px 20px",
-            boxShadow: "var(--shadow-sm)",
-            opacity: 0.9,
+      {/* 6. CARDS */}
+      <div style={{ padding: "0 0 0" }}>
+        {/* Dispatches */}
+        <div className="card-hover-luxury" style={{
+          padding: "44px 32px 36px", borderTop: "0.5px solid var(--border)",
+          borderLeft: "2px solid var(--sage)", cursor: "pointer",
+          animation: "fadeUp 0.6s var(--spring) 0.5s both",
+        }}>
+          <p style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
+            color: "var(--text-3)", marginBottom: 5, fontFamily: "var(--font-body)",
+          }}>Dispatches</p>
+          <h3 className="font-display" style={{
+            fontSize: 22, fontWeight: 400, color: "var(--text)", lineHeight: 1.25, marginBottom: 6,
+          }}>Send an update</h3>
+          <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, fontFamily: "var(--font-body)" }}>
+            Share a photo, a milestone, a quiet moment — everyone in {CHILD_FIRST}&apos;s circle will see it.
+          </p>
+          <p style={{ fontSize: 11, color: "var(--sage)", marginTop: 10, fontFamily: "var(--font-body)" }}>
+            Last dispatch 3 days ago
+          </p>
+        </div>
+
+        {/* Circle */}
+        <div className="card-hover-luxury" style={{
+          padding: "44px 32px 36px", borderTop: "0.5px solid var(--border)",
+          borderLeft: "2px solid var(--sage)", cursor: "pointer",
+          animation: "fadeUp 0.6s var(--spring) 0.6s both",
+        }}>
+          <p style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
+            color: "var(--text-3)", marginBottom: 5, fontFamily: "var(--font-body)",
+          }}>People</p>
+          <h3 className="font-display" style={{
+            fontSize: 22, fontWeight: 400, color: "var(--text)", lineHeight: 1.25, marginBottom: 6,
+          }}>Inner Circle</h3>
+          <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.6, fontFamily: "var(--font-body)" }}>
+            The people who love {CHILD_FIRST}. Invite grandparents, family, friends to write.
+          </p>
+          <p style={{ fontSize: 11, color: "var(--sage)", marginTop: 10, fontFamily: "var(--font-body)" }}>
+            8 people in {CHILD_FIRST}&apos;s circle
+          </p>
+        </div>
+      </div>
+
+      {/* 7. WORLD SNAPSHOT */}
+      <div style={{ marginBottom: 4 }}>
+        <p style={{ textAlign: "center", padding: "32px 0 8px", fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
+        <div className="card-hover-luxury" style={{
+          padding: "44px 32px 36px", borderTop: "2px solid var(--gold)", cursor: "pointer",
+          animation: "fadeUp 0.6s var(--spring) 0.7s both",
+        }}>
+          <p style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
+            color: "var(--text-3)", marginBottom: 5, fontFamily: "var(--font-body)",
+          }}>The World</p>
+          <h3 className="font-display" style={{
+            fontSize: 22, fontWeight: 400, color: "var(--text)", lineHeight: 1.25, marginBottom: 12,
+          }}>March 2026</h3>
+          <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 8, fontFamily: "var(--font-body)" }}>
+            Global trade tensions reshape supply chains as tariff negotiations stall for the third consecutive month.
+          </p>
+          <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
+            🎵 Not Like Us — Kendrick Lamar
+          </p>
+        </div>
+      </div>
+
+      <div style={{ height: 64 }} />
+    </div>
+  );
+}
+
+// ─── VAULT SECTION ────────────────────────────────────────────────────────────
+function VaultSection() {
+  const vaultEntries = [
+    { id: "1", memberName: "Grandma Betty", memberRelationship: "Grandmother", contentType: "text" as const, isSealed: true, unlockAge: 13 },
+    { id: "2", memberName: "Grandpa Jim", memberRelationship: "Grandfather", contentType: "voice" as const, isSealed: true, unlockAge: 13 },
+    { id: "3", memberName: "Aunt Lisa", memberRelationship: "Aunt", contentType: "photo" as const, isSealed: true, unlockAge: 18 },
+    { id: "4", memberName: "Uncle Dave", memberRelationship: "Uncle", contentType: "video" as const, isSealed: true, unlockAge: 13 },
+    { id: "5", memberName: "Godmother Carol", memberRelationship: "Godparent", contentType: "text" as const, isSealed: true, unlockAge: 18 },
+    { id: "6", memberName: "Grandma Ellis", memberRelationship: "Grandmother", contentType: "voice" as const, isSealed: true, unlockAge: 13 },
+    { id: "7", memberName: "Dad", memberRelationship: "Father", contentType: "text" as const, isSealed: false },
+    { id: "8", memberName: "Mom", memberRelationship: "Mother", contentType: "photo" as const, isSealed: false },
+  ];
+
+  const TYPE_ICONS: Record<string, React.ReactNode> = {
+    text: <FileText size={12} strokeWidth={1.5} />,
+    photo: <ImageIcon size={12} strokeWidth={1.5} />,
+    voice: <Mic size={12} strokeWidth={1.5} />,
+    video: <Video size={12} strokeWidth={1.5} />,
+  };
+
+  const TYPE_LABELS: Record<string, string> = {
+    text: "Letter", photo: "Photo", voice: "Voice memo", video: "Video",
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <FolderLock size={18} color="var(--gold)" strokeWidth={1.5} />
+        </div>
+        <div>
+          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>
+            {CHILD_FIRST}&apos;s Vault
+          </h1>
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>47 sealed memories</p>
+        </div>
+      </div>
+
+      {/* Filter chips */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
+        {["All", "Letters", "Voice memos", "Photos", "Videos"].map((f, i) => (
+          <button key={f} style={{
+            padding: "6px 14px", borderRadius: 100, fontSize: 11,
+            border: i === 0 ? "1.5px solid var(--green)" : "1px solid var(--border)",
+            background: i === 0 ? "var(--green-light)" : "transparent",
+            color: i === 0 ? "var(--green)" : "var(--text-3)",
+            fontFamily: "var(--font-body)", cursor: "pointer", fontWeight: i === 0 ? 600 : 400,
+          }}>{f}</button>
+        ))}
+      </div>
+
+      {/* Entries */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {vaultEntries.map(entry => (
+          <div key={entry.id} className="card" style={{
+            padding: 24,
+            borderLeft: entry.isSealed ? "3px solid var(--gold-border)" : "3px solid rgba(107,143,111,0.3)",
+            opacity: entry.isSealed ? 0.85 : 1,
           }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-              {/* Lock icon */}
               <div style={{
                 width: 40, height: 40, borderRadius: 10,
-                background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
+                background: entry.isSealed ? "var(--gold-dim)" : "var(--sage-dim)",
+                border: `1px solid ${entry.isSealed ? "var(--gold-border)" : "rgba(107,143,111,0.2)"}`,
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}>
-                <Lock size={16} color="var(--gold)" strokeWidth={1.5} />
+                <Lock size={16} color={entry.isSealed ? "var(--gold)" : "var(--sage)"} strokeWidth={1.5} />
               </div>
-
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-                  <p style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: 16, fontWeight: 400,
-                    color: "var(--text)",
-                  }}>
-                    {entry.name}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: 17, fontWeight: 400, color: "var(--text)" }}>
+                    {entry.memberName}
                   </p>
-                  <span style={{ fontSize: 11, color: "var(--text-3)" }}>· {entry.relationship}</span>
+                  <span style={{ fontSize: 10, color: "var(--text-3)" }}>· {entry.memberRelationship}</span>
                 </div>
-
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {/* Sealed chip */}
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    fontSize: 10, padding: "3px 10px",
-                    background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
-                    borderRadius: 100, color: "var(--gold)", fontWeight: 500,
-                  }}>
-                    <Lock size={9} strokeWidth={2} />
-                    Sealed
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  {entry.isSealed && (
+                    <span className="chip chip-gold" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
+                      <Lock size={9} strokeWidth={2} /> Sealed
+                    </span>
+                  )}
+                  <span className="chip" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
+                    {TYPE_ICONS[entry.contentType]}
+                    {TYPE_LABELS[entry.contentType]}
                   </span>
-
-                  {/* Content type chip */}
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    fontSize: 10, padding: "3px 10px",
-                    background: "var(--surface)", border: "1px solid var(--border)",
-                    borderRadius: 100, color: "var(--text-3)",
-                  }}>
-                    <ContentTypeIcon type={entry.contentType} size={11} />
-                    {entry.contentType === "photo" ? "Photo + letter" : entry.contentType.charAt(0).toUpperCase() + entry.contentType.slice(1)}
-                  </span>
-
-                  {/* Unlock age chip */}
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    fontSize: 10, padding: "3px 10px",
-                    background: "var(--surface)", border: "1px solid var(--border)",
-                    borderRadius: 100, color: "var(--text-3)",
-                  }}>
-                    <SealIcon until={entry.sealIcon} />
-                    <SealLabel until={entry.sealIcon} />
-                  </span>
+                  {entry.unlockAge && (
+                    <span className="chip" style={{ fontSize: 10 }}>
+                      Opens at {entry.unlockAge}
+                    </span>
+                  )}
                 </div>
-
-                <p style={{ fontSize: 11, color: "var(--text-4)", marginTop: 10 }}>
-                  Sealed {entry.date}
-                </p>
               </div>
+              {entry.isSealed && (
+                <button style={{
+                  background: "var(--surface)", border: "1px solid var(--border)",
+                  borderRadius: 8, padding: "7px 14px", fontSize: 11,
+                  color: "var(--text-3)", cursor: "pointer", flexShrink: 0,
+                  whiteSpace: "nowrap",
+                }}>Unlock early</button>
+              )}
             </div>
           </div>
         ))}
-
-        {/* More indicator */}
-        <div style={{
-          textAlign: "center", padding: "20px",
-          background: "var(--surface)", border: "1px dashed var(--border)",
-          borderRadius: "var(--radius)",
-          color: "var(--text-3)", fontSize: 13,
-        }}>
-          <Lock size={16} color="var(--border-dark)" strokeWidth={1.5} style={{ marginBottom: 6 }} />
-          <p>+39 more sealed entries waiting</p>
-          <p style={{ fontSize: 11, marginTop: 4, color: "var(--text-4)" }}>
-            Growing every month as {CHILD.firstName}&apos;s circle responds to prompts
+        {/* Show more */}
+        <div style={{ textAlign: "center", padding: "16px 0" }}>
+          <p style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic", fontFamily: "var(--font-playfair)" }}>
+            +39 more sealed entries
           </p>
         </div>
       </div>
@@ -707,868 +630,630 @@ function VaultScreen() {
   );
 }
 
-// ─── Screen: World Snapshot ──────────────────────────────────────────────────
+// ─── THE WORLD SECTION ────────────────────────────────────────────────────────
+function WorldSection() {
+  const dob = new Date(CHILD_DOB + "T12:00:00");
+  const fullDate = dob.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
-function WorldScreen() {
-  const [selected, setSelected] = useState<MonthSnapshot>(SNAPSHOTS[SNAPSHOTS.length - 1]);
+  const months = buildMonthRange(CHILD_DOB);
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div>
-        <h2 style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 24, fontWeight: 700, color: "var(--text)", marginBottom: 4,
-        }}>
-          {CHILD.firstName}&apos;s World Snapshots
-        </h2>
-        <p style={{ fontSize: 13, color: "var(--text-3)" }}>
-          Every month of {CHILD.firstName}&apos;s life, captured in time.
-        </p>
-      </div>
+  // Demo snapshot data
+  const snapshots: Record<string, { topHeadline: string; topSong: string; weatherDesc: string; tempHigh: number }> = {
+    "2025-7": {
+      topHeadline: "Record heat grips the Midwest as temperatures soar past 100°F for the fourth straight week",
+      topSong: "Not Like Us — Kendrick Lamar",
+      weatherDesc: "Hot and humid, thunderstorms late in the week",
+      tempHigh: 98,
+    },
+    "2025-8": {
+      topHeadline: "Back-to-school season begins with record enrollment numbers across US public schools",
+      topSong: "Good Luck, Babe! — Chappell Roan",
+      weatherDesc: "Warm with occasional showers, humidity dropping",
+      tempHigh: 88,
+    },
+    "2025-9": {
+      topHeadline: "Federal Reserve holds interest rates steady, citing cooling inflation data",
+      topSong: "APT. — ROSÉ & Bruno Mars",
+      weatherDesc: "Mild autumn conditions, first frost possible by month end",
+      tempHigh: 72,
+    },
+    "2025-10": {
+      topHeadline: "World Series draws record viewership as Houston advances to game seven",
+      topSong: "Die With A Smile — Lady Gaga & Bruno Mars",
+      weatherDesc: "Cool and crisp, fall colors at peak across Minneapolis",
+      tempHigh: 58,
+    },
+    "2025-11": {
+      topHeadline: "Holiday shopping season kicks off early as retailers report strong early November traffic",
+      topSong: "Now And Then — The Beatles",
+      weatherDesc: "First snowfall of the season, temperatures dropping sharply",
+      tempHigh: 38,
+    },
+    "2025-12": {
+      topHeadline: "Year in review: 2025 marked by AI breakthroughs and shifting global trade alliances",
+      topSong: "Blinding Lights (Redux) — The Weeknd",
+      weatherDesc: "Cold and snowy, classic Minnesota December",
+      tempHigh: 22,
+    },
+    "2026-1": {
+      topHeadline: "New year begins with optimism as job numbers beat expectations for the first time in six months",
+      topSong: "luther — Kendrick Lamar & SZA",
+      weatherDesc: "Bitter cold, wind chills below -20°F",
+      tempHigh: 8,
+    },
+    "2026-2": {
+      topHeadline: "Super Bowl LX draws 130 million viewers, highest since 2016",
+      topSong: "Espresso — Sabrina Carpenter",
+      weatherDesc: "Heavy snow and ice, travel advisories in effect",
+      tempHigh: 18,
+    },
+    "2026-3": {
+      topHeadline: "Global trade tensions reshape supply chains as tariff negotiations stall for the third consecutive month",
+      topSong: "Not Like Us — Kendrick Lamar",
+      weatherDesc: "Early spring thaw, highs reaching above freezing for first time in months",
+      tempHigh: 42,
+    },
+  };
 
-      {/* Selected snapshot */}
-      <div style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-        boxShadow: "var(--shadow)",
-      }}>
-        {/* Header */}
-        <div style={{
-          background: selected.isBirth
-            ? "linear-gradient(135deg, #C8A87A 0%, #D4B88A 100%)"
-            : selected.isCurrent
-              ? "linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%)"
-              : "linear-gradient(135deg, #4A5E4C 0%, #3D5040 100%)",
-          padding: "24px 24px 20px",
-          color: "#fff",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-            {selected.isBirth && <Star size={14} color="rgba(255,255,255,0.8)" strokeWidth={1.5} />}
-            <p style={{ fontSize: 11, opacity: 0.75, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              {selected.isBirth ? "Birth month" : selected.isCurrent ? "Current month" : "Monthly snapshot"}
-            </p>
-          </div>
-          <h3 style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 28, fontWeight: 700, marginBottom: 4, lineHeight: 1.2,
-          }}>
-            {selected.label}
-          </h3>
-          <p style={{ fontSize: 14, opacity: 0.8 }}>{CHILD.firstName} · {selected.age}</p>
-        </div>
-
-        {/* Content */}
-        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-          {selected.headline && (
-            <div style={{
-              padding: "14px 16px",
-              background: "var(--bg-2)",
-              borderRadius: 10,
-              borderLeft: "3px solid var(--border-dark)",
-            }}>
-              <p style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
-                Top headline
-              </p>
-              <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5, fontStyle: "italic" }}>
-                &ldquo;{selected.headline}&rdquo;
-              </p>
-            </div>
-          )}
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {selected.song && (
-              <div style={{
-                padding: "14px 16px",
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <Music size={13} color="var(--gold)" strokeWidth={1.5} />
-                  <p style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    #1 Song
-                  </p>
-                </div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>
-                  {selected.song}
-                </p>
-                <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{selected.artist}</p>
-              </div>
-            )}
-
-            {selected.weather && (
-              <div style={{
-                padding: "14px 16px",
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <MapPin size={13} color="var(--sage)" strokeWidth={1.5} />
-                  <p style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    Minneapolis
-                  </p>
-                </div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>
-                  {selected.temp}
-                </p>
-                <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{selected.weather}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Timeline */}
-      <div>
-        <p style={{ fontSize: 12, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
-          All months
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {[...SNAPSHOTS].reverse().map((snap, i) => (
-            <button
-              key={`${snap.year}-${snap.month}`}
-              onClick={() => setSelected(snap)}
-              style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "12px 16px",
-                background: selected === snap ? "var(--green-light)" : "var(--card)",
-                border: `1px solid ${selected === snap ? "var(--green-border)" : "var(--border)"}`,
-                borderRadius: 10,
-                cursor: "pointer",
-                textAlign: "left",
-                transition: "all 160ms",
-              }}
-            >
-              {/* Timeline dot */}
-              <div style={{
-                width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
-                background: snap.isBirth
-                  ? "var(--gold)"
-                  : snap.isCurrent
-                    ? "var(--green)"
-                    : selected === snap
-                      ? "var(--green)"
-                      : "var(--border-dark)",
-              }} />
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <p style={{
-                    fontSize: 13, fontWeight: 500,
-                    color: selected === snap ? "var(--green)" : "var(--text)",
-                  }}>
-                    {snap.label}
-                  </p>
-                  {snap.isBirth && (
-                    <span style={{
-                      fontSize: 9, padding: "2px 7px",
-                      background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
-                      borderRadius: 100, color: "var(--gold)",
-                    }}>
-                      BORN
-                    </span>
-                  )}
-                  {snap.isCurrent && (
-                    <span style={{
-                      fontSize: 9, padding: "2px 7px",
-                      background: "var(--green-light)", border: "1px solid var(--green-border)",
-                      borderRadius: 100, color: "var(--green)",
-                    }}>
-                      NOW
-                    </span>
-                  )}
-                </div>
-                <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 1 }}>
-                  {snap.age}
-                  {snap.song && <> · {snap.song}</>}
-                </p>
-              </div>
-
-              <ChevronRight size={14} color={selected === snap ? "var(--green)" : "var(--text-4)"} strokeWidth={1.5} />
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Screen: Born Day ────────────────────────────────────────────────────────
-
-function GoldDivider() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, margin: "16px auto", maxWidth: 200 }}>
-      <div style={{ flex: 1, height: 1, background: "var(--gold-border)" }} />
-      <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--gold)", opacity: 0.5 }} />
-      <div style={{ flex: 1, height: 1, background: "var(--gold-border)" }} />
-    </div>
-  );
-}
-
-function BornDayScreen() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      <div style={{
-        background: "var(--card)",
-        border: "1px solid var(--gold-border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-        boxShadow: "var(--shadow)",
-      }}>
-        {/* Masthead */}
-        <div style={{
-          padding: "28px 28px 20px",
-          borderBottom: "2px solid var(--text)",
-          textAlign: "center",
-        }}>
-          <p style={{
-            fontSize: 9,
-            letterSpacing: "0.35em",
-            textTransform: "uppercase",
-            color: "var(--text-3)",
-            marginBottom: 8,
-          }}>
-            ✦ Est. June 25, 2025 · Minneapolis, Minnesota ✦
-          </p>
-          <h2 style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 32,
-            fontWeight: 900,
-            letterSpacing: "-0.02em",
-            color: "var(--text)",
-            lineHeight: 1.05,
-            marginBottom: 6,
-          }}>
-            The Ellis Gazette
-          </h2>
-          <div style={{ height: 2, background: "var(--text)", margin: "10px 0 8px" }} />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-            <p style={{ fontSize: 10, color: "var(--text-3)", letterSpacing: "0.1em" }}>
-              VOL. I, NO. 1
-            </p>
-            <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--gold)", opacity: 0.6 }} />
-            <p style={{ fontSize: 10, color: "var(--text-3)", letterSpacing: "0.1em" }}>
-              WEDNESDAY, JUNE 25, 2025
-            </p>
-            <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--gold)", opacity: 0.6 }} />
-            <p style={{ fontSize: 10, color: "var(--text-3)", letterSpacing: "0.1em" }}>
-              ONE CENT
-            </p>
-          </div>
-          <div style={{ height: 1, background: "var(--border)", margin: "8px 0 0" }} />
-        </div>
-
-        {/* Headline */}
-        <div style={{ padding: "24px 28px", borderBottom: "1px solid var(--border)" }}>
-          <p style={{
-            fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase",
-            color: "var(--gold)", fontWeight: 600, marginBottom: 10,
-          }}>
-            ★ SPECIAL EDITION ★
-          </p>
-          <h3 style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 26, fontWeight: 900, lineHeight: 1.2,
-            color: "var(--text)", marginBottom: 8,
-          }}>
-            A Child Is Born: Noah James Ellis Arrives
-          </h3>
-          <p style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 16, fontStyle: "italic", fontWeight: 400,
-            color: "var(--text-2)", lineHeight: 1.5, marginBottom: 14,
-          }}>
-            &ldquo;He opened his eyes and looked at us like he&apos;d been waiting his whole life for this moment — and he had.&rdquo;
-          </p>
-
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <div style={{
-              background: "var(--green)",
-              borderRadius: 6, padding: "8px 14px",
-              color: "#fff", fontSize: 12, fontWeight: 600,
-            }}>
-              7 lbs, 4 oz
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text-3)" }}>
-              Born at 2:47 AM · Abbott Northwestern Hospital
-            </div>
-          </div>
-        </div>
-
-        {/* Two column */}
-        <div style={{ padding: "0 28px", display: "grid", gridTemplateColumns: "1fr 1px 1fr", gap: 0 }}>
-          {/* Left col */}
-          <div style={{ padding: "20px 20px 20px 0" }}>
-            <div style={{ height: 1, background: "var(--border)", marginBottom: 14 }} />
-            <p style={{ fontSize: 10, color: "var(--gold)", letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>
-              Weather Report
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <Sun size={22} color="var(--gold)" strokeWidth={1.5} />
-              <div>
-                <p style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, lineHeight: 1 }}>82°F</p>
-                <p style={{ fontSize: 11, color: "var(--text-3)" }}>Sunny & beautiful</p>
-              </div>
-            </div>
-            <p style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.6 }}>
-              A perfect summer morning welcomed Noah into the world. The sun was bright over Minneapolis, the air warm and still. The day could not have been more perfect.
-            </p>
-            <div style={{ height: 1, background: "var(--border)", margin: "14px 0" }} />
-            <p style={{ fontSize: 10, color: "var(--gold)", letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>
-              Song of the Day
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Music size={18} color="var(--gold)" strokeWidth={1.5} />
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Espresso</p>
-                <p style={{ fontSize: 11, color: "var(--text-3)" }}>Sabrina Carpenter</p>
-                <p style={{ fontSize: 10, color: "var(--text-4)" }}>#1 in America</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div style={{ background: "var(--border)" }} />
-
-          {/* Right col */}
-          <div style={{ padding: "20px 0 20px 20px" }}>
-            <div style={{ height: 1, background: "var(--border)", marginBottom: 14 }} />
-            <p style={{ fontSize: 10, color: "var(--gold)", letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>
-              In the World Today
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                "World leaders gather for G7 summit in Canada",
-                "US Open begins at Oakmont Country Club",
-                "NASA announces new Mars mission plans",
-              ].map((h, i) => (
-                <div key={i} style={{
-                  paddingBottom: 10,
-                  borderBottom: i < 2 ? "1px solid var(--border)" : "none",
-                }}>
-                  <p style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4, fontStyle: "italic" }}>
-                    &ldquo;{h}&rdquo;
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <GoldDivider />
-        <div style={{
-          padding: "16px 28px 24px",
-          textAlign: "center",
-          borderTop: "1px solid var(--border)",
-        }}>
-          <p style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 14, fontStyle: "italic",
-            color: "var(--text-3)", lineHeight: 1.7,
-          }}>
-            &ldquo;On this day, everything changed. A family became three.&rdquo;
-          </p>
-          <p style={{ fontSize: 10, color: "var(--text-4)", marginTop: 8, letterSpacing: "0.1em" }}>
-            This edition is sealed in {CHILD.firstName}&apos;s Vault for him to read someday. ✦
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Screen: How Prompts Work ────────────────────────────────────────────────
-
-function PromptsScreen() {
-  const [showRespond, setShowRespond] = useState(false);
-
-  if (showRespond) {
+  function GoldDivider() {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        {/* Back button */}
-        <button
-          onClick={() => setShowRespond(false)}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            background: "none", border: "none", cursor: "pointer",
-            color: "var(--text-3)", fontSize: 13, padding: 0,
-            textDecoration: "underline",
-          }}
-        >
-          ← Back to email preview
-        </button>
-
-        {/* Respond page in accessibility mode */}
-        <div style={{
-          background: "#FDFBF7",
-          border: "2px solid var(--green)",
-          borderRadius: "var(--radius-lg)",
-          overflow: "hidden",
-          boxShadow: "var(--shadow-lg)",
-        }}>
-          {/* Header */}
-          <div style={{
-            background: "var(--green)",
-            padding: "24px 28px",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
-            <div>
-              <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "#fff" }}>
-                Our Fable
-              </p>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>
-                Respond to Noah&apos;s prompt
-              </p>
-            </div>
-            <div style={{
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 8, padding: "6px 12px",
-              fontSize: 11, color: "#fff", fontWeight: 500,
-            }}>
-              ✦ Big text mode
-            </div>
-          </div>
-
-          <div style={{ padding: "28px 28px" }}>
-            {/* Accessibility mode notice */}
-            <div style={{
-              background: "var(--green-light)",
-              border: "1px solid var(--green-border)",
-              borderRadius: 12, padding: "14px 18px",
-              marginBottom: 24,
-              display: "flex", alignItems: "center", gap: 10,
-            }}>
-              <Star size={16} color="var(--green)" strokeWidth={1.5} />
-              <p style={{ fontSize: 13, color: "var(--green)", fontWeight: 500 }}>
-                Accessibility mode is on — larger text, simpler layout
-              </p>
-            </div>
-
-            {/* From */}
-            <p style={{ fontSize: 14, color: "var(--text-3)", marginBottom: 6 }}>
-              Prompt from
-            </p>
-            <p style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 28, fontWeight: 700,
-              color: "var(--text)", marginBottom: 24,
-              lineHeight: 1.2,
-            }}>
-              Noah Ellis
-            </p>
-
-            {/* Question — big text */}
-            <div style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: 14, padding: "22px 24px",
-              marginBottom: 28,
-            }}>
-              <p style={{ fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
-                This month&apos;s question
-              </p>
-              <p style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 22, fontStyle: "italic",
-                color: "var(--text)", lineHeight: 1.5,
-              }}>
-                &ldquo;Grandma Betty — what do you remember most about the first time you held me?&rdquo;
-              </p>
-            </div>
-
-            {/* Response options — big buttons */}
-            <p style={{ fontSize: 14, color: "var(--text-2)", marginBottom: 16, fontWeight: 500 }}>
-              Choose how to respond:
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                { icon: <FileText size={22} strokeWidth={1.5} />, label: "Write a letter", sub: "Type your response", color: "var(--green)" },
-                { icon: <Mic size={22} strokeWidth={1.5} />, label: "Record your voice", sub: "Speak your memory aloud", color: "var(--sage)" },
-                { icon: <ImageIcon size={22} strokeWidth={1.5} />, label: "Send a photo", sub: "With or without a note", color: "var(--gold)" },
-                { icon: <Video size={22} strokeWidth={1.5} />, label: "Record a video", sub: "Say it on camera", color: "#7A8FA6" },
-              ].map(opt => (
-                <button
-                  key={opt.label}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 18,
-                    padding: "20px 24px",
-                    background: "var(--card)",
-                    border: "2px solid var(--border)",
-                    borderRadius: 14, cursor: "pointer",
-                    textAlign: "left", transition: "all 160ms",
-                    minHeight: 72,
-                  }}
-                >
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 12,
-                    background: "var(--surface)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: opt.color, flexShrink: 0,
-                  }}>
-                    {opt.icon}
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text)" }}>{opt.label}</p>
-                    <p style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>{opt.sub}</p>
-                  </div>
-                  <ArrowRight size={20} color="var(--text-4)" style={{ marginLeft: "auto" }} />
-                </button>
-              ))}
-            </div>
-
-            {/* Seal note */}
-            <div style={{
-              marginTop: 28, padding: "16px 18px",
-              background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
-              borderRadius: 12, display: "flex", gap: 10, alignItems: "flex-start",
-            }}>
-              <Lock size={16} color="var(--gold)" strokeWidth={1.5} style={{ marginTop: 2, flexShrink: 0 }} />
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 3 }}>
-                  Your response will be sealed
-                </p>
-                <p style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.5 }}>
-                  Noah won&apos;t be able to read it until his 13th birthday. Everything you share is private and permanent.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, margin: "0 auto", maxWidth: 200 }}>
+        <div style={{ flex: 1, height: 1, background: "var(--gold-border)" }} />
+        <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--gold)", opacity: 0.5 }} />
+        <div style={{ flex: 1, height: 1, background: "var(--gold-border)" }} />
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div>
-        <h2 style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 24, fontWeight: 700, color: "var(--text)", marginBottom: 4,
-        }}>
-          How Prompts Work
-        </h2>
-        <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.6 }}>
-          Every month, each person in {CHILD.firstName}&apos;s circle gets a personalized prompt email — with a single thoughtful question and a simple way to respond.
+    <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      {/* Hero */}
+      <section style={{ textAlign: "center", paddingTop: 60, paddingBottom: 80 }}>
+        <p style={{
+          fontSize: 10, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase",
+          color: "var(--sage)", marginBottom: 32,
+        }}>The World, Then &amp; Now</p>
+        <h1 className="font-display" style={{
+          fontSize: "clamp(2.4rem, 7vw, 4.2rem)", fontWeight: 700,
+          color: "var(--green)", lineHeight: 1.1, marginBottom: 32, letterSpacing: "-0.01em",
+        }}>{fullDate}</h1>
+        <GoldDivider />
+        <p className="font-display" style={{
+          fontSize: "clamp(3rem, 10vw, 6.5rem)", fontWeight: 700,
+          color: "var(--gold)", lineHeight: 1.0, marginTop: 40, letterSpacing: "-0.02em",
+        }}>{CHILD_NAME}</p>
+        <p style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--text-3)", marginTop: 16 }}>arrived</p>
+      </section>
+
+      {/* Birth weather */}
+      <section style={{ paddingTop: 64, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 28 }}>The Weather</p>
+        <p className="font-display" style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.35, marginBottom: 24 }}>
+          It was 81° and partly cloudy
         </p>
-      </div>
+        <p style={{ fontSize: 16, lineHeight: 1.75, color: "var(--text-2)", maxWidth: 560 }}>
+          A warm June day in Minneapolis. The summer solstice just days away. Noah arrived at 6:47am to a golden morning sky.
+        </p>
+      </section>
 
-      {/* Email preview */}
-      <div style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-        boxShadow: "var(--shadow)",
-      }}>
-        {/* Email header bar */}
-        <div style={{
-          background: "#f3f4f6",
-          padding: "10px 16px",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex", gap: 6,
-        }}>
-          {["#ef4444", "#f59e0b", "#10b981"].map(c => (
-            <div key={c} style={{ width: 12, height: 12, borderRadius: "50%", background: c }} />
-          ))}
-          <p style={{ marginLeft: 8, fontSize: 11, color: "#6b7280" }}>Email preview</p>
+      {/* Birth song */}
+      <section style={{ paddingTop: 64, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 28 }}>#1 Song in America</p>
+        <p className="font-display" style={{ fontSize: "clamp(1.4rem, 3.5vw, 2rem)", fontWeight: 700, fontStyle: "italic", color: "var(--text)", lineHeight: 1.4 }}>
+          The #1 song was &ldquo;Not Like Us&rdquo;
+          <br />
+          <span style={{ fontStyle: "normal", fontWeight: 400, color: "var(--text-2)" }}>by Kendrick Lamar</span>
+        </p>
+        <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--text-3)", marginTop: 20, maxWidth: 480 }}>
+          It debuted at #1 on the Billboard Hot 100 the week they arrived.
+        </p>
+      </section>
+
+      {/* Headline */}
+      <section style={{ paddingTop: 64, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 40 }}>The World That Day</p>
+        <div style={{ padding: "40px 0", margin: "0 0 40px 0" }}>
+          <div style={{ height: 2, background: "var(--gold)", marginBottom: 32, maxWidth: 80 }} />
+          <p className="font-display" style={{ fontSize: "clamp(1.3rem, 3vw, 1.8rem)", fontWeight: 700, fontStyle: "italic", color: "var(--text)", lineHeight: 1.45, maxWidth: 560 }}>
+            &ldquo;The summer solstice arrived — the longest, sunniest day of the year&rdquo;
+          </p>
+          <div style={{ height: 2, background: "var(--gold)", marginTop: 32, maxWidth: 80 }} />
         </div>
+      </section>
 
-        {/* Email metadata */}
-        <div style={{
-          padding: "16px 20px",
-          borderBottom: "1px solid #f0f0f0",
-          background: "#fafafa",
-        }}>
-          <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-            <strong style={{ color: "#374151" }}>From:</strong> leo@ourfable.ai
-          </p>
-          <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-            <strong style={{ color: "#374151" }}>To:</strong> grandmabetty@gmail.com
-          </p>
-          <p style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>
-            Hi — it&apos;s Noah. 💛
-          </p>
-        </div>
+      {/* Monthly Timeline */}
+      <section style={{ paddingTop: 80, paddingBottom: 64, borderTop: "1px solid var(--border)" }}>
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 28 }}>Month by Month</p>
+        <h2 className="font-display" style={{ fontSize: "clamp(1.4rem, 3.5vw, 2rem)", fontWeight: 700, color: "var(--text)", marginBottom: 12, letterSpacing: "-0.01em" }}>
+          {CHILD_FIRST}&apos;s World
+        </h2>
+        <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.65, marginBottom: 40, maxWidth: 480 }}>
+          A snapshot of the world, month by month — the headlines, the songs, the weather outside.
+        </p>
 
-        {/* Email body */}
-        <div style={{ padding: "24px 24px" }}>
-          {/* Header */}
-          <div style={{
-            background: "linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%)",
-            borderRadius: 12, padding: "20px 24px", marginBottom: 20, textAlign: "center",
-          }}>
-            <p style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 4,
-            }}>
-              Our Fable
-            </p>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>
-              A message from Noah Ellis
-            </p>
-          </div>
+        <div style={{ paddingLeft: 6 }}>
+          {months.map(({ year, month }) => {
+            const key = `${year}-${month}`;
+            const snap = snapshots[key];
+            const label = `${monthName(month)} ${year}`;
+            const age = childAgeAtMonth(CHILD_DOB, year, month);
 
-          {/* Greeting */}
-          <p style={{ fontSize: 15, color: "#374151", marginBottom: 16, lineHeight: 1.7 }}>
-            Hi Grandma Betty,
-          </p>
-
-          <p style={{ fontSize: 15, color: "#374151", lineHeight: 1.7, marginBottom: 20 }}>
-            I&apos;m 9 months old now, and I can&apos;t ask you this question myself yet — but someday I&apos;ll be old enough to read your answer. This is your chance to save a memory for me.
-          </p>
-
-          {/* Prompt box */}
-          <div style={{
-            background: "var(--bg-2)",
-            border: "2px solid var(--gold-border)",
-            borderRadius: 14, padding: "22px 24px",
-            marginBottom: 24, textAlign: "center",
-          }}>
-            <p style={{ fontSize: 10, color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>
-              ✦ This month&apos;s prompt ✦
-            </p>
-            <p style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 19, fontStyle: "italic",
-              color: "var(--text)", lineHeight: 1.55,
-            }}>
-              &ldquo;What do you remember most about the first time you held me? What were you thinking?&rdquo;
-            </p>
-          </div>
-
-          {/* CTA button */}
-          <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <button
-              onClick={() => setShowRespond(true)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                padding: "16px 32px",
-                background: "var(--green)", color: "#fff",
-                border: "none", borderRadius: 100,
-                fontSize: 16, fontWeight: 700, cursor: "pointer",
-                boxShadow: "0 4px 20px rgba(74,94,76,0.3)",
-                transition: "all 160ms",
-              }}
-            >
-              Respond to Noah
-              <ArrowRight size={18} strokeWidth={2.5} />
-            </button>
-            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 10 }}>
-              Takes 2 minutes · Your response is sealed until Noah turns 13
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, textAlign: "center" }}>
-            <p style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.6 }}>
-              You&apos;re receiving this because Sarah &amp; James Ellis added you to Noah&apos;s circle.<br />
-              <span style={{ textDecoration: "underline", cursor: "pointer" }}>Unsubscribe</span> · <span style={{ textDecoration: "underline", cursor: "pointer" }}>Accessibility mode</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Explanation */}
-      <div style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "20px 20px",
-        boxShadow: "var(--shadow-sm)",
-      }}>
-        <h3 style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 16,
-        }}>
-          How it works for your circle
-        </h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {[
-            { step: "1", title: "Monthly prompt arrives", desc: "Each person in your circle gets a personalized question, tailored to their relationship with your child." },
-            { step: "2", title: "They respond their way", desc: "Letter, voice memo, photo, or video — whatever feels right. No app to download." },
-            { step: "3", title: "It seals in the Vault", desc: "Their response is sealed automatically — your child can't read it until they reach the milestone age you set." },
-            { step: "4", title: "A life in voices", desc: "By the time your child turns 13 or 18, they'll have a vault full of love letters from everyone who knew them." },
-          ].map(item => (
-            <div key={item.step} style={{ display: "flex", gap: 14 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: "50%",
-                background: "var(--green)", color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, fontWeight: 700, flexShrink: 0,
-              }}>
-                {item.step}
+            return (
+              <div key={key} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 6 }}>
+                  <div style={{
+                    width: 12, height: 12, borderRadius: "50%",
+                    background: snap ? "var(--gold)" : "transparent",
+                    border: snap ? "2px solid var(--gold)" : "2px solid var(--border)",
+                    flexShrink: 0,
+                  }} />
+                  <div style={{ width: 1, flex: 1, background: "var(--border)", marginTop: 8 }} />
+                </div>
+                <div style={{
+                  flex: 1, padding: 24, marginBottom: 16,
+                  background: "var(--surface, #fff)", borderRadius: 12,
+                  boxShadow: snap ? "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)" : "0 1px 2px rgba(0,0,0,0.02)",
+                  border: "1px solid var(--border)",
+                }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: snap ? 20 : 12 }}>
+                    <div>
+                      <h3 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", letterSpacing: "0.02em", lineHeight: 1.2 }}>
+                        {label}
+                      </h3>
+                      <span style={{ display: "inline-block", marginTop: 6, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)" }}>
+                        {age}
+                      </span>
+                    </div>
+                  </div>
+                  {snap ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>Headlines</span>
+                        <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.65 }}>{snap.topHeadline}</p>
+                      </div>
+                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>No. 1 Song</span>
+                        <p className="font-display" style={{ fontSize: 15, color: "var(--text-2)", fontStyle: "italic", lineHeight: 1.5 }}>{snap.topSong}</p>
+                      </div>
+                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>Weather</span>
+                        <p style={{ fontSize: 14, color: "var(--text-2)" }}>{snap.weatherDesc} · {snap.tempHigh}°F</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="font-display" style={{ fontSize: 15, color: "var(--text-3)", fontStyle: "italic", lineHeight: 1.6 }}>
+                      Snapshot not yet captured.
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 3 }}>{item.title}</p>
-                <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.5 }}>{item.desc}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <div style={{ textAlign: "center", paddingBottom: 80, paddingTop: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
+          <div style={{ width: 40, height: 1, background: "var(--gold-border)" }} />
+          <span className="font-display" style={{ fontSize: 13, color: "var(--gold)", letterSpacing: "0.18em", fontWeight: 700, textTransform: "uppercase" }}>Our Fable</span>
+          <div style={{ width: 40, height: 1, background: "var(--gold-border)" }} />
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Main Demo Page ──────────────────────────────────────────────────────────
-
-export default function DemoPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+// ─── CIRCLE SECTION ───────────────────────────────────────────────────────────
+function CircleSection() {
+  const members = [
+    { id: "1", name: "Grandma Betty", relationship: "Grandmother", city: "Phoenix, AZ", contributions: 8, active: true },
+    { id: "2", name: "Grandpa Jim", relationship: "Grandfather", city: "Phoenix, AZ", contributions: 5, active: true },
+    { id: "3", name: "Grandma Ellis", relationship: "Grandmother", city: "Chicago, IL", contributions: 3, active: true },
+    { id: "4", name: "Grandpa Ellis", relationship: "Grandfather", city: "Chicago, IL", contributions: 2, active: false },
+    { id: "5", name: "Aunt Lisa", relationship: "Aunt", city: "Seattle, WA", contributions: 6, active: true },
+    { id: "6", name: "Uncle Dave", relationship: "Uncle", city: "Denver, CO", contributions: 4, active: true },
+    { id: "7", name: "Godmother Carol", relationship: "Godparent", city: "Minneapolis, MN", contributions: 7, active: true },
+    { id: "8", name: "Family Friend Mike", relationship: "Family friend", city: "Minneapolis, MN", contributions: 1, active: false },
+  ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Demo Banner */}
-      <div style={{
-        background: "linear-gradient(90deg, var(--green) 0%, var(--green-mid) 100%)",
-        padding: "12px 20px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        flexWrap: "wrap",
-      }}>
-        <p style={{ fontSize: 13, color: "#fff", fontWeight: 500, opacity: 0.95 }}>
-          🎭 You&apos;re exploring a demo — this is what your family&apos;s vault could look like
-        </p>
-        <Link
-          href="/reserve"
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "8px 18px",
-            background: "#fff", color: "var(--green)",
-            borderRadius: 100, fontSize: 13, fontWeight: 700,
-            textDecoration: "none",
-            flexShrink: 0,
-            transition: "opacity 160ms",
-          }}
-        >
-          Reserve your spot →
-        </Link>
-      </div>
-
-      {/* Page header */}
-      <div style={{
-        maxWidth: 720,
-        margin: "0 auto",
-        padding: "32px 20px 0",
-      }}>
-        <div style={{ marginBottom: 8 }}>
-          <p style={{ fontSize: 12, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
-            Interactive Demo
-          </p>
-          <h1 style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 30, fontWeight: 900,
-            color: "var(--text)", lineHeight: 1.15, marginBottom: 6,
-          }}>
-            {CHILD.firstName}&apos;s Fable
-          </h1>
-          <p style={{ fontSize: 14, color: "var(--text-3)" }}>
-            {CHILD.family} · {CHILD.location} · Born June 25, 2025
-          </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 44, height: 44, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Users size={18} color="var(--sage)" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>
+              {CHILD_FIRST}&apos;s Circle
+            </h1>
+            <p style={{ fontSize: 12, color: "var(--text-3)" }}>8 people who love {CHILD_FIRST}</p>
+          </div>
         </div>
       </div>
 
-      {/* Tab navigation */}
-      <div style={{
-        position: "sticky",
-        top: 49,
-        zIndex: 90,
-        background: "rgba(253,251,247,0.97)",
-        backdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--border)",
-        marginTop: 20,
-      }}>
-        <div style={{
-          maxWidth: 720,
-          margin: "0 auto",
-          padding: "0 20px",
-          display: "flex",
-          gap: 0,
-          overflowX: "auto",
-          WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
-        }}>
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "14px 16px",
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 400,
-                color: activeTab === tab.key ? "var(--green)" : "var(--text-3)",
-                borderBottom: `2px solid ${activeTab === tab.key ? "var(--green)" : "transparent"}`,
-                whiteSpace: "nowrap",
-                transition: "all 160ms",
-              }}
-            >
-              <span style={{ color: activeTab === tab.key ? "var(--green)" : "var(--text-4)" }}>
-                {tab.icon}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {members.map(m => {
+          const initials = m.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+          return (
+            <div key={m.id} className="card" style={{ padding: 24 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 16 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: "50%",
+                  background: "var(--sage-dim)", border: "1px solid rgba(107,143,111,0.2)",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--sage)" }}>{initials}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 400, color: "var(--text)", marginBottom: 4 }}>{m.name}</p>
+                  <span className="chip chip-gold" style={{ fontSize: 10 }}>{m.relationship}</span>
+                </div>
+                {m.active && <span className="chip chip-sage" style={{ fontSize: 10, flexShrink: 0 }}>Active</span>}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 11, color: "var(--text-3)" }}>
+                <MapPin size={11} strokeWidth={1.5} /> {m.city}
+              </div>
+              {m.contributions > 0 && (
+                <p style={{ fontSize: 11, color: "var(--text-3)" }}>{m.contributions} contribution{m.contributions !== 1 ? "s" : ""}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── DISPATCHES SECTION ───────────────────────────────────────────────────────
+function DispatchesSection() {
+  const dispatches = [
+    { id: "1", title: "First Steps!", preview: "Noah took his very first steps today at 9 months and 3 days old. Shaky but determined.", date: "March 25, 2026", recipients: 8 },
+    { id: "2", title: "Smiling at everything", preview: "The biggest smile we've ever seen. He laughed for the first time this morning.", date: "February 14, 2026", recipients: 6 },
+    { id: "3", title: "Month 8 update", preview: "Eight months in. Growing so fast. Here's what this month looked like.", date: "February 25, 2026", recipients: 8 },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+        <div style={{ width: 44, height: 44, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Send size={18} color="var(--sage)" strokeWidth={1.5} />
+        </div>
+        <div>
+          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>Dispatches</h1>
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>Updates sent to {CHILD_FIRST}&apos;s circle</p>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {dispatches.map(d => (
+          <div key={d.id} className="card card-hover-luxury" style={{ padding: 24, cursor: "pointer" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
+              <h3 className="font-display" style={{ fontSize: 20, fontWeight: 400, color: "var(--text)" }}>{d.title}</h3>
+              <span style={{ fontSize: 11, color: "var(--text-3)", flexShrink: 0, marginLeft: 16 }}>{d.date}</span>
+            </div>
+            <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.7, marginBottom: 12 }}>{d.preview}</p>
+            <p style={{ fontSize: 11, color: "var(--sage)" }}>Sent to {d.recipients} people</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── LETTERS SECTION ──────────────────────────────────────────────────────────
+function LettersSection() {
+  const letters = [
+    { id: "1", from: "Mom", date: "March 20, 2026", preview: "Dear Noah, today you did something that made me laugh until I cried…", sealed: false },
+    { id: "2", from: "Dad", date: "March 15, 2026", preview: "Something I want you to know about the day the world was…", sealed: true },
+    { id: "3", from: "Grandma Betty", date: "February 28, 2026", preview: "My darling Noah, your grandfather and I were talking about you…", sealed: true },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+        <div style={{ width: 44, height: 44, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Mail size={18} color="var(--sage)" strokeWidth={1.5} />
+        </div>
+        <div>
+          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>Letters</h1>
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>Written for {CHILD_FIRST}</p>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {letters.map(l => (
+          <div key={l.id} className="card card-hover-luxury" style={{ padding: 24, cursor: "pointer", borderLeft: "3px solid rgba(107,143,111,0.3)" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
+              <p className="font-display" style={{ fontSize: 18, fontStyle: "italic", color: "var(--green)" }}>Dear {CHILD_FIRST},</p>
+              <span style={{ fontSize: 11, color: "var(--text-3)", flexShrink: 0, marginLeft: 16 }}>{l.date}</span>
+            </div>
+            <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 8 }}>From {l.from}</p>
+            {l.sealed ? (
+              <span className="chip chip-gold" style={{ fontSize: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <Lock size={9} strokeWidth={2} /> Sealed
               </span>
-              {tab.label}
-            </button>
-          ))}
+            ) : (
+              <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.7, fontStyle: "italic" }}>{l.preview}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── BEFORE YOU WERE BORN SECTION ─────────────────────────────────────────────
+function BeforeBornSection() {
+  return (
+    <div style={{ maxWidth: 600, margin: "0 auto" }}>
+      <div style={{ textAlign: "center", paddingTop: 60, paddingBottom: 80 }}>
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 32 }}>
+          Before You Were Born
+        </p>
+        <h1 className="font-display" style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)", fontWeight: 700, color: "var(--green)", lineHeight: 1.1, marginBottom: 32 }}>
+          The story before the story
+        </h1>
+        <div style={{ width: 40, height: 1, background: "var(--gold-border)", margin: "0 auto 32px" }} />
+        <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.8, maxWidth: 480, margin: "0 auto 40px" }}>
+          Every family has a chapter before the child arrives — the moment the test showed positive, the name debates, the nursery being painted at midnight.
+        </p>
+        <p className="font-display" style={{ fontSize: "clamp(1.1rem, 3vw, 1.4rem)", fontStyle: "italic", color: "var(--gold)", lineHeight: 1.6, maxWidth: 440, margin: "0 auto" }}>
+          &ldquo;You were wanted before you were real. Loved before we knew your name.&rdquo;
+        </p>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 80 }}>
+        {[
+          { title: "The announcement", desc: "How we told the world you were coming." },
+          { title: "The name debate", desc: "All the names that almost were yours." },
+          { title: "Getting ready for you", desc: "Everything we did to prepare for your arrival." },
+          { title: "The night before", desc: "What we did the night before you were born." },
+        ].map(item => (
+          <div key={item.title} className="card" style={{ padding: 28 }}>
+            <h3 className="font-display" style={{ fontSize: 20, fontWeight: 400, color: "var(--text)", marginBottom: 8 }}>{item.title}</h3>
+            <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.65 }}>{item.desc}</p>
+            <p className="font-display" style={{ fontSize: 13, color: "var(--text-4)", fontStyle: "italic", marginTop: 12 }}>Not yet written…</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── DELIVERY SECTION ─────────────────────────────────────────────────────────
+function DeliverySection() {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+        <div style={{ width: 44, height: 44, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <PackageOpen size={18} color="var(--sage)" strokeWidth={1.5} />
+        </div>
+        <div>
+          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>Delivery</h1>
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>How memories reach {CHILD_FIRST}&apos;s circle</p>
         </div>
       </div>
-
-      {/* Tab content */}
-      <div style={{
-        maxWidth: 720,
-        margin: "0 auto",
-        padding: "24px 20px 100px",
-      }}>
-        {activeTab === "dashboard" && <DashboardScreen />}
-        {activeTab === "vault" && <VaultScreen />}
-        {activeTab === "world" && <WorldScreen />}
-        {activeTab === "born" && <BornDayScreen />}
-        {activeTab === "prompts" && <PromptsScreen />}
+      <div className="card" style={{ padding: 40, textAlign: "center" }}>
+        <PackageOpen size={36} color="var(--text-3)" strokeWidth={1} style={{ margin: "0 auto 16px" }} />
+        <p className="font-display" style={{ fontStyle: "italic", fontSize: 20, color: "var(--text-2)", marginBottom: 8 }}>
+          Monthly prompts, automatically delivered.
+        </p>
+        <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.7, maxWidth: 400, margin: "0 auto" }}>
+          Every month, each person in {CHILD_FIRST}&apos;s circle receives a gentle prompt — a question worth answering, sealed into the vault automatically.
+        </p>
       </div>
+    </div>
+  );
+}
 
-      {/* Mobile sticky CTA */}
-      <div className="demo-mobile-cta">
-        <Link
-          href="/reserve"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "16px 32px",
-            background: "var(--green)", color: "#fff",
-            borderRadius: 100, fontSize: 15, fontWeight: 700,
-            textDecoration: "none", width: "100%",
-            boxShadow: "0 4px 20px rgba(74,94,76,0.3)",
-          }}
-        >
+// ─── MAIN DEMO PAGE ───────────────────────────────────────────────────────────
+export default function DemoPage() {
+  const [activeSection, setActiveSection] = useState<SectionKey>("home");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const BANNER_HEIGHT = 44;
+  const SIDEBAR_WIDTH = 224;
+
+  function renderSection() {
+    switch (activeSection) {
+      case "home": return <HomeSection />;
+      case "vault": return <VaultSection />;
+      case "world": return <WorldSection />;
+      case "before-born": return <BeforeBornSection />;
+      case "letters": return <LettersSection />;
+      case "dispatches": return <DispatchesSection />;
+      case "circle": return <CircleSection />;
+      case "delivery": return <DeliverySection />;
+      default: return <HomeSection />;
+    }
+  }
+
+  return (
+    <>
+      {/* ── DEMO BANNER ── */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        height: BANNER_HEIGHT,
+        background: "rgba(200,168,122,0.12)",
+        borderBottom: "1px solid rgba(200,168,122,0.35)",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 20px",
+        backdropFilter: "blur(12px)",
+      }}>
+        <span style={{
+          fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)",
+          letterSpacing: "0.01em",
+        }}>
+          <span className="demo-banner-full">🎭 You&apos;re exploring a demo — this is what your family&apos;s vault could look like</span>
+          <span className="demo-banner-mobile">🎭 Demo — explore your family&apos;s vault</span>
+        </span>
+        <Link href="/reserve" style={{
+          display: "inline-flex", alignItems: "center",
+          padding: "6px 14px", borderRadius: 100,
+          background: "var(--green)", color: "#fff",
+          fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+          textDecoration: "none", transition: "opacity 160ms",
+          fontFamily: "var(--font-body)", flexShrink: 0,
+        }}>
           Reserve your spot →
         </Link>
       </div>
+
+      {/* ── MOBILE TOP BAR ── */}
+      <div
+        className="sidebar-topbar-demo"
+        style={{
+          position: "fixed", left: 0, right: 0, zIndex: 60,
+          height: 52,
+          top: BANNER_HEIGHT,
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "0 16px",
+          borderBottom: "0.5px solid var(--border)",
+          background: "rgba(253,251,247,0.94)", backdropFilter: "blur(16px)",
+        }}
+      >
+        <button
+          onClick={() => setSidebarOpen(s => !s)}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-2)", padding: 6 }}
+        >
+          {sidebarOpen ? <X size={18} strokeWidth={1.5} /> : <Menu size={18} strokeWidth={1.5} />}
+        </button>
+        <span style={{ fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 700, color: "var(--green)", letterSpacing: "0.02em" }}>
+          Our Fable
+        </span>
+      </div>
+
+      {/* ── MOBILE OVERLAY ── */}
+      {sidebarOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── SIDEBAR ── */}
+      <aside
+        className={`demo-sidebar ${sidebarOpen ? "demo-sidebar-open" : ""}`}
+        style={{
+          position: "fixed", top: BANNER_HEIGHT, left: 0, bottom: 0, zIndex: 60,
+          width: SIDEBAR_WIDTH,
+          background: "var(--surface)",
+          borderRight: "0.5px solid var(--border)",
+        }}
+      >
+        <DemoSidebarContent
+          activeSection={activeSection}
+          onSectionChange={s => { setActiveSection(s); setSidebarOpen(false); }}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </aside>
+
+      {/* ── MAIN CONTENT ── */}
+      <main style={{
+        minHeight: "100vh",
+        background: "var(--bg)",
+        paddingTop: BANNER_HEIGHT,
+      }}>
+        <div className="demo-content-inner" style={{
+          padding: "48px 32px 0",
+          maxWidth: 720,
+        }}>
+          {renderSection()}
+        </div>
+      </main>
 
       <style>{`
-        .demo-mobile-cta {
-          display: none;
+        /* Banner text responsive */
+        .demo-banner-mobile { display: none; }
+        @media (max-width: 560px) {
+          .demo-banner-full { display: none; }
+          .demo-banner-mobile { display: inline; }
         }
 
-        @media (max-width: 680px) {
-          .demo-mobile-cta {
-            display: block;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
-            background: rgba(253,251,247,0.97);
-            border-top: 1px solid var(--border);
-            backdrop-filter: blur(20px);
-            z-index: 80;
+        /* Sidebar: mobile hidden by default */
+        .sidebar-topbar-demo { display: flex; }
+        .demo-sidebar {
+          transform: translateX(-100%);
+          transition: transform 280ms cubic-bezier(0.4,0,0.2,1);
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .demo-sidebar-open {
+          transform: translateX(0) !important;
+        }
+
+        /* Desktop: always show sidebar */
+        @media (min-width: 768px) {
+          .sidebar-topbar-demo { display: none !important; }
+          .demo-sidebar { transform: translateX(0) !important; }
+          .demo-content-inner {
+            margin-left: ${SIDEBAR_WIDTH}px !important;
           }
         }
+
+        /* Mobile: account for top bar */
+        @media (max-width: 767px) {
+          main {
+            padding-top: ${BANNER_HEIGHT + 52}px !important;
+          }
+          .demo-content-inner {
+            padding: 28px 16px 0 !important;
+          }
+        }
+
+        /* Card hover effect */
+        .card-hover-luxury {
+          display: block;
+          text-decoration: none;
+          color: inherit;
+          transition: background 180ms ease;
+        }
+        .card-hover-luxury:hover {
+          background: var(--surface);
+        }
+
+        /* Chips */
+        .chip {
+          display: inline-flex; align-items: center;
+          padding: 3px 10px; border-radius: 100px;
+          background: var(--surface); border: 1px solid var(--border);
+          font-family: var(--font-body); font-size: 11;
+          color: var(--text-3);
+        }
+        .chip-gold {
+          background: var(--gold-dim) !important;
+          border-color: var(--gold-border) !important;
+          color: var(--gold) !important;
+        }
+        .chip-sage {
+          background: var(--sage-dim) !important;
+          border-color: var(--sage-border) !important;
+          color: var(--sage) !important;
+        }
+
+        /* Card */
+        .card {
+          background: var(--card, #fff);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes countLand {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.04); }
+          100% { transform: scale(1); }
+        }
+        @keyframes goldLineDraw {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
+        }
       `}</style>
-    </div>
+    </>
   );
 }
