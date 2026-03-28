@@ -30,6 +30,7 @@ const PUBLIC_PREFIXES = [
   "/view/",
   "/reset-password",
   "/journal",
+  "/invite/",
   "/manifest.json",
   "/robots.txt",
   "/sitemap.xml",
