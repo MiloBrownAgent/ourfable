@@ -155,6 +155,42 @@ export async function POST(req: NextRequest) {
       console.error("CAPI fire-and-forget error:", err)
     );
 
+    // 5. Notify Dave — Telegram + Email
+    const childLabel = childName ? ` for ${childName}` : "";
+    const utmLabel = utm_source ? ` (via ${utm_source})` : "";
+    const referralLabel = (req as unknown as { body?: { referralCode?: string } }).body?.referralCode
+      ? ` · ref: ${(req as unknown as { body: { referralCode: string } }).body.referralCode}`
+      : "";
+
+    // Telegram alert
+    const ALERT_BOT = process.env.TELEGRAM_ALERT_BOT_TOKEN;
+    const ALERT_CHAT = process.env.TELEGRAM_ALERT_CHAT_ID;
+    if (ALERT_BOT && ALERT_CHAT) {
+      fetch(`https://api.telegram.org/bot${ALERT_BOT}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: ALERT_CHAT,
+          text: `🎉 New waitlist signup!\n\n${cleanEmail}${childLabel}${utmLabel}${referralLabel}`,
+          disable_web_page_preview: true,
+        }),
+      }).catch(() => {});
+    }
+
+    // Email notification
+    if (RESEND_FULL_KEY) {
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_FULL_KEY}` },
+        body: JSON.stringify({
+          from: "OurFable Alerts <hello@ourfable.ai>",
+          to: process.env.ALERT_EMAIL ?? "hello@ourfable.ai",
+          subject: `🎉 New waitlist signup: ${cleanEmail}`,
+          html: `<p style="font-family:sans-serif;font-size:15px;"><strong>${cleanEmail}</strong> just reserved a spot${childLabel}.${utmLabel}${referralLabel}</p>`,
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Waitlist error:", err);
