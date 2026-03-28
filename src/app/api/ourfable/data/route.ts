@@ -70,6 +70,7 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:listReferralCodes",
   "ourfable:createReferralCodes",
   "ourfable:redeemReferral",
+  "ourfable:sealParentLetter",
 ]);
 
 // Public — no session required (join/share flows)
