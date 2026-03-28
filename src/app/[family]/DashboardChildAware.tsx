@@ -141,7 +141,7 @@ export default function DashboardChildAware({
 
       {/* ── 1. GREETING HEADER ── */}
       <div style={{
-        paddingBottom: 40,
+        paddingBottom: 24,
         animation: "fadeUp 0.7s var(--spring) both",
       }}>
         <Greeting />
@@ -149,7 +149,7 @@ export default function DashboardChildAware({
         <h1 className="font-display" style={{
           fontWeight: 700,
           fontStyle: "normal",
-          fontSize: "clamp(2.5rem, 7vw, 4rem)",
+          fontSize: "clamp(2rem, 6vw, 3rem)",
           color: "var(--green)",
           letterSpacing: "-0.02em",
           lineHeight: 1,
@@ -165,16 +165,36 @@ export default function DashboardChildAware({
           marginBottom: 12,
         }} />
 
-        <p style={{
-          fontFamily: "var(--font-body)",
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: "var(--sage)",
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flexWrap: "wrap",
         }}>
-          {ageLong}
-        </p>
+          <p style={{
+            fontFamily: "var(--font-body)",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "var(--sage)",
+          }}>
+            {ageLong} ·
+          </p>
+          <span style={{
+            fontFamily: "var(--font-body)",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.18em",
+            color: "var(--sage)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+          }}>
+            <CountUpNumber target={totalDays} inline fontSize={11} />
+            <span style={{ textTransform: "uppercase", letterSpacing: "0.18em" }}>DAYS</span>
+          </span>
+        </div>
 
         {/* ── MILESTONE COUNTDOWN STRIP ── */}
         {nextMilestone && (
@@ -202,85 +222,15 @@ export default function DashboardChildAware({
         )}
       </div>
 
-      {/* ── 2. DAYS COUNTER ── */}
-      <div style={{
-        textAlign: "center",
-        padding: "16px 0 64px",
-        animation: "fadeUp 0.7s var(--spring) 0.1s both",
-      }}>
-        <CountUpNumber target={totalDays} label={"days of " + childFirst} />
-      </div>
-
-      {/* ── 3. PULL QUOTE ── */}
-      <div style={{
-        padding: "0 0 56px",
-        textAlign: "center",
-        maxWidth: 480,
-        margin: "0 auto 8px",
-        animation: "fadeUp 0.7s var(--spring) 0.2s both",
-      }}>
-        <div style={{
-          width: 48,
-          height: "0.5px",
-          background: "rgba(200,168,122,0.5)",
-          margin: "0 auto 28px",
-        }} />
-
-        <p className="font-display" style={{
-          fontStyle: "italic",
-          fontSize: "clamp(1.1rem, 3vw, 1.45rem)",
-          fontWeight: 400,
-          color: "var(--green)",
-          lineHeight: 1.6,
-        }}>
-          {totalVault > 0
-            ? `The vault holds ${totalVault} sealed ${totalVault === 1 ? "memory" : "memories"}, waiting for ${childFirst}.`
-            : `Every day is a page. What do you want ${childFirst} to know about today?`}
-        </p>
-
-        <div style={{
-          width: 48,
-          height: "0.5px",
-          background: "rgba(200,168,122,0.5)",
-          margin: "28px auto 24px",
-        }} />
-
-        <p style={{ fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
-      </div>
-
-      {/* ── 4. WRITING BLOCK (primary action — moved up) ── */}
+      {/* ── 2. WRITING BLOCK (primary action — hero position) ── */}
       <div style={{
         marginBottom: 72,
-        animation: "fadeUp 0.7s var(--spring) 0.3s both",
+        animation: "fadeUp 0.7s var(--spring) 0.1s both",
       }}>
         <WritingBlock childFirst={childFirst} familyId={familyId} />
       </div>
 
-      {/* ── 5. MILESTONE BANNER (within 6 months of a milestone) ── */}
-      {milestoneBannerVisible && nextMilestone && (
-        <div style={{
-          width: "100vw",
-          marginLeft: "calc(-50vw + 50%)",
-          background: "linear-gradient(135deg, #C8A87A 0%, #B8944F 100%)",
-          padding: "20px 24px",
-          textAlign: "center",
-          marginBottom: 0,
-          animation: "fadeUp 0.7s var(--spring) 0.35s both",
-        }}>
-          <p className="font-display" style={{
-            fontSize: "clamp(0.95rem, 2.5vw, 1.15rem)",
-            fontWeight: 400,
-            fontStyle: "italic",
-            color: "#1C2B1E",
-            lineHeight: 1.5,
-          }}>
-            {childFirst} turns {nextMilestone.age} in {nextMilestone.daysAway} days.
-            {" "}Their vault will open.
-          </p>
-        </div>
-      )}
-
-      {/* ── 6. VAULT ── */}
+      {/* ── 3. VAULT ── */}
       <div
         style={{
           width: "100vw",

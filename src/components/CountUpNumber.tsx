@@ -9,9 +9,11 @@ interface CountUpNumberProps {
   target: number
   duration?: number
   label?: string
+  inline?: boolean
+  fontSize?: number
 }
 
-export default function CountUpNumber({ target, duration = 1200, label }: CountUpNumberProps) {
+export default function CountUpNumber({ target, duration = 1200, label, inline = false, fontSize }: CountUpNumberProps) {
   const [count, setCount] = useState(0)
   const [landed, setLanded] = useState(false)
   const frameRef = useRef<number | null>(null)
@@ -39,11 +41,28 @@ export default function CountUpNumber({ target, duration = 1200, label }: CountU
     return () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current) }
   }, [target, duration])
 
+  // Inline mode: render just the number as an inline span (no label, no gold bar)
+  if (inline) {
+    return (
+      <span style={{
+        fontFamily: 'var(--font-body)',
+        fontSize: fontSize ?? 11,
+        fontWeight: 600,
+        color: 'var(--sage)',
+        letterSpacing: '0.18em',
+        fontVariantNumeric: 'tabular-nums',
+        textTransform: 'uppercase' as const,
+      }}>
+        {count.toLocaleString()}
+      </span>
+    )
+  }
+
   return (
     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
       <span style={{
         fontFamily: 'var(--font-display)',
-        fontSize: 'clamp(3.5rem, 12vw, 8rem)',
+        fontSize: fontSize ? `${fontSize}px` : 'clamp(3.5rem, 12vw, 8rem)',
         fontWeight: 700,
         color: 'var(--green)',
         letterSpacing: '-0.025em',

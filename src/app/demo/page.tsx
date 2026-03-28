@@ -428,19 +428,29 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
   return (
     <div>
       {/* 1. GREETING HEADER */}
-      <div style={{ paddingBottom: 40, animation: "fadeUp 0.7s var(--spring) both" }}>
+      <div style={{ paddingBottom: 24, animation: "fadeUp 0.7s var(--spring) both" }}>
         <Greeting />
         <h1 className="font-display" style={{
           fontWeight: 700, fontStyle: "normal",
-          fontSize: "clamp(2.5rem, 7vw, 4rem)",
+          fontSize: "clamp(2rem, 6vw, 3rem)",
           color: "var(--green)", letterSpacing: "-0.02em",
           lineHeight: 1, marginBottom: 20,
         }}>{CHILD_NAME}</h1>
         <div style={{ width: 48, height: "0.5px", background: "linear-gradient(90deg, var(--gold), transparent)", marginBottom: 12 }} />
-        <p style={{
-          fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
-          letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--sage)",
-        }}>{ageLong}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <p style={{
+            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+            letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--sage)",
+          }}>{ageLong} ·</p>
+          <span style={{
+            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+            letterSpacing: "0.18em", color: "var(--sage)",
+            display: "inline-flex", alignItems: "center", gap: 4,
+          }}>
+            <CountUpNumber target={totalDays} inline fontSize={11} />
+            <span style={{ textTransform: "uppercase", letterSpacing: "0.18em" }}>DAYS</span>
+          </span>
+        </div>
         {nextMilestone && (
           <div style={{
             marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8,
@@ -458,30 +468,8 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
         )}
       </div>
 
-      {/* 2. DAYS COUNTER */}
-      <div style={{ textAlign: "center", padding: "16px 0 64px", animation: "fadeUp 0.7s var(--spring) 0.1s both" }}>
-        <CountUpNumber target={totalDays} label={"days of " + CHILD_FIRST} />
-      </div>
-
-      {/* 3. PULL QUOTE */}
-      <div style={{
-        padding: "0 0 56px", textAlign: "center",
-        maxWidth: 480, margin: "0 auto 8px",
-        animation: "fadeUp 0.7s var(--spring) 0.2s both",
-      }}>
-        <div style={{ width: 48, height: "0.5px", background: "rgba(200,168,122,0.5)", margin: "0 auto 28px" }} />
-        <p className="font-display" style={{
-          fontStyle: "italic", fontSize: "clamp(1.1rem, 3vw, 1.45rem)",
-          fontWeight: 400, color: "var(--green)", lineHeight: 1.6,
-        }}>
-          The vault holds {totalVault} sealed memories, waiting for {CHILD_FIRST}.
-        </p>
-        <div style={{ width: 48, height: "0.5px", background: "rgba(200,168,122,0.5)", margin: "28px auto 24px" }} />
-        <p style={{ fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
-      </div>
-
-      {/* 4. WRITING BLOCK */}
-      <div style={{ marginBottom: 72, animation: "fadeUp 0.7s var(--spring) 0.3s both" }}>
+      {/* 2. WRITING BLOCK */}
+      <div style={{ marginBottom: 72, animation: "fadeUp 0.7s var(--spring) 0.1s both" }}>
         <DemoWritingBlock childFirst={CHILD_FIRST} />
       </div>
 
