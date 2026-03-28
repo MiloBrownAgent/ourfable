@@ -537,7 +537,103 @@ export default function DashboardChildAware({
         </>
       )}
 
+      {/* ── 9. REFERRAL CODES ── */}
+      <ReferralWidget familyId={familyId} />
+
       <div style={{ height: 64 }} />
+    </div>
+  );
+}
+
+function ReferralWidget({ familyId }: { familyId: string }) {
+  const [codes, setCodes] = useState<Array<{ code: string; status: string }>>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/ourfable/data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "ourfable:listReferralCodes", args: { familyId } }),
+    })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d.value)) setCodes(d.value); })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, [familyId]);
+
+  if (!loaded || codes.length === 0) return null;
+
+  const available = codes.filter(c => c.status === "available");
+  const redeemed = codes.filter(c => c.status === "redeemed");
+
+  const copyCode = (code: string) => {
+    const url = `https://ourfable.ai/invite/${code}`;
+    navigator.clipboard.writeText(url);
+    setCopied(code);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  return (
+    <div style={{
+      marginTop: 32, padding: "32px 28px",
+      background: "var(--surface)", border: "1px solid var(--border)",
+      borderRadius: 16,
+      animation: "fadeUp 0.6s var(--spring) 0.8s both",
+    }}>
+      <p style={{
+        fontSize: 9, fontWeight: 700, letterSpacing: "0.2em",
+        textTransform: "uppercase", color: "var(--green)", marginBottom: 8,
+      }}>Save a spot</p>
+      <h3 className="font-display" style={{
+        fontSize: 20, fontWeight: 400, color: "var(--text)", lineHeight: 1.3, marginBottom: 8,
+      }}>
+        Share Our Fable with someone you love.
+      </h3>
+      <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 20 }}>
+        {available.length > 0
+          ? `You have ${available.length} founding member invite${available.length !== 1 ? "s" : ""} to share.`
+          : "All your invites have been claimed!"}
+        {redeemed.length > 0 && ` ${redeemed.length} redeemed.`}
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {codes.map(c => (
+          <div key={c.code} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 14px", borderRadius: 10,
+            background: c.status === "redeemed" ? "var(--green-light)" : "var(--bg)",
+            border: `1px solid ${c.status === "redeemed" ? "var(--green-border)" : "var(--border)"}`,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{
+                fontFamily: "monospace", fontSize: 13, fontWeight: 600,
+                color: c.status === "redeemed" ? "var(--green)" : "var(--text)",
+                letterSpacing: "0.06em",
+              }}>
+                {c.code}
+              </span>
+              {c.status === "redeemed" && (
+                <span style={{ fontSize: 11, color: "var(--green)", fontWeight: 500 }}>Claimed</span>
+              )}
+            </div>
+            {c.status === "available" && (
+              <button
+                onClick={() => copyCode(c.code)}
+                style={{
+                  padding: "6px 14px", borderRadius: 8,
+                  background: copied === c.code ? "var(--green)" : "var(--surface)",
+                  border: `1px solid ${copied === c.code ? "var(--green)" : "var(--border)"}`,
+                  color: copied === c.code ? "#fff" : "var(--text-2)",
+                  fontSize: 12, fontWeight: 500, cursor: "pointer",
+                  transition: "all 150ms",
+                }}
+              >
+                {copied === c.code ? "Copied!" : "Copy link"}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -79,6 +79,7 @@ const PUBLIC_QUERIES = new Set([
   "ourfable:getPromptByToken",
   "ourfable:generateUploadUrl",
   "ourfable:submitVaultEntry",
+  "ourfable:getReferralByCode",
 ]);
 
 export async function POST(req: NextRequest) {

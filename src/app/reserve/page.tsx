@@ -100,6 +100,7 @@ function ReservePageInner() {
           childBirthday,
           source: "reserve",
           eventId: eid,
+          referralCode: searchParams.get("ref") ?? undefined,
           ...utms,
         }),
       });

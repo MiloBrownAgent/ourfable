@@ -650,6 +650,27 @@ export default defineSchema({
   // Independent from the contribution itself — even if the contribution
   // insert fails, the audit log captures the attempt.
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Referral Codes — viral growth
+  // ---------------------------------------------------------------------------
+  ourfable_referrals: defineTable({
+    code: v.string(),                       // unique 8-char code
+    referrerFamilyId: v.string(),
+    referrerName: v.string(),               // "Dave & Amanda"
+    childName: v.string(),                  // "Soren"
+    status: v.string(),                     // "available" | "redeemed"
+    redeemedByEmail: v.optional(v.string()),
+    redeemedByFamilyId: v.optional(v.string()),
+    redeemedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_referrerFamilyId", ["referrerFamilyId"])
+    .index("by_status", ["status"]),
+
+  // ---------------------------------------------------------------------------
+  // Vault Audit Log
+  // ---------------------------------------------------------------------------
   ourfable_vault_audit_log: defineTable({
     familyId: v.string(),
     memberId: v.optional(v.string()),

@@ -84,6 +84,23 @@ export const createFamily = mutation({
       });
     }
 
+    // Generate 3 referral codes for this family
+    const referralCodes: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      let code = "";
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      for (let j = 0; j < 8; j++) code += chars[Math.floor(Math.random() * chars.length)];
+      await ctx.db.insert("ourfable_referrals", {
+        code,
+        referrerFamilyId: args.familyId,
+        referrerName: args.parentNames,
+        childName: args.childName,
+        status: "available",
+        createdAt: Date.now(),
+      });
+      referralCodes.push(code);
+    }
+
     return docId;
   },
 });
@@ -770,6 +787,108 @@ export const submitVaultEntry = mutation({
 });
 
 // Generate Convex upload URL for media (photo/video/voice)
+// ── Referral Codes ─────────────────────────────────────────────────────────
+
+function generateReferralCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I confusion
+  let code = "";
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+export const createReferralCodes = mutation({
+  args: {
+    familyId: v.string(),
+    referrerName: v.string(),
+    childName: v.string(),
+    count: v.optional(v.number()),
+  },
+  handler: async (ctx, { familyId, referrerName, childName, count = 3 }) => {
+    // Check if codes already exist for this family
+    const existing = await ctx.db
+      .query("ourfable_referrals")
+      .withIndex("by_referrerFamilyId", (q) => q.eq("referrerFamilyId", familyId))
+      .collect();
+    if (existing.length >= count) return existing.map((r) => r.code);
+
+    const codes: string[] = [];
+    const needed = count - existing.length;
+    for (let i = 0; i < needed; i++) {
+      let code = generateReferralCode();
+      // Ensure unique
+      let attempts = 0;
+      while (attempts < 10) {
+        const dup = await ctx.db
+          .query("ourfable_referrals")
+          .withIndex("by_code", (q) => q.eq("code", code))
+          .first();
+        if (!dup) break;
+        code = generateReferralCode();
+        attempts++;
+      }
+
+      await ctx.db.insert("ourfable_referrals", {
+        code,
+        referrerFamilyId: familyId,
+        referrerName,
+        childName,
+        status: "available",
+        createdAt: Date.now(),
+      });
+      codes.push(code);
+    }
+
+    return [...existing.map((r) => r.code), ...codes];
+  },
+});
+
+export const listReferralCodes = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    return await ctx.db
+      .query("ourfable_referrals")
+      .withIndex("by_referrerFamilyId", (q) => q.eq("referrerFamilyId", familyId))
+      .collect();
+  },
+});
+
+export const getReferralByCode = query({
+  args: { code: v.string() },
+  handler: async (ctx, { code }) => {
+    return await ctx.db
+      .query("ourfable_referrals")
+      .withIndex("by_code", (q) => q.eq("code", code.toUpperCase()))
+      .first();
+  },
+});
+
+export const redeemReferral = mutation({
+  args: {
+    code: v.string(),
+    redeemedByEmail: v.string(),
+    redeemedByFamilyId: v.optional(v.string()),
+  },
+  handler: async (ctx, { code, redeemedByEmail, redeemedByFamilyId }) => {
+    const referral = await ctx.db
+      .query("ourfable_referrals")
+      .withIndex("by_code", (q) => q.eq("code", code.toUpperCase()))
+      .first();
+    if (!referral) return { error: "Invalid code" };
+    if (referral.status === "redeemed") return { error: "Code already used" };
+
+    await ctx.db.patch(referral._id, {
+      status: "redeemed",
+      redeemedByEmail,
+      redeemedByFamilyId,
+      redeemedAt: Date.now(),
+    });
+
+    return { success: true, referrerName: referral.referrerName, childName: referral.childName };
+  },
+});
+
+// ── Media Upload ───────────────────────────────────────────────────────────
+
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
