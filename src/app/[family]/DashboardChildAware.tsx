@@ -6,6 +6,7 @@ import WritingBlock from "@/components/WritingBlock";
 import Greeting from "@/components/Greeting";
 import { useChildContext } from "@/components/ChildContext";
 import { calcAge, formatAgeLong } from "@/lib/convex";
+import { Music } from "lucide-react";
 
 interface VaultEntry {
   _id: string;
@@ -528,9 +529,9 @@ export default function DashboardChildAware({
                 </p>
               )}
               {currentSnap.topSong && (
-                <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
-                  🎵 {currentSnap.topSong}
-                </p>
+                <a href={`https://odesli.co/?q=${encodeURIComponent(currentSnap.topSong.replace(" — ", " "))}`} target="_blank" rel="noopener noreferrer" className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, borderBottom: "0.5px solid var(--border)", transition: "border-color 160ms" }}>
+                  <Music size={13} strokeWidth={1.5} /> {currentSnap.topSong}
+                </a>
               )}
             </div>
           </Link>

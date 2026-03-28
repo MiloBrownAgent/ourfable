@@ -510,7 +510,7 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
                             {snap.topSong && (
                               <div className="snapshot-content-row" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                                 <span className="snapshot-label" style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--sage)", flexShrink: 0, minWidth: 68, marginTop: 3 }}>No. 1 Song</span>
-                                <p className="font-display" style={{ fontSize: 15, color: "var(--text-2)", fontStyle: "italic", lineHeight: 1.5 }}>{snap.topSong}</p>
+                                <a href={`https://odesli.co/?q=${encodeURIComponent(snap.topSong.replace(" — ", " "))}`} target="_blank" rel="noopener noreferrer" className="font-display" style={{ fontSize: 15, color: "var(--text-2)", fontStyle: "italic", lineHeight: 1.5, textDecoration: "none", borderBottom: "0.5px solid var(--border)", transition: "border-color 160ms" }}>{snap.topSong}</a>
                               </div>
                             )}
                             {(snap.weatherDesc || snap.tempHigh) && (
