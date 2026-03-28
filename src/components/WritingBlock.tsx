@@ -130,6 +130,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   }, [])
 
   // Callback ref for video element — attaches stream immediately when element mounts
+  // IMPORTANT: do NOT null out pendingStreamRef here — startVideoRecording needs it
   const videoCameraRefCallback = useCallback((el: HTMLVideoElement | null) => {
     videoCameraRef.current = el
     if (el && pendingStreamRef.current) {
@@ -138,7 +139,6 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       el.setAttribute('playsinline', '')
       el.setAttribute('webkit-playsinline', '')
       el.play().catch(() => {})
-      pendingStreamRef.current = null
     }
   }, [])
 
@@ -269,16 +269,17 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
   // Fallback: if callback ref didn't fire (re-render timing), connect stream via effect
   useEffect(() => {
-    if (recordingVideo && videoCameraRef.current && pendingStreamRef.current) {
+    if ((previewingVideo || recordingVideo) && videoCameraRef.current && pendingStreamRef.current) {
       const el = videoCameraRef.current
-      el.srcObject = pendingStreamRef.current
-      el.muted = true
-      el.setAttribute('playsinline', '')
-      el.setAttribute('webkit-playsinline', '')
-      el.play().catch(() => {})
-      pendingStreamRef.current = null
+      if (!el.srcObject) {
+        el.srcObject = pendingStreamRef.current
+        el.muted = true
+        el.setAttribute('playsinline', '')
+        el.setAttribute('webkit-playsinline', '')
+        el.play().catch(() => {})
+      }
     }
-  }, [recordingVideo])
+  }, [previewingVideo, recordingVideo])
 
   const hasContent = text.trim().length > 0 || photos.length > 0 || video !== null || audioBlob !== null
 
