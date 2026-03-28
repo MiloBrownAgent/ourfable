@@ -11,6 +11,7 @@ export function FooterSection() {
           <Link href="/faq" className="nav-link" style={{ fontSize: 13, padding: "12px 0" }}>FAQ</Link>
           <Link href="/journal" className="nav-link" style={{ fontSize: 13, padding: "12px 0" }}>Journal</Link>
           <Link href="/partners" className="nav-link" style={{ fontSize: 13, padding: "12px 0" }}>Partner with us</Link>
+          <Link href="/support" className="nav-link" style={{ fontSize: 13, padding: "12px 0" }}>Support</Link>
           <Link href="/privacy" className="nav-link" style={{ fontSize: 13, padding: "12px 0" }}>Privacy</Link>
           <Link href="/terms" className="nav-link" style={{ fontSize: 13, padding: "12px 0" }}>Terms</Link>
         </div>
