@@ -9,19 +9,35 @@ import { Mic, Image as ImageIcon, Video, Music, Globe, Cloud } from "lucide-reac
 function VaultMockup() {
   return (
     <div className="mockup-scale-wrapper"><div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,0.18)" }}>
-      {/* Dark vault section — matches actual dashboard */}
+      {/* Dark vault page — matches live vault page design */}
       <div style={{ background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)", padding: "28px 24px 32px", position: "relative" }}>
         {/* Gold ambient glow */}
         <div style={{ position: "absolute", bottom: -20, left: "50%", transform: "translateX(-50%)", width: "60%", height: 60, pointerEvents: "none", background: "radial-gradient(ellipse, rgba(200,168,122,0.09), transparent 70%)" }} />
         <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 10, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "#C8A87A", marginBottom: 8 }}>THE VAULT</p>
-        <div style={{ width: 36, height: "0.5px", background: "rgba(200,168,122,0.4)", marginBottom: 18 }} />
-        <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 400, color: "#FDFBF7", marginBottom: 24, lineHeight: 1.25 }}>Sealed memories for Noah</h2>
+        <div style={{ width: 36, height: "0.5px", background: "rgba(200,168,122,0.4)", marginBottom: 14 }} />
+        <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 400, fontStyle: "italic", color: "#FDFBF7", marginBottom: 18, lineHeight: 1.25 }}>Sealed memories for Noah</h2>
+        {/* Stats bar */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+          {[{ n: "47", l: "Total" }, { n: "45", l: "Sealed" }, { n: "2", l: "Open" }].map(s => (
+            <div key={s.l} style={{ flex: 1, padding: "10px 0", textAlign: "center", background: "rgba(255,255,255,0.03)", border: "0.5px solid rgba(253,251,247,0.08)", borderRadius: 8 }}>
+              <p style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "#FDFBF7", marginBottom: 2 }}>{s.n}</p>
+              <p style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(253,251,247,0.35)" }}>{s.l}</p>
+            </div>
+          ))}
+        </div>
+        {/* Filter tabs */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+          {["All", "Sealed", "Open"].map((t, i) => (
+            <span key={t} style={{ padding: "5px 14px", borderRadius: 100, fontSize: 10, fontWeight: 500, border: i === 0 ? "1px solid #C8A87A" : "1px solid rgba(253,251,247,0.1)", color: i === 0 ? "#C8A87A" : "rgba(253,251,247,0.35)", letterSpacing: "0.06em" }}>{t}</span>
+          ))}
+        </div>
+        {/* Entries */}
         {[
           { name: "Grandma", rel: "Grandmother", type: "Letter" },
           { name: "Uncle", rel: "Uncle", type: "Voice memo" },
           { name: "Godmother", rel: "Godparent", type: "Photo" },
         ].map((entry, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: i < 2 ? "0.5px solid rgba(253,251,247,0.07)" : "none" }}>
+          <div key={i} style={{ padding: "14px 16px", marginBottom: 8, background: "rgba(255,255,255,0.03)", border: "0.5px solid rgba(253,251,247,0.07)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <p style={{ fontFamily: "var(--font-playfair)", fontSize: 14, fontStyle: "italic", color: "#FDFBF7", marginBottom: 3 }}>{entry.name}</p>
               <p style={{ fontSize: 10, color: "rgba(253,251,247,0.45)" }}>{entry.type} · {entry.rel}</p>
@@ -29,18 +45,7 @@ function VaultMockup() {
             <span style={{ display: "inline-flex", alignItems: "center", border: "0.5px solid rgba(200,168,122,0.45)", borderRadius: 100, padding: "3px 10px", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#C8A87A" }}>Sealed</span>
           </div>
         ))}
-        <p style={{ fontSize: 11, color: "rgba(253,251,247,0.3)", marginTop: 12 }}>+4 more sealed</p>
-      </div>
-      {/* Cream cards below vault */}
-      <div style={{ background: "#FDFBF7", padding: "16px 24px 20px" }}>
-        <div style={{ padding: "14px 0", borderBottom: "0.5px solid #E8E2D8", borderLeft: "2px solid rgba(107,143,111,0.5)", paddingLeft: 14 }}>
-          <p style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9A9590", marginBottom: 3 }}>Dispatches</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 14, fontWeight: 400, color: "#1A1A18" }}>Send an update</p>
-        </div>
-        <div style={{ padding: "14px 0", borderLeft: "2px solid rgba(107,143,111,0.5)", paddingLeft: 14 }}>
-          <p style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9A9590", marginBottom: 3 }}>People</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 14, fontWeight: 400, color: "#1A1A18" }}>Inner Circle</p>
-        </div>
+        <p style={{ fontSize: 11, color: "rgba(253,251,247,0.3)", marginTop: 8 }}>+44 more sealed</p>
       </div>
     </div></div>
   );
@@ -49,12 +54,12 @@ function VaultMockup() {
 function WritingBlockMockup() {
   return (
     <div className="mockup-scale-wrapper"><div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,0.10)" }}>
-      {/* Greeting + child name — matches dashboard hero */}
-      <div style={{ background: "#FDFBF7", padding: "28px 24px 0" }}>
-        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(107,143,111,0.7)", marginBottom: 10 }}>Good evening</p>
-        <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: 36, color: "#4A5E4C", letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 14 }}>Noah</h1>
-        <div style={{ width: 40, height: "0.5px", background: "linear-gradient(90deg, #C8A87A, transparent)", marginBottom: 8 }} />
-        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(107,143,111,0.7)" }}>9 months, 3 days</p>
+      {/* Greeting + child name — compact layout matching live dashboard */}
+      <div style={{ background: "#FDFBF7", padding: "24px 24px 0" }}>
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(107,143,111,0.7)", marginBottom: 8 }}>Good evening</p>
+        <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: 28, color: "#4A5E4C", letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 10 }}>Noah</h1>
+        <div style={{ width: 36, height: "0.5px", background: "linear-gradient(90deg, #C8A87A, transparent)", marginBottom: 6 }} />
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 9, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(107,143,111,0.7)" }}>9 months, 3 days · 280 days &nbsp;&nbsp; ✦ 13 years · 4,468 days away</p>
       </div>
       {/* Writing block */}
       <div style={{ background: "#FDFBF7", padding: "20px 24px" }}>
