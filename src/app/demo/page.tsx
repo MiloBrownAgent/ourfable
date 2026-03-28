@@ -843,7 +843,7 @@ function WorldSection() {
             const age = childAgeAtMonth(CHILD_DOB, year, month);
 
             return (
-              <div key={key} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+              <div key={`${year}-${month}`} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 6 }}>
                   <div style={{
                     width: 12, height: 12, borderRadius: "50%",
