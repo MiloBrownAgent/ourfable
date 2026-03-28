@@ -36,6 +36,7 @@ const PUBLIC_PREFIXES = [
   "/robots.txt",
   "/sitemap.xml",
   "/llms.txt",
+  "/googlee054f0458cc7f091.html",
 ];
 
 function isPublic(pathname: string): boolean {
@@ -151,5 +152,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest\\.json|icon-.*\\.png).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest\\.json|icon-.*\\.png|google.*\\.html).*)"],
 };
