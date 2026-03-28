@@ -68,17 +68,20 @@ export function MobileNav({ scrolled }: { scrolled: boolean }) {
         transition: "all 300ms ease",
       }} className="mobile-nav">
         <a href="/" onClick={(e) => { if (window.location.pathname === "/") { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); } }} style={{ fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 700, color: "var(--green)", textDecoration: "none", cursor: "pointer" }}>Our Fable</a>
-        <button
-          ref={toggleRef}
-          onClick={() => setOpen(o => !o)}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 12, display: "flex", flexDirection: "column", gap: 5, minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}
-          aria-label="Menu"
-          aria-expanded={open}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <a href="/login" style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", textDecoration: "none", padding: "8px 12px" }}>Sign in</a>
+          <button
+            ref={toggleRef}
+            onClick={() => setOpen(o => !o)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 12, display: "flex", flexDirection: "column", gap: 5, minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}
+            aria-label="Menu"
+            aria-expanded={open}
+          >
           <span style={{ display: "block", width: 22, height: 2, background: "var(--text)", borderRadius: 2, transition: "all 0.25s", transform: open ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
           <span style={{ display: "block", width: 22, height: 2, background: "var(--text)", borderRadius: 2, transition: "all 0.25s", opacity: open ? 0 : 1 }} />
           <span style={{ display: "block", width: 22, height: 2, background: "var(--text)", borderRadius: 2, transition: "all 0.25s", transform: open ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
         </button>
+        </div>
       </nav>
 
       {open && (

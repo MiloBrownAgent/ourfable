@@ -179,11 +179,9 @@ function LoginForm() {
 
         <div style={{ width: "100%", maxWidth: 360, position: "relative" }}>
           {/* Mobile wordmark */}
-          <div className="hide-desktop" style={{ textAlign: "center", marginBottom: 48 }}>
-            <div style={{ width: 56, height: 56, border: "1.5px solid var(--green-border)", borderRadius: "50%", background: "var(--green-light)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <span style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 800, color: "var(--green)" }}>Our Fable</span>
-            </div>
-            <p style={{ fontFamily: "var(--font-playfair)", fontSize: 24, fontWeight: 700, color: "var(--text)", letterSpacing: "0.06em" }}>Our Fable</p>
+          <div className="hide-desktop" style={{ textAlign: "center", marginBottom: 40 }}>
+            <p style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--green)", letterSpacing: "-0.01em", marginBottom: 8 }}>Our Fable</p>
+            <p style={{ fontSize: 11, color: "var(--text-3)", letterSpacing: "0.15em", textTransform: "uppercase" }}>Private · Permanent · Personal</p>
           </div>
 
           <div style={{ marginBottom: 36 }}>
