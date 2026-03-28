@@ -780,9 +780,10 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       {/* Dispatch member selector */}
       {mode === 'dispatch' && !locked && (
         <div style={{
-          padding: '12px 24px',
+          padding: '16px 24px 20px',
           borderTop: '0.5px solid var(--border)',
           background: 'var(--bg)',
+          marginBottom: 4,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
