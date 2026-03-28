@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Reveal } from "./Reveal";
+import { Mic, Image as ImageIcon, Video, PenLine } from "lucide-react";
 
 export function DispatchSection() {
   return (
@@ -85,7 +86,12 @@ export function DispatchSection() {
 
           {/* Media type chips */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 36 }}>
-            {["🎙 Voice memo", "📷 Photo", "🎥 Video", "✍️ Written note"].map(label => (
+            {[
+              { label: "Voice memo", icon: <Mic size={14} strokeWidth={1.5} /> },
+              { label: "Photo", icon: <ImageIcon size={14} strokeWidth={1.5} /> },
+              { label: "Video", icon: <Video size={14} strokeWidth={1.5} /> },
+              { label: "Written note", icon: <PenLine size={14} strokeWidth={1.5} /> },
+            ].map(({ label, icon }) => (
               <span key={label} style={{
                 padding: "8px 16px",
                 background: "rgba(107,143,111,0.08)",
@@ -94,7 +100,7 @@ export function DispatchSection() {
                 fontSize: 12, color: "var(--text-2)",
                 fontWeight: 500,
               }}>
-                {label}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{icon} {label}</span>
               </span>
             ))}
           </div>
