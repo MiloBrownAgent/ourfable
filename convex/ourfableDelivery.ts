@@ -607,7 +607,7 @@ export const sendDispatchEmails = internalAction({
   args: {
     familyId: v.string(),
     body: v.string(),
-    mediaUrls: v.optional(v.array(v.string())),
+    mediaUrl: v.optional(v.string()),
     mediaType: v.optional(v.string()),
     sentToAll: v.boolean(),
     sentToMemberIds: v.optional(v.array(v.string())),
@@ -638,13 +638,13 @@ export const sendDispatchEmails = internalAction({
       if (!member.email) continue;
 
       const memberFirst = member.name?.split(" ")[0] ?? "there";
-      const mediaHtml = args.mediaUrls?.[0]
+      const mediaHtml = args.mediaUrl
         ? args.mediaType === "photo"
-          ? `<img src="${args.mediaUrls[0]}" style="max-width:100%;border-radius:12px;margin:16px 0;" alt="Photo from ${parentNames}" />`
+          ? `<img src="${args.mediaUrl}" style="max-width:100%;border-radius:12px;margin:16px 0;" alt="Photo from ${parentNames}" />`
           : args.mediaType === "video"
-          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">🎬 Video attached — <a href="${args.mediaUrls[0]}" style="color:#4A5E4C;">Watch now</a></p>`
+          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">Video attached — <a href="${args.mediaUrl}" style="color:#4A5E4C;">Watch now</a></p>`
           : args.mediaType === "voice"
-          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">🎙 Voice memo — <a href="${args.mediaUrls[0]}" style="color:#4A5E4C;">Listen now</a></p>`
+          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">Voice memo — <a href="${args.mediaUrl}" style="color:#4A5E4C;">Listen now</a></p>`
           : ""
         : "";
 

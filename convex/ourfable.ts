@@ -1340,11 +1340,17 @@ export const createOutgoing = mutation({
       createdAt: Date.now(),
     });
 
+    // Resolve media URL server-side for email delivery
+    let resolvedMediaUrl: string | undefined;
+    if (args.mediaUrls?.[0]) {
+      resolvedMediaUrl = args.mediaUrls[0];
+    }
+
     // Schedule email delivery to circle members
     await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendDispatchEmails, {
       familyId: args.familyId,
       body: args.body,
-      mediaUrls: args.mediaUrls,
+      mediaUrl: resolvedMediaUrl,
       mediaType: args.mediaType,
       sentToAll: args.sentToAll,
       sentToMemberIds: args.sentToMemberIds,
