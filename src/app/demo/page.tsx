@@ -475,10 +475,11 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
 
       {/* 5. VAULT — dark section */}
       <div style={{
-        width: "100vw", marginLeft: "calc(-50vw + 50%)",
+        marginLeft: -24, marginRight: -24,
         position: "relative",
         background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)",
         padding: "72px 24px 80px",
+        borderRadius: 0,
         animation: "fadeUp 0.7s var(--spring) 0.4s both",
       }}>
         <div style={{ maxWidth: 720, margin: "0 auto", position: "relative" }}>
