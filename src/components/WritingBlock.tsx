@@ -33,6 +33,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const [recording, setRecording] = useState(false)
   const [recordingVideo, setRecordingVideo] = useState(false)
   const [previewingVideo, setPreviewingVideo] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState('')
   const [recorderError, setRecorderError] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -71,20 +72,22 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
   // ── Detect supported mime types (Safari vs Chrome/Firefox) ──
   const getAudioMimeType = (): string => {
-    if (typeof MediaRecorder === 'undefined') return 'audio/webm'
-    if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus'
-    if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm'
+    if (typeof MediaRecorder === 'undefined') return ''
+    // Check mp4/aac FIRST — Safari doesn't support webm
     if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4'
     if (MediaRecorder.isTypeSupported('audio/aac')) return 'audio/aac'
+    if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus'
+    if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm'
     return '' // let browser pick default
   }
 
   const getVideoMimeType = (): string => {
-    if (typeof MediaRecorder === 'undefined') return 'video/webm'
+    if (typeof MediaRecorder === 'undefined') return ''
+    // Check mp4 FIRST — Safari only supports mp4, not webm
+    if (MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4'
     if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) return 'video/webm;codecs=vp9,opus'
     if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) return 'video/webm;codecs=vp8,opus'
     if (MediaRecorder.isTypeSupported('video/webm')) return 'video/webm'
-    if (MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4'
     return '' // let browser pick default
   }
 
@@ -292,6 +295,16 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
   const uploadMedia = async (blob: Blob, mimeType: string): Promise<string | undefined> => {
     try {
+      setUploadStatus('Preparing upload…')
+      console.log(`[WritingBlock] Uploading ${mimeType}, size: ${(blob.size / 1024).toFixed(0)}KB`)
+
+      if (blob.size === 0) {
+        console.error('[WritingBlock] Blob is empty — recording failed')
+        setUploadStatus('')
+        setSealError('Recording was empty. Please try again.')
+        return undefined
+      }
+
       // 1. Get presigned upload URL from Convex
       const urlRes = await fetch('/api/ourfable/data', {
         method: 'POST',
@@ -303,15 +316,21 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       if (!uploadUrl) throw new Error('No upload URL')
 
       // 2. Upload file to Convex storage
+      const sizeMB = (blob.size / (1024 * 1024)).toFixed(1)
+      setUploadStatus(`Uploading ${sizeMB}MB…`)
+
       const uploadRes = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Content-Type': mimeType },
         body: blob,
       })
       const uploadData = await uploadRes.json()
+      setUploadStatus('Saving…')
+      console.log(`[WritingBlock] Upload complete, storageId: ${uploadData.storageId}`)
       return uploadData.storageId
     } catch (err) {
       console.error('[WritingBlock] Media upload failed:', err)
+      setUploadStatus('')
       return undefined
     }
   }
@@ -878,7 +897,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
               animation: validationMsg ? 'shake 400ms ease' : 'none',
             }}
           >
-            {sealed ? '✓ Sealed' : sealing ? (mode === 'seal' ? 'Sealing…' : 'Sending…') : mode === 'seal' ? 'Seal letter' : 'Send dispatch'}
+            {sealed ? '✓ Sealed' : sealing ? (uploadStatus || (mode === 'seal' ? 'Sealing…' : 'Sending…')) : mode === 'seal' ? 'Seal letter' : 'Send dispatch'}
           </button>
         </div>
       </div>
