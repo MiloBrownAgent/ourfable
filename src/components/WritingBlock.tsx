@@ -44,6 +44,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const videoCameraRef = useRef<HTMLVideoElement | null>(null)
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
   const photoFileRef = useRef<Blob | null>(null)
+  const pendingStreamRef = useRef<MediaStream | null>(null)
 
   // Dispatch
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
@@ -128,13 +129,10 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: true,
       })
-      if (videoCameraRef.current) {
-        videoCameraRef.current.srcObject = stream
-        videoCameraRef.current.setAttribute('autoplay', '')
-        videoCameraRef.current.setAttribute('playsinline', '')
-        videoCameraRef.current.muted = true
-        try { await videoCameraRef.current.play() } catch { /* autoplay may be blocked */ }
-      }
+
+      // Store stream for the useEffect to connect once video element renders
+      pendingStreamRef.current = stream
+
       const mimeType = getVideoMimeType()
       const options: MediaRecorderOptions = mimeType ? { mimeType } : {}
       const recorder = new MediaRecorder(stream, options)
@@ -145,13 +143,17 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       recorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop())
         if (videoCameraRef.current) videoCameraRef.current.srcObject = null
+        pendingStreamRef.current = null
         const blob = new Blob(chunksRef.current, { type: actualMime })
         setVideoBlob(blob)
         setVideo({ name: `video-${Date.now()}.${ext}` })
         setAudioDuration(recordingTime)
       }
       mediaRecorderRef.current = recorder
-      recorder.start(1000) // request data every 1s for reliability
+      recorder.start(1000)
+
+      // Set state AFTER recorder starts — this triggers render of <video> element
+      // The useEffect above will connect the stream once the element exists
       setRecordingVideo(true)
       setRecordingTime(0)
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
@@ -227,6 +229,18 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [])
+
+  // Connect pending stream to video element once it renders
+  useEffect(() => {
+    if (recordingVideo && videoCameraRef.current && pendingStreamRef.current) {
+      const el = videoCameraRef.current
+      el.srcObject = pendingStreamRef.current
+      el.muted = true
+      el.setAttribute('playsinline', '')
+      el.play().catch(() => {})
+      pendingStreamRef.current = null
+    }
+  }, [recordingVideo])
 
   const hasContent = text.trim().length > 0 || photos.length > 0 || video !== null || audioBlob !== null
 
