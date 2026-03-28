@@ -32,6 +32,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   // Voice recording
   const [recording, setRecording] = useState(false)
   const [recordingVideo, setRecordingVideo] = useState(false)
+  const [previewingVideo, setPreviewingVideo] = useState(false)
   const [recorderError, setRecorderError] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -123,6 +124,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     mediaRecorderRef.current?.stop()
     setRecording(false)
     setRecordingVideo(false)
+    setPreviewingVideo(false)
     if (timerRef.current) clearInterval(timerRef.current)
     if (videoCameraRef.current) videoCameraRef.current.srcObject = null
   }, [])
@@ -140,49 +142,62 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     }
   }, [])
 
-  const startVideoRecording = useCallback(async () => {
+  // Step 1: Open camera preview (no recording yet)
+  const openVideoPreview = useCallback(async () => {
     setRecorderError('')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: true,
       })
-
-      // Store stream for the callback ref to connect once video element renders
       pendingStreamRef.current = stream
-
-      const mimeType = getVideoMimeType()
-      const options: MediaRecorderOptions = mimeType ? { mimeType } : {}
-      const recorder = new MediaRecorder(stream, options)
-      const actualMime = recorder.mimeType || mimeType || 'video/mp4'
-      const ext = actualMime.includes('mp4') ? 'mp4' : 'webm'
-      chunksRef.current = []
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      recorder.onstop = () => {
-        stream.getTracks().forEach(t => t.stop())
-        if (videoCameraRef.current) videoCameraRef.current.srcObject = null
-        pendingStreamRef.current = null
-        const blob = new Blob(chunksRef.current, { type: actualMime })
-        setVideoBlob(blob)
-        setVideo({ name: `video-${Date.now()}.${ext}` })
-        setAudioDuration(recordingTimeRef.current)
-      }
-      mediaRecorderRef.current = recorder
-      // Safari doesn't reliably support timeslice — omit it
-      recorder.start()
-
-      // Set state AFTER recorder starts — this triggers render of <video> element
-      // The callback ref will connect the stream once the element exists
-      setRecordingVideo(true)
-      setRecordingTime(0)
-      recordingTimeRef.current = 0
-      timerRef.current = setInterval(() => {
-        setRecordingTime(t => { recordingTimeRef.current = t + 1; return t + 1 })
-      }, 1000)
+      setPreviewingVideo(true)
     } catch (err) {
-      console.error('[WritingBlock] Video recording error:', err)
+      console.error('[WritingBlock] Camera preview error:', err)
       setRecorderError('Camera access denied. Please allow access in your browser settings.')
     }
+  }, [])
+
+  // Step 2: Start actual recording (camera already open from preview)
+  const startVideoRecording = useCallback(() => {
+    const stream = pendingStreamRef.current
+    if (!stream) return
+
+    const mimeType = getVideoMimeType()
+    const options: MediaRecorderOptions = mimeType ? { mimeType } : {}
+    const recorder = new MediaRecorder(stream, options)
+    const actualMime = recorder.mimeType || mimeType || 'video/mp4'
+    const ext = actualMime.includes('mp4') ? 'mp4' : 'webm'
+    chunksRef.current = []
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+    recorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop())
+      if (videoCameraRef.current) videoCameraRef.current.srcObject = null
+      pendingStreamRef.current = null
+      const blob = new Blob(chunksRef.current, { type: actualMime })
+      setVideoBlob(blob)
+      setVideo({ name: `video-${Date.now()}.${ext}` })
+      setAudioDuration(recordingTimeRef.current)
+    }
+    mediaRecorderRef.current = recorder
+    recorder.start()
+    setPreviewingVideo(false)
+    setRecordingVideo(true)
+    setRecordingTime(0)
+    recordingTimeRef.current = 0
+    timerRef.current = setInterval(() => {
+      setRecordingTime(t => { recordingTimeRef.current = t + 1; return t + 1 })
+    }, 1000)
+  }, [])
+
+  // Cancel preview without recording
+  const cancelVideoPreview = useCallback(() => {
+    if (pendingStreamRef.current) {
+      pendingStreamRef.current.getTracks().forEach(t => t.stop())
+      pendingStreamRef.current = null
+    }
+    if (videoCameraRef.current) videoCameraRef.current.srcObject = null
+    setPreviewingVideo(false)
   }, [])
 
   const removeAudio = () => {
@@ -487,7 +502,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       }} />
 
       {/* Video camera preview — shown ABOVE the overlay so it's visible on iOS */}
-      {recordingVideo && (
+      {(previewingVideo || recordingVideo) && (
         <video
           ref={videoCameraRefCallback}
           muted
@@ -497,6 +512,32 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
           webkit-playsinline=""
           style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block', transform: 'scaleX(-1)', position: 'relative', zIndex: 11 }}
         />
+      )}
+
+      {/* Video preview controls — camera open, not recording yet */}
+      {previewingVideo && !recordingVideo && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          padding: '16px 24px', background: 'var(--bg)',
+          borderTop: '0.5px solid var(--border)',
+        }}>
+          <button onClick={cancelVideoPreview} style={{
+            padding: '10px 24px', borderRadius: 100,
+            border: '1px solid var(--border)', background: 'transparent',
+            color: 'var(--text-3)', fontFamily: 'var(--font-body)',
+            fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          }}>Cancel</button>
+          <button onClick={startVideoRecording} style={{
+            padding: '10px 24px', borderRadius: 100,
+            border: 'none', background: '#E53E3E',
+            color: '#fff', fontFamily: 'var(--font-body)',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
+            Start recording
+          </button>
+        </div>
       )}
 
       {/* Recording overlay — for audio: full overlay; for video: controls below the preview */}
@@ -526,7 +567,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {recordingVideo && (
+            {(previewingVideo || recordingVideo) && (
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#E53E3E', animation: 'recordPulse 1.5s ease-in-out infinite' }} />
             )}
             <span style={{
@@ -684,7 +725,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         {[
           { label: 'Voice', icon: <Mic size={13} strokeWidth={1.5} />, onClick: () => audioBlob ? undefined : startRecording() },
           { label: 'Photo', icon: <ImageIcon size={13} strokeWidth={1.5} />, onClick: () => photoRef.current?.click() },
-          { label: 'Video', icon: <VideoIcon size={13} strokeWidth={1.5} />, onClick: () => videoBlob ? undefined : startVideoRecording() },
+          { label: 'Video', icon: <VideoIcon size={13} strokeWidth={1.5} />, onClick: () => videoBlob ? undefined : openVideoPreview() },
         ].map(btn => (
           <button key={btn.label} onClick={btn.onClick} style={{
             display: 'inline-flex',
@@ -836,7 +877,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
               animation: validationMsg ? 'shake 400ms ease' : 'none',
             }}
           >
-            {sealed ? '✓ Sealed' : sealing ? 'Sealing…' : mode === 'seal' ? 'Seal letter' : 'Send dispatch'}
+            {sealed ? '✓ Sealed' : sealing ? (mode === 'seal' ? 'Sealing…' : 'Sending…') : mode === 'seal' ? 'Seal letter' : 'Send dispatch'}
           </button>
         </div>
       </div>
