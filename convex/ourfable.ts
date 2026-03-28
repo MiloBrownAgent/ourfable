@@ -1320,7 +1320,27 @@ export const createOutgoing = mutation({
     recipientCount: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("ourfable_vault_outgoings", { ...args, sentAt: Date.now() });
+    // Save to outgoings (for the Dispatches page)
+    const outgoingId = await ctx.db.insert("ourfable_vault_outgoings", { ...args, sentAt: Date.now() });
+
+    // Also save to vault entries so dispatches appear in the vault
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+
+    await ctx.db.insert("ourfable_vault_entries", {
+      familyId: args.familyId,
+      type: args.mediaType ?? "dispatch",
+      content: args.body,
+      mediaUrl: args.mediaUrls?.[0],
+      authorEmail: family?.email ?? "parent@ourfable.ai",
+      authorName: args.sentByName,
+      isSealed: false, // dispatches are visible immediately
+      createdAt: Date.now(),
+    });
+
+    return outgoingId;
   },
 });
 
