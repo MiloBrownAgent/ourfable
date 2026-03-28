@@ -31,9 +31,14 @@ export function StickyNav({ scrolled, showSecondNav, activeSection }: StickyNavP
               <Link href="/gift" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
               <Link href="/login" className="nav-link" style={{ fontSize: 14 }}>Sign in</Link>
             </div>
-            <Link href="/reserve" className="btn-primary nav-cta" style={{ padding: "10px 22px", fontSize: 14 }}>
-              Reserve your spot
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Link href="/demo" style={{ padding: "10px 20px", fontSize: 14, fontWeight: 600, color: "var(--green)", border: "1.5px solid var(--green-border)", borderRadius: 100, textDecoration: "none", transition: "all 160ms", background: "var(--green-light)" }}>
+                Try the demo
+              </Link>
+              <Link href="/reserve" className="btn-primary nav-cta" style={{ padding: "10px 22px", fontSize: 14 }}>
+                Reserve your spot
+              </Link>
+            </div>
           </div>
         </div>
       </nav>

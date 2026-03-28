@@ -31,6 +31,7 @@ const PUBLIC_PREFIXES = [
   "/reset-password",
   "/journal",
   "/invite/",
+  "/demo",
   "/manifest.json",
   "/robots.txt",
   "/sitemap.xml",
@@ -59,6 +60,7 @@ const INDEXABLE_PATHS = new Set([
   "/gift",
   "/how-it-works",
   "/journal",
+  "/demo",
 ]);
 
 function isBlogPath(pathname: string): boolean {

@@ -32,8 +32,9 @@ export function MobileNav({ scrolled }: { scrolled: boolean }) {
     }
   }, [open]);
 
-  const sections = [
+  const sections: { label: string; href: string; primary?: boolean; demo?: boolean }[] = [
     { label: "Reserve your spot", href: "/reserve", primary: true },
+    { label: "Try the demo", href: "/demo", demo: true },
     { label: "Why it matters", href: "#why-it-matters" },
     { label: "How it works", href: "#how-it-works" },
     { label: "What's inside", href: "#whats-inside" },
@@ -90,8 +91,8 @@ export function MobileNav({ scrolled }: { scrolled: boolean }) {
             <button key={s.label} onClick={() => scrollTo(s.href)} style={{
               background: "none", border: "none", cursor: "pointer", textAlign: "left",
               padding: "16px 24px", fontSize: s.primary ? 16 : 15,
-              fontWeight: s.primary ? 700 : 400,
-              color: s.primary ? "var(--green)" : "var(--text-2)",
+              fontWeight: s.primary ? 700 : (s.demo ? 600 : 400),
+              color: s.primary ? "var(--green)" : (s.demo ? "var(--sage)" : "var(--text-2)"),
               borderBottom: "1px solid var(--border)",
               fontFamily: s.primary ? "var(--font-playfair)" : "inherit",
               width: "100%",
