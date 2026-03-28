@@ -28,7 +28,7 @@ export function StickyNav({ scrolled, showSecondNav, activeSection }: StickyNavP
             <div className="nav-links" style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <Link href="/" className="nav-link" style={{ fontSize: 14 }}>Home</Link>
               <Link href="/faq" className="nav-link" style={{ fontSize: 14 }}>FAQ</Link>
-              <Link href="/gift" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
+              <Link href="/reserve" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
               <Link href="/login" className="nav-link" style={{ fontSize: 14 }}>Sign in</Link>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
