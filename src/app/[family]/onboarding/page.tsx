@@ -901,7 +901,7 @@ export default function OnboardingPage() {
                     desc: `Each month, ${childFirst}'s circle gets a new question. The vault grows on its own.`,
                   },
                   {
-                    emoji: "🔒",
+                    emoji: "",
                     title: `Everything stays sealed until ${childFirst} is ready`,
                     desc: "Letters, photos, voice memos — all locked until the milestone you chose.",
                   },

@@ -66,7 +66,7 @@ function OutgoingCard({ item }: { item: Outgoing }) {
                 if (item.mediaType === "voice") {
                   return (
                     <div key={i} style={{ padding: "12px 16px", background: "var(--bg-2)", borderRadius: 10, border: "1px solid var(--border)" }}>
-                      <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>🎙 Voice memo</p>
+                      <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>Voice memo</p>
                       <audio controls src={url} style={{ width: "100%", height: 36 }} />
                     </div>
                   );
@@ -588,7 +588,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                   {attachedFiles.map((f, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "var(--sage-dim)", border: "1px solid rgba(107,143,111,0.25)", borderRadius: 8, fontSize: 12, color: "var(--sage)" }}>
-                      {f.mediaType === "photo" ? "📷" : f.mediaType === "video" ? "🎥" : "🎙"} {f.fileName}
+                      {f.mediaType === "photo" ? "Photo" : f.mediaType === "video" ? "Video" : "Voice"} {f.fileName}
                       <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-3)", lineHeight: 1 }}>
                         <X size={11} strokeWidth={2} />
                       </button>

@@ -50,7 +50,7 @@ function MediaPlayer({ mediaUrl, mediaType }: { mediaUrl: string; mediaType: str
   if (mediaType === "voice") {
     return (
       <div style={{ marginTop: 16, padding: "14px 16px", background: "var(--surface)", borderRadius: 10, border: "1px solid var(--border)" }}>
-        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>🎙️ Voice memo</p>
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>Voice memo</p>
         <audio controls src={mediaUrl} style={{ width: "100%", height: 36 }} />
       </div>
     );

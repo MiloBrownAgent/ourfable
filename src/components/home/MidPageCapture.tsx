@@ -34,7 +34,7 @@ export function MidPageCapture() {
           Free to reserve · No card required
         </p>
         <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 32, fontFamily: "var(--font-sans, Inter, sans-serif)" }}>
-          🔒 Private vault · Your data is never shared · Export anytime
+          Private vault · Your data is never shared · Export anytime
         </p>
 
         {/* Gold rule below */}

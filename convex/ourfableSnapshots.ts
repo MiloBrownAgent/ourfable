@@ -11,7 +11,7 @@
  */
 
 import { v } from "convex/values";
-import { internalAction, internalMutation, internalQuery, action } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery, action, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 const OPENAI_MODEL = "gpt-4o-mini";
@@ -250,5 +250,14 @@ export const upsertSnapshotFromAI = internalMutation({
       return existing._id;
     }
     return await ctx.db.insert("ourfable_vault_snapshots", { familyId, year, month, ...data });
+  },
+});
+
+// Delete a single snapshot by its ID (admin use)
+export const deleteSnapshotById = mutation({
+  args: { id: v.id("ourfable_vault_snapshots") },
+  handler: async (ctx, { id }) => {
+    await ctx.db.delete(id);
+    return { deleted: true };
   },
 });

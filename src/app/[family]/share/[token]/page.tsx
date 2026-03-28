@@ -74,7 +74,7 @@ export default function SharePage({ params }: { params: Promise<{ family: string
             {childFirst}&apos;s world
           </p>
           <p className="font-display" style={{ fontSize: 26, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-            Hi, {member.name.split(" ")[0]} 💛
+            Hi, {member.name.split(" ")[0]} 
           </p>
           <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 16 }}>{member.relationship} to {childFirst}</p>
           <span className="chip chip-sage">{childFirst} is {ageStr} old</span>

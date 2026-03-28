@@ -178,7 +178,7 @@ function DemoSidebarContent({
     { name: "Home", icon: LayoutDashboard, key: "home" },
     { name: "The Vault", icon: FolderLock, key: "vault" },
     { name: "Dispatches", icon: Send, key: "dispatches" },
-    { name: "Letters", icon: Mail, key: "letters" },
+
     { name: "The World", icon: Sunrise, key: "world" },
     { name: "Before You Were Born", icon: BookOpen, key: "before-born" },
   ];
