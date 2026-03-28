@@ -66,21 +66,43 @@ Each month, we capture a "World Snapshot" — a warm, archival description of wh
 The child will read this years from now and feel transported back to when they were small.
 
 Write in an intimate, warm, slightly literary tone. Not journalistic — more like a letter to a child.
-Think: "This was the world you were born into."`;
+Think: "This was the world you were born into."
+
+TONE GUIDELINES:
+- Warm, nostalgic, human. Like a parent writing to their future teenager.
+- Seasonal and sensory — what the weather felt like, what people were doing, the rhythm of the month.
+- Specific but universal. Reference cultural moments that EVERYONE would remember (a song everyone was singing, a movie everyone saw, a collective feeling) — not niche or divisive events.
+- Emotional resonance over factual precision. "The whole country was humming this song" beats "Billboard #1 for 4 consecutive weeks."
+
+NEVER INCLUDE:
+- Politics, elections, legislation, government policy, trade disputes, tariffs, partisan content
+- Violence, war, tragedy, mass shootings, terrorism, disasters
+- Economic indicators (Fed rates, inflation, GDP, job numbers, stock market)
+- Controversy, scandal, divisive cultural debates
+- Anything that would make a parent uncomfortable reading to a child
+- Corporate news (mergers, IPOs, layoffs)
+
+ALWAYS PREFER:
+- Weather and seasons ("The first real snow came early this year")
+- Music and movies everyone loved
+- Sports moments that brought people together
+- Cultural vibes and collective feelings
+- Small, charming details of everyday life (what people were eating, wearing, doing on weekends)
+- Nature, holidays, family rhythms
+- Things that will feel nostalgic in 10-15 years`;
 
     const userPrompt = `Generate a World Snapshot for ${monthName} ${year}.
 
 Return ONLY valid JSON with this exact shape:
 {
-  "topHeadline": "1-2 sentence description of the major mood/event of the month, written for a child to read years later",
-  "topSong": "Song Title — Artist (the #1 hit or most culturally significant song of the month)",
-  "weatherDesc": "brief seasonal weather description for the US Midwest, include rough temperature",
-  "tempHigh": <number, approximate high temp in Fahrenheit for the month>,
-  "funFact": "one charming, specific detail about everyday life or culture in this month — something that will feel nostalgic in 10-15 years"
+  "topHeadline": "1-2 sentence description of the mood, season, or cultural moment of the month — written like a warm letter to a child who will read this in 15 years. NO politics, NO economics, NO tragedy. Focus on weather, seasons, music, sports, collective feelings, things that bring people together.",
+  "topSong": "Song Title — Artist (the song everyone was singing or streaming that month — the one that defined the moment)",
+  "weatherDesc": "brief seasonal weather description — evocative and sensory, not clinical. Write it like you're describing the month to someone who wasn't there.",
+  "tempHigh": <number, approximate high temp in Fahrenheit for the month in the US>,
+  "funFact": "one charming, specific detail about everyday life or culture in this month — the kind of thing that will make someone smile in 2040. What were people eating? Watching? Wearing? What was the vibe?"
 }
 
-Make the headline feel like history already — something a child would love to read about the world they arrived in.
-Be specific. Use real cultural touchstones from that month if possible.`;
+Make every line feel like it belongs in a letter to a child. Something they'd read at 18 and think: "That's the world I grew up in." Keep it warm, universal, and completely apolitical.`;
 
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
