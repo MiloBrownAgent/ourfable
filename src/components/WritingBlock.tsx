@@ -820,7 +820,9 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '14px 24px',
+        flexWrap: 'wrap',
+        gap: 12,
+        padding: '16px 24px',
         borderTop: '0.5px solid var(--border)',
         background: 'var(--bg)',
       }}>
