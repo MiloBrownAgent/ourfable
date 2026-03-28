@@ -43,6 +43,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const videoCameraRef = useRef<HTMLVideoElement | null>(null)
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
+  const photoFileRef = useRef<Blob | null>(null)
 
   // Dispatch
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
@@ -153,14 +154,17 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     if (!files) return
     const newPhotos = Array.from(files).map(f => ({ name: f.name, url: URL.createObjectURL(f) }))
     setPhotos(prev => [...prev, ...newPhotos])
+    // Store first photo file for upload
+    if (files[0]) photoFileRef.current = files[0]
     e.target.value = ''
   }
 
-  // Video handling
+  // Video file upload (from file picker, not camera recording)
   const onVideoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setVideo({ name: file.name })
+    setVideoBlob(file)
     e.target.value = ''
   }
 
@@ -196,6 +200,32 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     return 'letter'
   }
 
+  const uploadMedia = async (blob: Blob, mimeType: string): Promise<string | undefined> => {
+    try {
+      // 1. Get presigned upload URL from Convex
+      const urlRes = await fetch('/api/ourfable/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'ourfable:generateUploadUrl', args: {}, type: 'mutation' }),
+      })
+      const urlData = await urlRes.json()
+      const uploadUrl = urlData.value as string
+      if (!uploadUrl) throw new Error('No upload URL')
+
+      // 2. Upload file to Convex storage
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': mimeType },
+        body: blob,
+      })
+      const uploadData = await uploadRes.json()
+      return uploadData.storageId
+    } catch (err) {
+      console.error('[WritingBlock] Media upload failed:', err)
+      return undefined
+    }
+  }
+
   const handleSeal = async () => {
     setSealError('')
     setValidationMsg('')
@@ -207,17 +237,46 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     if (!familyId) return
     setSealing(true)
     try {
+      // Upload media if present
+      let mediaStorageId: string | undefined
+      let mediaMimeType: string | undefined
+
+      if (videoBlob) {
+        mediaMimeType = 'video/webm'
+        mediaStorageId = await uploadMedia(videoBlob, mediaMimeType)
+      } else if (audioBlob) {
+        mediaMimeType = 'audio/webm'
+        mediaStorageId = await uploadMedia(audioBlob, mediaMimeType)
+      } else if (photos.length > 0 && photoFileRef.current) {
+        mediaMimeType = photoFileRef.current.type || 'image/jpeg'
+        mediaStorageId = await uploadMedia(photoFileRef.current, mediaMimeType)
+      }
+
+      const contentType = getContentType()
+      const entryArgs: Record<string, unknown> = {
+        familyId,
+        memberName: 'Parent',
+        contentType,
+        isSealed: true,
+      }
+
+      // Include text body for letters (and as caption for media)
+      if (text.trim()) {
+        entryArgs.body = text.trim()
+      }
+
+      // Include media reference
+      if (mediaStorageId) {
+        entryArgs.mediaStorageId = mediaStorageId
+        entryArgs.mediaMimeType = mediaMimeType
+      }
+
       const res = await fetch('/api/ourfable/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          path: 'ourfable:submitVaultEntry',
-          args: {
-            familyId,
-            memberName: 'Parent',
-            contentType: getContentType(),
-            isSealed: true,
-          },
+          path: 'ourfable:sealParentLetter',
+          args: entryArgs,
           type: 'mutation',
         }),
       })
@@ -228,6 +287,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         setText('')
         setPhotos([])
         setVideo(null)
+        setVideoBlob(null)
         removeAudio()
         onSealed?.()
       }, 2000)

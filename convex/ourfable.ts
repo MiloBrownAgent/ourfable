@@ -800,6 +800,44 @@ function generateReferralCode(): string {
   return code;
 }
 
+// ── Parent-authored vault entry (from WritingBlock on dashboard) ──────────────
+export const sealParentLetter = mutation({
+  args: {
+    familyId: v.string(),
+    memberName: v.string(),
+    contentType: v.string(),
+    isSealed: v.boolean(),
+    body: v.optional(v.string()),
+    mediaStorageId: v.optional(v.string()),
+    mediaMimeType: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_vault_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+    if (!family) throw new Error("Family not found");
+
+    // Build media URL from storage ID if present
+    let mediaUrl: string | undefined;
+    if (args.mediaStorageId) {
+      const url = await ctx.storage.getUrl(args.mediaStorageId as any);
+      mediaUrl = url ?? undefined;
+    }
+
+    return await ctx.db.insert("ourfable_vault_entries", {
+      familyId: args.familyId,
+      type: args.contentType === "letter" ? "text" : args.contentType,
+      content: args.body,
+      mediaUrl,
+      authorEmail: family.parentEmail ?? "parent@ourfable.ai",
+      authorName: args.memberName || "Parent",
+      isSealed: args.isSealed,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 export const createReferralCodes = mutation({
   args: {
     familyId: v.string(),
