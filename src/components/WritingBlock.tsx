@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { Mic, Image as ImageIcon, Video as VideoIcon } from 'lucide-react'
 
 interface WritingBlockProps {
   childFirst: string
@@ -418,7 +419,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
             background: 'var(--sage-dim)', border: '1px solid var(--sage-border)',
             marginTop: 10,
           }}>
-            <span style={{ fontSize: 13 }}>🎥</span>
+            <VideoIcon size={13} strokeWidth={1.5} />
             <span style={{ fontSize: 12, color: 'var(--text-2)', fontFamily: 'var(--font-body)' }}>{video.name}</span>
             <button onClick={() => setVideo(null)} style={{
               background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', fontSize: 14, padding: '0 2px',
@@ -439,9 +440,9 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         borderTop: '0.5px solid var(--border)',
       }}>
         {[
-          { label: 'Voice', icon: '🎙', onClick: () => audioBlob ? undefined : startRecording() },
-          { label: 'Photo', icon: '📷', onClick: () => photoRef.current?.click() },
-          { label: 'Video', icon: '🎥', onClick: () => videoBlob ? undefined : startVideoRecording() },
+          { label: 'Voice', icon: <Mic size={13} strokeWidth={1.5} />, onClick: () => audioBlob ? undefined : startRecording() },
+          { label: 'Photo', icon: <ImageIcon size={13} strokeWidth={1.5} />, onClick: () => photoRef.current?.click() },
+          { label: 'Video', icon: <VideoIcon size={13} strokeWidth={1.5} />, onClick: () => videoBlob ? undefined : startVideoRecording() },
         ].map(btn => (
           <button key={btn.label} onClick={btn.onClick} style={{
             display: 'inline-flex',
@@ -467,7 +468,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-3)'
           }}
           >
-            <span style={{ fontSize: 13 }}>{btn.icon}</span>
+            {btn.icon}
             {btn.label}
           </button>
         ))}
