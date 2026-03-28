@@ -39,6 +39,7 @@ const PUBLIC_PREFIXES = [
   "/sitemap.xml",
   "/llms.txt",
   "/googlee054f0458cc7f091.html",
+  "/media-test",
 ];
 
 function isPublic(pathname: string): boolean {

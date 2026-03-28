@@ -45,6 +45,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
   const photoFileRef = useRef<Blob | null>(null)
   const pendingStreamRef = useRef<MediaStream | null>(null)
+  const recordingTimeRef = useRef(0)
 
   // Dispatch
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
@@ -94,25 +95,29 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       const mimeType = getAudioMimeType()
       const options: MediaRecorderOptions = mimeType ? { mimeType } : {}
       const recorder = new MediaRecorder(stream, options)
-      const actualMime = recorder.mimeType || mimeType || 'audio/webm'
+      const actualMime = recorder.mimeType || mimeType || 'audio/mp4'
       chunksRef.current = []
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: actualMime })
         setAudioBlob(blob)
-        setAudioDuration(recordingTime)
+        setAudioDuration(recordingTimeRef.current)
         stream.getTracks().forEach(t => t.stop())
       }
       mediaRecorderRef.current = recorder
-      recorder.start(1000) // request data every 1s for reliability
+      // Safari doesn't reliably support timeslice — omit it
+      recorder.start()
       setRecording(true)
       setRecordingTime(0)
-      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
+      recordingTimeRef.current = 0
+      timerRef.current = setInterval(() => {
+        setRecordingTime(t => { recordingTimeRef.current = t + 1; return t + 1 })
+      }, 1000)
     } catch (err) {
       console.error('[WritingBlock] Audio recording error:', err)
       setRecorderError('Microphone access denied. Please allow access in your browser settings.')
     }
-  }, [recordingTime])
+  }, [])
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop()
@@ -120,6 +125,19 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     setRecordingVideo(false)
     if (timerRef.current) clearInterval(timerRef.current)
     if (videoCameraRef.current) videoCameraRef.current.srcObject = null
+  }, [])
+
+  // Callback ref for video element — attaches stream immediately when element mounts
+  const videoCameraRefCallback = useCallback((el: HTMLVideoElement | null) => {
+    videoCameraRef.current = el
+    if (el && pendingStreamRef.current) {
+      el.srcObject = pendingStreamRef.current
+      el.muted = true
+      el.setAttribute('playsinline', '')
+      el.setAttribute('webkit-playsinline', '')
+      el.play().catch(() => {})
+      pendingStreamRef.current = null
+    }
   }, [])
 
   const startVideoRecording = useCallback(async () => {
@@ -130,7 +148,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         audio: true,
       })
 
-      // Store stream for the useEffect to connect once video element renders
+      // Store stream for the callback ref to connect once video element renders
       pendingStreamRef.current = stream
 
       const mimeType = getVideoMimeType()
@@ -147,21 +165,25 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         const blob = new Blob(chunksRef.current, { type: actualMime })
         setVideoBlob(blob)
         setVideo({ name: `video-${Date.now()}.${ext}` })
-        setAudioDuration(recordingTime)
+        setAudioDuration(recordingTimeRef.current)
       }
       mediaRecorderRef.current = recorder
-      recorder.start(1000)
+      // Safari doesn't reliably support timeslice — omit it
+      recorder.start()
 
       // Set state AFTER recorder starts — this triggers render of <video> element
-      // The useEffect above will connect the stream once the element exists
+      // The callback ref will connect the stream once the element exists
       setRecordingVideo(true)
       setRecordingTime(0)
-      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
+      recordingTimeRef.current = 0
+      timerRef.current = setInterval(() => {
+        setRecordingTime(t => { recordingTimeRef.current = t + 1; return t + 1 })
+      }, 1000)
     } catch (err) {
       console.error('[WritingBlock] Video recording error:', err)
       setRecorderError('Camera access denied. Please allow access in your browser settings.')
     }
-  }, [recordingTime])
+  }, [])
 
   const removeAudio = () => {
     setAudioBlob(null)
@@ -230,13 +252,14 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     }
   }, [])
 
-  // Connect pending stream to video element once it renders
+  // Fallback: if callback ref didn't fire (re-render timing), connect stream via effect
   useEffect(() => {
     if (recordingVideo && videoCameraRef.current && pendingStreamRef.current) {
       const el = videoCameraRef.current
       el.srcObject = pendingStreamRef.current
       el.muted = true
       el.setAttribute('playsinline', '')
+      el.setAttribute('webkit-playsinline', '')
       el.play().catch(() => {})
       pendingStreamRef.current = null
     }
@@ -463,16 +486,24 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         boxShadow: focused ? '0 0 12px rgba(74,94,76,0.25)' : 'none',
       }} />
 
-      {/* Video camera preview */}
+      {/* Video camera preview — shown ABOVE the overlay so it's visible on iOS */}
       {recordingVideo && (
-        <video ref={videoCameraRef} muted playsInline autoPlay style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block', transform: 'scaleX(-1)' }} />
+        <video
+          ref={videoCameraRefCallback}
+          muted
+          playsInline
+          autoPlay
+          // @ts-expect-error webkit-playsinline is needed for older iOS Safari
+          webkit-playsinline=""
+          style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block', transform: 'scaleX(-1)', position: 'relative', zIndex: 11 }}
+        />
       )}
 
-      {/* Recording overlay */}
+      {/* Recording overlay — for audio: full overlay; for video: controls below the preview */}
       {(recording || recordingVideo) && (
         <div style={{
-          position: 'absolute',
-          inset: 0,
+          position: recordingVideo ? 'relative' : 'absolute',
+          inset: recordingVideo ? undefined : 0,
           zIndex: 10,
           background: 'rgba(253,251,247,0.97)',
           display: 'flex',
@@ -480,25 +511,34 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
           alignItems: 'center',
           justifyContent: 'center',
           gap: 20,
-          borderRadius: 12,
+          borderRadius: recordingVideo ? 0 : 12,
+          padding: recordingVideo ? '20px 0' : undefined,
+          minHeight: recordingVideo ? undefined : '100%',
         }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%',
-            background: '#E53E3E',
-            animation: 'recordPulse 1.5s ease-in-out infinite',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff' }} />
+          {!recordingVideo && (
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: '#E53E3E',
+              animation: 'recordPulse 1.5s ease-in-out infinite',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff' }} />
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {recordingVideo && (
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#E53E3E', animation: 'recordPulse 1.5s ease-in-out infinite' }} />
+            )}
+            <span style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 28,
+              fontWeight: 600,
+              color: 'var(--text)',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {formatTime(recordingTime)}
+            </span>
           </div>
-          <span style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 28,
-            fontWeight: 600,
-            color: 'var(--text)',
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            {formatTime(recordingTime)}
-          </span>
           <span style={{ fontSize: 12, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {recordingVideo ? 'Recording video...' : 'Recording voice...'}
           </span>

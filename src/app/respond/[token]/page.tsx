@@ -131,6 +131,9 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
     videoPreviewRef.current = el;
     if (el && streamRef.current) {
       el.srcObject = streamRef.current;
+      el.muted = true;
+      el.setAttribute('playsinline', '');
+      el.setAttribute('webkit-playsinline', '');
       el.play().catch(() => {});
     }
   }, []);
@@ -174,7 +177,8 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
     };
 
     mediaRecorderRef.current = recorder;
-    recorder.start(1000);
+    // Safari doesn't reliably support timeslice parameter — omit it
+    recorder.start();
     setIsPreviewing(false);
     setIsRecording(true);
     setRecordingTime(0);
@@ -371,8 +375,8 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       };
       if (tab === "write") entryArgs.body = body;
       if (tab === "photo") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = photoFile?.type; if (caption.trim()) entryArgs.body = caption; }
-      if (tab === "voice") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = voiceFile?.type ?? "audio/webm"; }
-      if (tab === "video") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = videoFile?.type ?? "video/webm"; }
+      if (tab === "voice") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = voiceFile?.type ?? "audio/mp4"; }
+      if (tab === "video") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = videoFile?.type ?? "video/mp4"; }
       if (data.promptUnlocksAtAge) entryArgs.unlocksAtAge = data.promptUnlocksAtAge;
       if (data.promptUnlocksAtEvent) entryArgs.unlocksAtEvent = data.promptUnlocksAtEvent;
 
@@ -810,10 +814,18 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                   background: "var(--card)", border: "1.5px solid var(--green-border)",
                   borderRadius: 14, padding: "20px", overflow: "hidden",
                 }}>
-                  <video ref={videoRefCallback} muted playsInline autoPlay style={{
-                    width: "100%", maxHeight: 280, borderRadius: 10,
-                    background: "#000", display: "block", transform: "scaleX(-1)",
-                  }} />
+                  <video
+                    ref={videoRefCallback}
+                    muted
+                    playsInline
+                    autoPlay
+                    // @ts-expect-error webkit-playsinline is needed for older iOS Safari
+                    webkit-playsinline=""
+                    style={{
+                      width: "100%", maxHeight: 280, borderRadius: 10,
+                      background: "#000", display: "block", transform: "scaleX(-1)",
+                    }}
+                  />
                   <p style={{ fontSize: 13, color: "var(--text-3)" }}>Check your camera — when you&apos;re ready, hit record.</p>
                   <div style={{ display: "flex", gap: 12 }}>
                     <button onClick={cancelPreview} style={{
@@ -840,10 +852,18 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                   background: "var(--card)", border: "1.5px solid var(--green-border)",
                   borderRadius: 14, padding: "20px", overflow: "hidden",
                 }}>
-                  <video ref={videoRefCallback} muted playsInline autoPlay style={{
-                    width: "100%", maxHeight: 280, borderRadius: 10,
-                    background: "#000", display: "block", transform: "scaleX(-1)",
-                  }} />
+                  <video
+                    ref={videoRefCallback}
+                    muted
+                    playsInline
+                    autoPlay
+                    // @ts-expect-error webkit-playsinline is needed for older iOS Safari
+                    webkit-playsinline=""
+                    style={{
+                      width: "100%", maxHeight: 280, borderRadius: 10,
+                      background: "#000", display: "block", transform: "scaleX(-1)",
+                    }}
+                  />
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#E07070", animation: "pulse 1.5s ease infinite" }} />
                     <span style={{ fontFamily: "var(--font-body)", fontSize: 20, fontWeight: 600, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{formatTime(recordingTime)}</span>
