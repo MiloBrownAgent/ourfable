@@ -291,7 +291,7 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
           Something happened today I want you to know about…
         </p>
         {/* Demo overlay — clicking anywhere prompts signup */}
-        <div onClick={() => window.open("/reserve", "_blank")} style={{
+        <div onClick={() => window.location.href = "/reserve"} style={{
           position: "absolute", inset: 0, cursor: "pointer", zIndex: 2,
         }} />
       </div>
@@ -302,7 +302,7 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
           { label: "Photo", icon: "camera" },
           { label: "Video", icon: "video" },
         ].map(btn => (
-          <button key={btn.label} onClick={() => window.open("/reserve", "_blank")} style={{
+          <button key={btn.label} onClick={() => window.location.href = "/reserve"} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             padding: "5px 12px", borderRadius: 100,
             border: "1px solid var(--border)", background: "transparent",
@@ -405,7 +405,7 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
             transition: "all 160ms",
           }}>Dispatch</button>
         </div>
-        <button onClick={() => window.open("/reserve", "_blank")} className="btn-primary" style={{ padding: "8px 20px", fontSize: 13 }}>
+        <button onClick={() => window.location.href = "/reserve"} className="btn-primary" style={{ padding: "8px 20px", fontSize: 13 }}>
           {mode === "seal" ? "Seal letter" : "Send dispatch"}
         </button>
       </div>

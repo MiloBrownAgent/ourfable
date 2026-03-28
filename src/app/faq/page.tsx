@@ -122,7 +122,7 @@ export default function FAQPage() {
             <div className="nav-text-links" style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <Link href="/" className="nav-link" style={{ fontSize: 14 }}>Home</Link>
               <Link href="/faq" className="nav-link" style={{ fontSize: 14, fontWeight: 600, color: "var(--green)" }}>FAQ</Link>
-              <Link href="/gift" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
+              <Link href="/reserve" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
               <Link href="/login" className="nav-link" style={{ fontSize: 14 }}>Sign in</Link>
             </div>
             <Link href="/reserve" className="btn-primary" style={{ padding: "9px 20px", fontSize: 14, textDecoration: "none" }}>
@@ -182,7 +182,7 @@ export default function FAQPage() {
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "var(--green)" }}>Our Fable</span>
           <div style={{ display: "flex", gap: 24 }}>
-            <Link href="/gift" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
+            <Link href="/reserve" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
             <Link href="/journal" className="nav-link" style={{ fontSize: 13 }}>Journal</Link>
             <Link href="/privacy" className="nav-link" style={{ fontSize: 13 }}>Privacy</Link>
             <Link href="/terms" className="nav-link" style={{ fontSize: 13 }}>Terms</Link>

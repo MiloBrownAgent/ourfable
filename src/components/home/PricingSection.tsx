@@ -178,6 +178,17 @@ export function PricingSection() {
                       </div>
                     ))}
                   </div>
+                  <Link href="/reserve" style={{
+                    display: "block", textAlign: "center", marginTop: 24,
+                    padding: "14px 28px", borderRadius: 100,
+                    background: tier.highlight ? "var(--green)" : "transparent",
+                    border: tier.highlight ? "none" : "1.5px solid var(--green)",
+                    color: tier.highlight ? "#fff" : "var(--green)",
+                    fontSize: 14, fontWeight: 600, textDecoration: "none",
+                    transition: "opacity 160ms",
+                  }}>
+                    Reserve your spot →
+                  </Link>
                 </div>
               );
             })}

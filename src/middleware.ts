@@ -29,6 +29,7 @@ const PUBLIC_PREFIXES = [
   "/go",
   "/view/",
   "/reset-password",
+  "/forgot-password",
   "/journal",
   "/invite/",
   "/demo",

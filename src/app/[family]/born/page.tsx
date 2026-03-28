@@ -434,15 +434,7 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
           &ldquo;{quote}&rdquo;
         </p>
 
-        <p style={{
-          fontSize: 11,
-          letterSpacing: "0.2em",
-          textTransform: "uppercase",
-          color: "var(--text-3)",
-          marginTop: 20,
-        }}>
-          Henry David Thoreau
-        </p>
+
 
         <div style={{ height: 2, background: "var(--gold)", width: 60, margin: "40px auto 0" }} />
       </section>
