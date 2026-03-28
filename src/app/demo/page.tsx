@@ -660,7 +660,7 @@ function WorldSection() {
     "2025-10": {
       topHeadline: "World Series draws record viewership as Houston advances to game seven",
       topSong: "Die With A Smile — Lady Gaga & Bruno Mars",
-      weatherDesc: "Cool and crisp, fall colors at peak across Minneapolis",
+      weatherDesc: "Cool and crisp, fall colors at peak across Portland",
       tempHigh: 58,
     },
     "2025-11": {
@@ -732,7 +732,7 @@ function WorldSection() {
           It was 81° and partly cloudy
         </p>
         <p style={{ fontSize: 16, lineHeight: 1.75, color: "var(--text-2)", maxWidth: 560 }}>
-          A warm June day in Minneapolis. The summer solstice just days away. Noah arrived at 6:47am to a golden morning sky.
+          A warm June day in Portland. The summer solstice just days away. Noah arrived at 6:47am to a golden morning sky.
         </p>
       </section>
 
@@ -853,8 +853,8 @@ function CircleSection() {
     { id: "4", name: "Grandpa Ellis", relationship: "Grandfather", city: "Chicago, IL", contributions: 2, active: false },
     { id: "5", name: "Aunt Lisa", relationship: "Aunt", city: "Seattle, WA", contributions: 6, active: true },
     { id: "6", name: "Uncle Dave", relationship: "Uncle", city: "Denver, CO", contributions: 4, active: true },
-    { id: "7", name: "Godmother Carol", relationship: "Godparent", city: "Minneapolis, MN", contributions: 7, active: true },
-    { id: "8", name: "Family Friend Mike", relationship: "Family friend", city: "Minneapolis, MN", contributions: 1, active: false },
+    { id: "7", name: "Godmother Carol", relationship: "Godparent", city: "Portland, MN", contributions: 7, active: true },
+    { id: "8", name: "Family Friend Mike", relationship: "Family friend", city: "Portland, MN", contributions: 1, active: false },
   ];
 
   return (
@@ -1083,11 +1083,11 @@ export default function DemoPage() {
         backdropFilter: "blur(12px)",
       }}>
         <span style={{
-          fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)",
-          letterSpacing: "0.01em",
+          fontFamily: "var(--font-body)", fontSize: 11, color: "var(--gold)",
+          letterSpacing: "0.12em", textTransform: "uppercase" as const, fontWeight: 600,
         }}>
-          <span className="demo-banner-full">🎭 You&apos;re exploring a demo — this is what your family&apos;s vault could look like</span>
-          <span className="demo-banner-mobile">🎭 Demo — explore your family&apos;s vault</span>
+          <span className="demo-banner-full">THIS IS A DEMO — explore what your family&apos;s vault could look like</span>
+          <span className="demo-banner-mobile">DEMO — explore your family&apos;s vault</span>
         </span>
         <Link href="/reserve" style={{
           display: "inline-flex", alignItems: "center",
