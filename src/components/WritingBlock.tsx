@@ -45,7 +45,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const videoCameraRef = useRef<HTMLVideoElement | null>(null)
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
-  const photoFileRef = useRef<Blob | null>(null)
+  const photoFilesRef = useRef<File[]>([])
   const pendingStreamRef = useRef<MediaStream | null>(null)
   const recordingTimeRef = useRef(0)
 
@@ -233,8 +233,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     if (!files) return
     const newPhotos = Array.from(files).map(f => ({ name: f.name, url: URL.createObjectURL(f) }))
     setPhotos(prev => [...prev, ...newPhotos])
-    // Store first photo file for upload
-    if (files[0]) photoFileRef.current = files[0]
+    // Store all photo files for upload
+    photoFilesRef.current = [...photoFilesRef.current, ...Array.from(files)]
     e.target.value = ''
   }
 
@@ -356,9 +356,9 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       } else if (audioBlob) {
         mediaMimeType = audioBlob.type || 'audio/mp4'
         mediaStorageId = await uploadMedia(audioBlob, mediaMimeType)
-      } else if (photos.length > 0 && photoFileRef.current) {
-        mediaMimeType = photoFileRef.current.type || 'image/jpeg'
-        mediaStorageId = await uploadMedia(photoFileRef.current, mediaMimeType)
+      } else if (photos.length > 0 && photoFilesRef.current.length > 0) {
+        mediaMimeType = photoFilesRef.current[0].type || 'image/jpeg'
+        mediaStorageId = await uploadMedia(photoFilesRef.current[0], mediaMimeType)
       }
 
       const contentType = getContentType()
@@ -394,7 +394,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       setTimeout(() => {
         setSealed(false)
         setText('')
-        setPhotos([])
+        setPhotos([]); photoFilesRef.current = []
         setVideo(null)
         setVideoBlob(null)
         removeAudio()
@@ -451,17 +451,22 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
           const urlData = await urlRes.json()
           if (urlData.value) mediaUrls.push(urlData.value)
         }
-      } else if (photos.length > 0 && photoFileRef.current) {
+      } else if (photos.length > 0 && photoFilesRef.current.length > 0) {
         mediaType = 'photo'
-        const storageId = await uploadMedia(photoFileRef.current, photoFileRef.current.type || 'image/jpeg')
-        if (storageId) {
-          const urlRes = await fetch('/api/ourfable/data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'ourfable:getMediaUrl', args: { storageId }, type: 'query' }),
-          })
-          const urlData = await urlRes.json()
-          if (urlData.value) mediaUrls.push(urlData.value)
+        const totalPhotos = photoFilesRef.current.length
+        for (let i = 0; i < totalPhotos; i++) {
+          const file = photoFilesRef.current[i]
+          setUploadStatus(`Uploading photo ${i + 1}/${totalPhotos}…`)
+          const storageId = await uploadMedia(file, file.type || 'image/jpeg')
+          if (storageId) {
+            const urlRes = await fetch('/api/ourfable/data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ path: 'ourfable:getMediaUrl', args: { storageId }, type: 'query' }),
+            })
+            const urlData = await urlRes.json()
+            if (urlData.value) mediaUrls.push(urlData.value)
+          }
         }
       }
 
@@ -489,7 +494,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       setTimeout(() => {
         setDispatchMsg('')
         setText('')
-        setPhotos([])
+        setPhotos([]); photoFilesRef.current = []
         setVideo(null)
         setVideoBlob(null)
         removeAudio()

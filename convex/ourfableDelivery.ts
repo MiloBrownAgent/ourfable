@@ -607,7 +607,7 @@ export const sendDispatchEmails = internalAction({
   args: {
     familyId: v.string(),
     body: v.string(),
-    mediaUrl: v.optional(v.string()),
+    mediaUrls: v.optional(v.array(v.string())),
     mediaType: v.optional(v.string()),
     sentToAll: v.boolean(),
     sentToMemberIds: v.optional(v.array(v.string())),
@@ -638,15 +638,15 @@ export const sendDispatchEmails = internalAction({
       if (!member.email) continue;
 
       const memberFirst = member.name?.split(" ")[0] ?? "there";
-      const mediaHtml = args.mediaUrl
-        ? args.mediaType === "photo"
-          ? `<img src="${args.mediaUrl}" style="max-width:100%;border-radius:12px;margin:16px 0;" alt="Photo from ${parentNames}" />`
-          : args.mediaType === "video"
-          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">Video attached — <a href="${args.mediaUrl}" style="color:#4A5E4C;">Watch now</a></p>`
-          : args.mediaType === "voice"
-          ? `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">Voice memo — <a href="${args.mediaUrl}" style="color:#4A5E4C;">Listen now</a></p>`
-          : ""
-        : "";
+      const urls = args.mediaUrls ?? [];
+      let mediaHtml = "";
+      if (urls.length > 0 && args.mediaType === "photo") {
+        mediaHtml = urls.map(url => `<img src="${url}" style="max-width:100%;border-radius:12px;margin:12px 0;" alt="Photo from ${parentNames}" />`).join("");
+      } else if (urls.length > 0 && args.mediaType === "video") {
+        mediaHtml = `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">Video attached — <a href="${urls[0]}" style="color:#4A5E4C;">Watch now</a></p>`;
+      } else if (urls.length > 0 && args.mediaType === "voice") {
+        mediaHtml = `<p style="margin:16px 0;font-size:13px;color:#4A5E4C;font-weight:600;">Voice memo — <a href="${urls[0]}" style="color:#4A5E4C;">Listen now</a></p>`;
+      }
 
       const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="color-scheme" content="light"/></head><body style="margin:0;padding:0;background:#FDFBF7;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:48px 20px;background:#FDFBF7;"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;"><tr><td align="center" style="padding-bottom:20px;"><span style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#4A5E4C;">Our Fable</span></td></tr><tr><td style="background:#FFFFFF;border-radius:16px;border:1px solid #EAE7E1;padding:36px;"><p style="margin:0 0 6px;font-family:-apple-system,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Dispatch from ${parentNames}</p><p style="margin:0 0 20px;font-family:Georgia,serif;font-size:22px;color:#1A1A1A;line-height:1.3;">Hi ${memberFirst} —</p><p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${args.body}</p>${mediaHtml}<div style="border-top:1px solid #EAE7E1;padding-top:16px;margin-top:20px;"><p style="margin:0;font-family:-apple-system,sans-serif;font-size:12px;color:#9A9590;line-height:1.6;">Sent to ${childFirst}'s circle via Our Fable</p></div></td></tr><tr><td align="center" style="padding-top:20px;"><p style="font-family:-apple-system,sans-serif;font-size:11px;color:#B0A9A0;">Our Fable · ourfable.ai</p></td></tr></table></td></tr></table></body></html>`;
 
