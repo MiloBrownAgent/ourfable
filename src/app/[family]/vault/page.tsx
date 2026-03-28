@@ -90,44 +90,71 @@ function computeAgeFromCustomDate(childDob: string, customDate: string): number 
 
 function SealedCard({ entry, onUnlock }: { entry: VaultEntry; onUnlock: (id: string) => void }) {
   return (
-    <div className="card card-hover-luxury" style={{ padding: 24, borderLeft: "3px solid var(--gold-border)", opacity: 0.85 }}>
+    <div style={{
+      padding: 24,
+      borderLeft: "3px solid rgba(200,168,122,0.55)",
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(253,251,247,0.07)",
+      borderRadius: 12,
+      transition: "background 200ms",
+    }}
+      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+    >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 10,
-          background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
+          background: "rgba(200,168,122,0.08)", border: "1px solid rgba(200,168,122,0.3)",
           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
         }}>
-          <Lock size={16} color="var(--gold)" strokeWidth={1.5} />
+          <Lock size={16} color="rgba(200,168,122,0.9)" strokeWidth={1.5} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 17, fontWeight: 400, color: "var(--text)" }}>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 400, fontStyle: "italic", color: "#FDFBF7" }}>
               {entry.memberName}
             </p>
             {entry.memberRelationship && (
-              <span style={{ fontSize: 10, color: "var(--text-3)" }}>· {entry.memberRelationship}</span>
+              <span style={{ fontSize: 10, color: "rgba(253,251,247,0.45)" }}>· {entry.memberRelationship}</span>
             )}
           </div>
 
           {/* Sealed: metadata only — no content, no prompts, no previews */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <span className="chip chip-gold" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              border: "0.5px solid rgba(200,168,122,0.45)",
+              borderRadius: 100, padding: "3px 10px",
+              fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "rgba(200,168,122,0.9)", fontFamily: "var(--font-body)",
+            }}>
               <Lock size={9} strokeWidth={2} />
               Sealed
             </span>
-            <span className="chip" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              border: "0.5px solid rgba(253,251,247,0.15)",
+              borderRadius: 100, padding: "3px 10px",
+              fontSize: 10, letterSpacing: "0.05em", textTransform: "capitalize",
+              color: "rgba(253,251,247,0.4)", fontFamily: "var(--font-body)",
+            }}>
               {TYPE_ICONS[entry.contentType]}
               {entry.contentType}
             </span>
             {entry.unlockAge != null && (
-              <span className="chip" style={{ fontSize: 10 }}>
+              <span style={{
+                display: "inline-flex", alignItems: "center",
+                border: "0.5px solid rgba(253,251,247,0.15)",
+                borderRadius: 100, padding: "3px 10px",
+                fontSize: 10, color: "rgba(253,251,247,0.4)", fontFamily: "var(--font-body)",
+              }}>
                 Opens at {entry.unlockAge}
               </span>
             )}
           </div>
 
           {entry.createdAt && (
-            <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 10 }}>
+            <p style={{ fontSize: 11, color: "rgba(253,251,247,0.25)", marginTop: 10 }}>
               Sealed {formatDate(entry.createdAt)}
             </p>
           )}
@@ -136,9 +163,9 @@ function SealedCard({ entry, onUnlock }: { entry: VaultEntry; onUnlock: (id: str
         <button
           onClick={() => onUnlock(entry._id)}
           style={{
-            background: "var(--surface)", border: "1px solid var(--border)",
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(253,251,247,0.12)",
             borderRadius: 8, padding: "7px 14px", fontSize: 11,
-            color: "var(--text-3)", cursor: "pointer", flexShrink: 0,
+            color: "rgba(253,251,247,0.45)", cursor: "pointer", flexShrink: 0,
             transition: "all 160ms", whiteSpace: "nowrap",
           }}
         >
@@ -153,27 +180,37 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="card card-hover-luxury" style={{ padding: 24, borderLeft: "3px solid rgba(107,143,111,0.3)" }}>
+    <div style={{
+      padding: 24,
+      borderLeft: "3px solid rgba(107,143,111,0.45)",
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(253,251,247,0.07)",
+      borderRadius: 12,
+      transition: "background 200ms",
+    }}
+      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+    >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 10,
-          background: "var(--sage-dim)", border: "1px solid rgba(107,143,111,0.2)",
+          background: "rgba(107,143,111,0.1)", border: "1px solid rgba(107,143,111,0.25)",
           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
         }}>
-          <Unlock size={16} color="var(--sage)" strokeWidth={1.5} />
+          <Unlock size={16} color="rgba(107,143,111,0.9)" strokeWidth={1.5} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 17, fontWeight: 400, color: "var(--text)" }}>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 400, fontStyle: "italic", color: "#FDFBF7" }}>
               {entry.memberName}
             </p>
             {entry.memberRelationship && (
-              <span style={{ fontSize: 10, color: "var(--text-3)" }}>· {entry.memberRelationship}</span>
+              <span style={{ fontSize: 10, color: "rgba(253,251,247,0.45)" }}>· {entry.memberRelationship}</span>
             )}
           </div>
 
           {entry.promptText && (
-            <p style={{ fontSize: 12, color: "var(--text-3)", fontStyle: "italic", marginBottom: 10 }}>
+            <p style={{ fontSize: 12, color: "rgba(253,251,247,0.4)", fontStyle: "italic", marginBottom: 10 }}>
               &ldquo;{entry.promptText}&rdquo;
             </p>
           )}
@@ -181,7 +218,7 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
           {entry.contentType === "text" && entry.textContent && (
             <div>
               <p style={{
-                fontSize: 14, color: "var(--text-2)", lineHeight: 1.8,
+                fontSize: 14, color: "rgba(253,251,247,0.75)", lineHeight: 1.8,
                 overflow: expanded ? "visible" : "hidden",
                 display: expanded ? "block" : "-webkit-box",
                 WebkitLineClamp: expanded ? undefined : 3,
@@ -194,7 +231,7 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
                   onClick={() => setExpanded(!expanded)}
                   style={{
                     background: "none", border: "none", cursor: "pointer",
-                    color: "var(--gold)", fontSize: 11, padding: "6px 0",
+                    color: "rgba(200,168,122,0.9)", fontSize: 11, padding: "6px 0",
                     display: "flex", alignItems: "center", gap: 4,
                   }}
                 >
@@ -221,11 +258,23 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
             <video controls src={entry.mediaUrl} style={{ width: "100%", borderRadius: 10, marginTop: 6 }} />
           )}
 
-          {entry.createdAt && (
-            <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 10 }}>
-              Written {formatDate(entry.createdAt)}
-            </p>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              border: "0.5px solid rgba(107,143,111,0.35)",
+              borderRadius: 100, padding: "3px 10px",
+              fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "rgba(107,143,111,0.9)", fontFamily: "var(--font-body)",
+            }}>
+              <Unlock size={9} strokeWidth={2} />
+              Open
+            </span>
+            {entry.createdAt && (
+              <p style={{ fontSize: 11, color: "rgba(253,251,247,0.25)" }}>
+                Written {formatDate(entry.createdAt)}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -946,41 +995,66 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+    <div style={{
+      display: "flex", flexDirection: "column", gap: 28,
+      background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)",
+      minHeight: "100vh",
+      margin: "-40px -24px",
+      padding: "40px 24px calc(80px + env(safe-area-inset-bottom, 0px))",
+      position: "relative",
+    }}>
+      {/* Ambient gold glow */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse at 60% 10%, rgba(200,168,122,0.09), transparent 70%)",
+      }} />
+
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <div style={{
-          width: 44, height: 44, background: "var(--surface)", border: "1px solid var(--border)",
-          borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+      <div style={{ position: "relative" }}>
+        <p style={{
+          fontFamily: "var(--font-body)",
+          fontSize: 11, fontWeight: 600,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: "rgba(200,168,122,0.9)",
+          marginBottom: 10,
         }}>
-          <FolderLock size={18} color="var(--gold)" strokeWidth={1.5} />
-        </div>
-        <div>
-          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>
-            {childFirst}&apos;s Vault
-          </h1>
-          <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6, marginTop: 2 }}>
-            Everything the people who love {childFirst} have shared — sealed until {childFirst} is ready.
-          </p>
-        </div>
+          THE VAULT
+        </p>
+        <div style={{
+          width: 40, height: "0.5px",
+          background: "rgba(200,168,122,0.4)",
+          marginBottom: 20,
+        }} />
+        <h1 className="font-display" style={{
+          fontSize: 28, fontWeight: 400, fontStyle: "italic",
+          color: "#FDFBF7", marginBottom: 8, lineHeight: 1.25,
+        }}>
+          Sealed memories for {childFirst}
+        </h1>
+        <p style={{ fontSize: 12, color: "rgba(253,251,247,0.4)", lineHeight: 1.6 }}>
+          Everything the people who love {childFirst} have shared — sealed until {childFirst} is ready.
+        </p>
       </div>
 
       {/* Stats bar */}
       {!loading && entries.length > 0 && (
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {[
-            { label: "Total", value: entries.length, color: "var(--text)" },
-            { label: "Sealed", value: sealed.length, color: "var(--gold)" },
-            { label: "Open", value: open.length, color: "var(--sage)" },
+            { label: "Total", value: entries.length, color: "rgba(253,251,247,0.85)" },
+            { label: "Sealed", value: sealed.length, color: "rgba(200,168,122,0.9)" },
+            { label: "Open", value: open.length, color: "rgba(107,143,111,0.9)" },
           ].map(s => (
             <div key={s.label} style={{
-              flex: "1 1 80px", background: "var(--surface)", border: "1px solid var(--border)",
+              flex: "1 1 80px",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(253,251,247,0.07)",
               borderRadius: 12, padding: "14px 20px", textAlign: "center",
             }}>
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 28, fontWeight: 300, color: s.color, lineHeight: 1 }}>
                 {s.value}
               </p>
-              <p style={{ fontFamily: "var(--font-inter), Inter, sans-serif", fontSize: 10, color: "var(--text-3)", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 4 }}>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "rgba(253,251,247,0.3)", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 4 }}>
                 {s.label}
               </p>
             </div>
@@ -996,17 +1070,17 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
               key={tab.key}
               onClick={() => setFilter(tab.key)}
               style={{
-                background: filter === tab.key ? "var(--gold-dim)" : "var(--surface)",
-                border: `1px solid ${filter === tab.key ? "var(--gold-border)" : "var(--border)"}`,
-                color: filter === tab.key ? "var(--gold)" : "var(--text-3)",
+                background: "transparent",
+                border: `1px solid ${filter === tab.key ? "rgba(200,168,122,0.55)" : "rgba(253,251,247,0.1)"}`,
+                color: filter === tab.key ? "rgba(200,168,122,0.9)" : "rgba(253,251,247,0.35)",
                 borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: "pointer",
                 transition: "all 160ms", display: "flex", alignItems: "center", gap: 6,
               }}
             >
               {tab.label}
               <span style={{
-                background: filter === tab.key ? "var(--gold-border)" : "var(--border)",
-                color: filter === tab.key ? "var(--gold)" : "var(--text-3)",
+                background: filter === tab.key ? "rgba(200,168,122,0.15)" : "rgba(255,255,255,0.05)",
+                color: filter === tab.key ? "rgba(200,168,122,0.9)" : "rgba(253,251,247,0.25)",
                 borderRadius: 20, padding: "1px 7px", fontSize: 10,
               }}>
                 {tab.count}
@@ -1020,9 +1094,9 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
               <button
                 onClick={() => setPersonOpen(!personOpen)}
                 style={{
-                  background: personFilter !== "all" ? "var(--gold-dim)" : "var(--surface)",
-                  border: `1px solid ${personFilter !== "all" ? "var(--gold-border)" : "var(--border)"}`,
-                  color: personFilter !== "all" ? "var(--gold)" : "var(--text-3)",
+                  background: "transparent",
+                  border: `1px solid ${personFilter !== "all" ? "rgba(200,168,122,0.55)" : "rgba(253,251,247,0.1)"}`,
+                  color: personFilter !== "all" ? "rgba(200,168,122,0.9)" : "rgba(253,251,247,0.35)",
                   borderRadius: 8, padding: "7px 12px", fontSize: 12, cursor: "pointer",
                   display: "flex", alignItems: "center", gap: 6,
                 }}
@@ -1033,8 +1107,9 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
               {personOpen && (
                 <div style={{
                   position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 10,
-                  background: "var(--surface)", border: "1px solid var(--border)",
-                  borderRadius: 10, overflow: "hidden", minWidth: 160, boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  background: "#1C2B1E", border: "1px solid rgba(253,251,247,0.12)",
+                  borderRadius: 10, overflow: "hidden", minWidth: 160,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
                 }}>
                   {["all", ...uniquePeople].map(p => (
                     <button
@@ -1043,8 +1118,8 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
                       style={{
                         display: "block", width: "100%", textAlign: "left",
                         padding: "10px 14px", fontSize: 12, cursor: "pointer",
-                        background: personFilter === p ? "var(--gold-dim)" : "transparent",
-                        color: personFilter === p ? "var(--gold)" : "var(--text-2)",
+                        background: personFilter === p ? "rgba(200,168,122,0.1)" : "transparent",
+                        color: personFilter === p ? "rgba(200,168,122,0.9)" : "rgba(253,251,247,0.55)",
                         border: "none",
                       }}
                     >
@@ -1062,28 +1137,39 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       {loading ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {[1, 2, 3].map(i => (
-            <div key={i} className="card" style={{ padding: 24, opacity: 0.3, height: 100 }} />
+            <div key={i} style={{
+              padding: 24, height: 100, borderRadius: 12,
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(253,251,247,0.05)",
+            }} />
           ))}
         </div>
       ) : entries.length === 0 ? (
-        <div className="card" style={{ padding: 64, textAlign: "center" }}>
-          <FolderLock size={32} color="var(--text-3)" strokeWidth={1} style={{ margin: "0 auto 16px" }} />
+        <div style={{
+          padding: "64px 32px", textAlign: "center",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(253,251,247,0.06)",
+          borderRadius: 16,
+        }}>
+          <FolderLock size={32} color="rgba(200,168,122,0.4)" strokeWidth={1} style={{ margin: "0 auto 20px" }} />
           <p style={{
             fontFamily: "var(--font-cormorant)", fontStyle: "italic", fontSize: 22,
-            color: "var(--text-2)", marginBottom: 10,
+            color: "rgba(253,251,247,0.65)", marginBottom: 10,
           }}>
-            The Vault is waiting.
+            The Vault is waiting for its first letter.
           </p>
-          <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 20 }}>
+          <p style={{ fontSize: 13, color: "rgba(253,251,247,0.3)", lineHeight: 1.7, marginBottom: 24 }}>
             Your circle members will begin receiving prompts on {getNextPromptDate()}.
-            <br />Their responses will appear here.
+            <br />Their responses will appear here, sealed in time.
           </p>
           <button
             onClick={() => setShowQuickAdd(true)}
             style={{
-              background: "var(--green)", color: "#fff", border: "none",
-              borderRadius: 10, padding: "12px 24px", fontSize: 14, fontWeight: 600,
+              background: "rgba(200,168,122,0.15)", color: "rgba(200,168,122,0.9)",
+              border: "1px solid rgba(200,168,122,0.35)",
+              borderRadius: 10, padding: "12px 28px", fontSize: 14, fontWeight: 500,
               cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8,
+              letterSpacing: "0.02em",
             }}
           >
             <Plus size={16} strokeWidth={2} />
@@ -1091,11 +1177,16 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card" style={{ padding: 48, textAlign: "center" }}>
-          <p style={{ fontSize: 14, color: "var(--text-3)" }}>No entries match this filter.</p>
+        <div style={{
+          padding: 48, textAlign: "center",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(253,251,247,0.05)",
+          borderRadius: 16,
+        }}>
+          <p style={{ fontSize: 14, color: "rgba(253,251,247,0.3)" }}>No entries match this filter.</p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtered.map(entry =>
             entry.isSealed
               ? <SealedCard key={entry._id} entry={entry} onUnlock={handleUnlock} />
