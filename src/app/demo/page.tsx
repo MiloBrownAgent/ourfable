@@ -29,11 +29,11 @@ import {
 // ─── Demo Data ───────────────────────────────────────────────────────────────
 
 const CHILD = {
-  name: "Leo Sweeney",
-  firstName: "Leo",
+  name: "Noah Ellis",
+  firstName: "Noah",
   dob: new Date("2025-06-25"),
   location: "Minneapolis, MN",
-  family: "Dave & Amanda Sweeney",
+  family: "Sarah & James Ellis",
 };
 
 function getDaysAlive(): number {
@@ -170,35 +170,35 @@ interface MonthSnapshot {
 const SNAPSHOTS: MonthSnapshot[] = [
   {
     year: 2025, month: 6, label: "June 2025",
-    headline: "Leo Sweeney enters the world",
+    headline: "Noah Ellis enters the world",
     song: "Espresso", artist: "Sabrina Carpenter",
     weather: "Sunny & warm", temp: "82°F",
     age: "Newborn", isBirth: true,
   },
   {
     year: 2025, month: 7, label: "July 2025",
-    headline: "Heat wave grips Minneapolis as Leo turns 1 month",
+    headline: "Heat wave grips Minneapolis as Noah turns 1 month",
     song: "Good Luck, Babe!", artist: "Chappell Roan",
     weather: "Hot & humid", temp: "91°F",
     age: "1 month",
   },
   {
     year: 2025, month: 8, label: "August 2025",
-    headline: "State Fair opens as Leo begins smiling",
+    headline: "State Fair opens as Noah begins smiling",
     song: "Die With A Smile", artist: "Lady Gaga & Bruno Mars",
     weather: "Warm, late summer", temp: "85°F",
     age: "2 months",
   },
   {
     year: 2025, month: 9, label: "September 2025",
-    headline: "Fall arrives; Leo discovers his hands",
+    headline: "Fall arrives; Noah discovers his hands",
     song: "APT.", artist: "ROSE & Bruno Mars",
     weather: "Cool & crisp", temp: "67°F",
     age: "3 months",
   },
   {
     year: 2025, month: 10, label: "October 2025",
-    headline: "Leo's first Halloween — dressed as a little pumpkin",
+    headline: "Noah's first Halloween — dressed as a little pumpkin",
     song: "luther", artist: "Kendrick Lamar & SZA",
     weather: "Chilly & windy", temp: "52°F",
     age: "4 months",
@@ -212,28 +212,28 @@ const SNAPSHOTS: MonthSnapshot[] = [
   },
   {
     year: 2025, month: 12, label: "December 2025",
-    headline: "Leo's first Christmas — wide eyes at the tree lights",
+    headline: "Noah's first Christmas — wide eyes at the tree lights",
     song: "All I Want for Christmas Is You", artist: "Mariah Carey",
     weather: "Snowy & cold", temp: "18°F",
     age: "6 months",
   },
   {
     year: 2026, month: 1, label: "January 2026",
-    headline: "New Year brings new rolls — Leo rolls over for the first time",
+    headline: "New Year brings new rolls — Noah rolls over for the first time",
     song: "BIRDS OF A FEATHER", artist: "Billie Eilish",
     weather: "Deep freeze", temp: "7°F",
     age: "7 months",
   },
   {
     year: 2026, month: 2, label: "February 2026",
-    headline: "Super Bowl LX comes to Minneapolis; Leo naps through halftime",
+    headline: "Super Bowl LX comes to Minneapolis; Noah naps through halftime",
     song: "Now And Then", artist: "The Beatles",
     weather: "Cold & clear", temp: "22°F",
     age: "8 months",
   },
   {
     year: 2026, month: 3, label: "March 2026",
-    headline: "Spring thaw begins; Leo starts pulling up to stand",
+    headline: "Spring thaw begins; Noah starts pulling up to stand",
     song: "Not Like Us", artist: "Kendrick Lamar",
     weather: "Thawing, partly cloudy", temp: "41°F",
     age: "9 months",
@@ -242,8 +242,8 @@ const SNAPSHOTS: MonthSnapshot[] = [
 ];
 
 const CIRCLE_MEMBERS = [
-  { name: "Dave Sweeney", role: "Dad", initials: "DS", color: "#4A5E4C" },
-  { name: "Amanda Sweeney", role: "Mom", initials: "AS", color: "#6B8F6F" },
+  { name: "James Ellis", role: "Dad", initials: "JE", color: "#4A5E4C" },
+  { name: "Sarah Ellis", role: "Mom", initials: "SE", color: "#6B8F6F" },
   { name: "Grandma Betty", role: "Paternal grandmother", initials: "GB", color: "#C8A87A" },
   { name: "Grandpa Jim", role: "Maternal grandfather", initials: "GJ", color: "#8B7355" },
   { name: "Uncle Paul", role: "Uncle", initials: "UP", color: "#7A8FA6" },
@@ -308,7 +308,7 @@ function DashboardScreen() {
         color: "#fff",
       }}>
         <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 6, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          Good morning, Dave & Amanda
+          Good morning, Sarah & James
         </p>
         <h2 style={{
           fontFamily: "var(--font-display)",
@@ -482,7 +482,7 @@ function DashboardScreen() {
             }} />
             <div>
               <p style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>Grandma Betty responded</p>
-              <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>March prompt · Sealed until Leo turns 13</p>
+              <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>March prompt · Sealed until Noah turns 13</p>
             </div>
             <Clock size={12} color="var(--text-4)" style={{ marginLeft: "auto", marginTop: 4, flexShrink: 0 }} />
           </div>
@@ -942,7 +942,7 @@ function BornDayScreen() {
             lineHeight: 1.05,
             marginBottom: 6,
           }}>
-            The Sweeney Gazette
+            The Ellis Gazette
           </h2>
           <div style={{ height: 2, background: "var(--text)", margin: "10px 0 8px" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
@@ -974,7 +974,7 @@ function BornDayScreen() {
             fontSize: 26, fontWeight: 900, lineHeight: 1.2,
             color: "var(--text)", marginBottom: 8,
           }}>
-            A Child Is Born: Leo James Sweeney Arrives
+            A Child Is Born: Noah James Ellis Arrives
           </h3>
           <p style={{
             fontFamily: "var(--font-display)",
@@ -1014,7 +1014,7 @@ function BornDayScreen() {
               </div>
             </div>
             <p style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.6 }}>
-              A perfect summer morning welcomed Leo into the world. The sun was bright over Minneapolis, the air warm and still. The day could not have been more perfect.
+              A perfect summer morning welcomed Noah into the world. The sun was bright over Minneapolis, the air warm and still. The day could not have been more perfect.
             </p>
             <div style={{ height: 1, background: "var(--border)", margin: "14px 0" }} />
             <p style={{ fontSize: 10, color: "var(--gold)", letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>
@@ -1121,7 +1121,7 @@ function PromptsScreen() {
                 Our Fable
               </p>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>
-                Respond to Leo&apos;s prompt
+                Respond to Noah&apos;s prompt
               </p>
             </div>
             <div style={{
@@ -1158,7 +1158,7 @@ function PromptsScreen() {
               color: "var(--text)", marginBottom: 24,
               lineHeight: 1.2,
             }}>
-              Leo Sweeney
+              Noah Ellis
             </p>
 
             {/* Question — big text */}
@@ -1232,7 +1232,7 @@ function PromptsScreen() {
                   Your response will be sealed
                 </p>
                 <p style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.5 }}>
-                  Leo won&apos;t be able to read it until his 13th birthday. Everything you share is private and permanent.
+                  Noah won&apos;t be able to read it until his 13th birthday. Everything you share is private and permanent.
                 </p>
               </div>
             </div>
@@ -1290,7 +1290,7 @@ function PromptsScreen() {
             <strong style={{ color: "#374151" }}>To:</strong> grandmabetty@gmail.com
           </p>
           <p style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>
-            Hi — it&apos;s Leo. 💛
+            Hi — it&apos;s Noah. 💛
           </p>
         </div>
 
@@ -1308,7 +1308,7 @@ function PromptsScreen() {
               Our Fable
             </p>
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>
-              A message from Leo Sweeney
+              A message from Noah Ellis
             </p>
           </div>
 
@@ -1354,18 +1354,18 @@ function PromptsScreen() {
                 transition: "all 160ms",
               }}
             >
-              Respond to Leo
+              Respond to Noah
               <ArrowRight size={18} strokeWidth={2.5} />
             </button>
             <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 10 }}>
-              Takes 2 minutes · Your response is sealed until Leo turns 13
+              Takes 2 minutes · Your response is sealed until Noah turns 13
             </p>
           </div>
 
           {/* Footer */}
           <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, textAlign: "center" }}>
             <p style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.6 }}>
-              You&apos;re receiving this because Dave &amp; Amanda Sweeney added you to Leo&apos;s circle.<br />
+              You&apos;re receiving this because Sarah &amp; James Ellis added you to Noah&apos;s circle.<br />
               <span style={{ textDecoration: "underline", cursor: "pointer" }}>Unsubscribe</span> · <span style={{ textDecoration: "underline", cursor: "pointer" }}>Accessibility mode</span>
             </p>
           </div>
