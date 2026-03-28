@@ -29,7 +29,7 @@ const VIGNETTES = [
   {
     who: "Grandpa",
     age: "84 years old",
-    excerpt: "He forgets things now. Some days are harder than others. But last Tuesday, he called the Our Fable number and talked for eleven minutes — about the farm he grew up on, about his own father, about what he hopes for the baby he's only met twice.",
+    excerpt: "He forgets things now. Some days are harder than others. But last Tuesday, he recorded a video message — eleven minutes about the farm he grew up on, about his own father, about what he hopes for the baby he's only met twice.",
     seal: "Sealed until age 18.",
     color: "var(--gold)",
   },
