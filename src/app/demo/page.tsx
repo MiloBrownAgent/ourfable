@@ -647,92 +647,141 @@ function VaultSection() {
   };
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 12,
-          background: "var(--gold-dim)", border: "1px solid var(--gold-border)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <FolderLock size={18} color="var(--gold)" strokeWidth={1.5} />
-        </div>
-        <div>
-          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: "var(--text)" }}>
-            {CHILD_FIRST}&apos;s Vault
-          </h1>
-          <p style={{ fontSize: 12, color: "var(--text-3)" }}>47 sealed memories</p>
-        </div>
+    <div style={{
+      background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)",
+      borderRadius: 16,
+      padding: "32px 28px 36px",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Gold ambient glow */}
+      <div style={{
+        position: "absolute", bottom: -30, left: "50%", transform: "translateX(-50%)",
+        width: "70%", height: 80, pointerEvents: "none",
+        background: "radial-gradient(ellipse, rgba(200,168,122,0.08), transparent 70%)",
+      }} />
+
+      {/* THE VAULT label */}
+      <p style={{
+        fontSize: 10, fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase",
+        color: "#C8A87A", marginBottom: 8, fontFamily: "var(--font-body)",
+      }}>The Vault</p>
+
+      {/* Gold divider */}
+      <div style={{ width: 36, height: "0.5px", background: "rgba(200,168,122,0.4)", marginBottom: 16 }} />
+
+      {/* Title */}
+      <h1 style={{
+        fontFamily: "var(--font-playfair)", fontSize: 26, fontWeight: 400,
+        fontStyle: "italic", color: "#FDFBF7", marginBottom: 24, lineHeight: 1.3,
+      }}>
+        Sealed memories for {CHILD_FIRST}
+      </h1>
+
+      {/* Stats bar */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+        {[{ n: "47", l: "Total" }, { n: "45", l: "Sealed" }, { n: "2", l: "Open" }].map(s => (
+          <div key={s.l} style={{
+            flex: 1, padding: "12px 0", textAlign: "center",
+            background: "rgba(255,255,255,0.03)", border: "0.5px solid rgba(253,251,247,0.08)",
+            borderRadius: 10,
+          }}>
+            <p style={{ fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 700, color: "#FDFBF7", marginBottom: 2 }}>{s.n}</p>
+            <p style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(253,251,247,0.35)", fontFamily: "var(--font-body)" }}>{s.l}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Filter chips */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
+      {/* Filter tabs */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 24 }}>
         {["All", "Letters", "Voice memos", "Photos", "Videos"].map((f, i) => (
           <button key={f} style={{
             padding: "6px 14px", borderRadius: 100, fontSize: 11,
-            border: i === 0 ? "1.5px solid var(--green)" : "1px solid var(--border)",
-            background: i === 0 ? "var(--green-light)" : "transparent",
-            color: i === 0 ? "var(--green)" : "var(--text-3)",
+            border: i === 0 ? "1px solid #C8A87A" : "1px solid rgba(253,251,247,0.1)",
+            background: "transparent",
+            color: i === 0 ? "#C8A87A" : "rgba(253,251,247,0.35)",
             fontFamily: "var(--font-body)", cursor: "pointer", fontWeight: i === 0 ? 600 : 400,
+            letterSpacing: "0.05em",
           }}>{f}</button>
         ))}
       </div>
 
       {/* Entries */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {vaultEntries.map(entry => (
-          <div key={entry.id} className="card" style={{
-            padding: 24,
-            borderLeft: entry.isSealed ? "3px solid var(--gold-border)" : "3px solid rgba(107,143,111,0.3)",
-            opacity: entry.isSealed ? 0.85 : 1,
+          <div key={entry.id} style={{
+            padding: "18px 20px",
+            background: "rgba(255,255,255,0.03)",
+            border: "0.5px solid rgba(253,251,247,0.07)",
+            borderLeft: entry.isSealed ? "3px solid rgba(200,168,122,0.55)" : "3px solid rgba(107,143,111,0.45)",
+            borderRadius: 12,
           }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
               <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: entry.isSealed ? "var(--gold-dim)" : "var(--sage-dim)",
-                border: `1px solid ${entry.isSealed ? "var(--gold-border)" : "rgba(107,143,111,0.2)"}`,
+                width: 38, height: 38, borderRadius: 10,
+                background: entry.isSealed ? "rgba(200,168,122,0.08)" : "rgba(107,143,111,0.1)",
+                border: `1px solid ${entry.isSealed ? "rgba(200,168,122,0.3)" : "rgba(107,143,111,0.25)"}`,
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}>
-                <Lock size={16} color={entry.isSealed ? "var(--gold)" : "var(--sage)"} strokeWidth={1.5} />
+                <Lock size={15} color={entry.isSealed ? "rgba(200,168,122,0.9)" : "rgba(107,143,111,0.9)"} strokeWidth={1.5} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: 17, fontWeight: 400, color: "var(--text)" }}>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 400, fontStyle: "italic", color: "#FDFBF7" }}>
                     {entry.memberName}
                   </p>
-                  <span style={{ fontSize: 10, color: "var(--text-3)" }}>· {entry.memberRelationship}</span>
+                  <span style={{ fontSize: 10, color: "rgba(253,251,247,0.45)" }}>· {entry.memberRelationship}</span>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   {entry.isSealed && (
-                    <span className="chip chip-gold" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      border: "0.5px solid rgba(200,168,122,0.45)", borderRadius: 100,
+                      padding: "3px 10px", fontSize: 10, letterSpacing: "0.1em",
+                      textTransform: "uppercase" as const, color: "rgba(200,168,122,0.9)",
+                      fontFamily: "var(--font-body)",
+                    }}>
                       <Lock size={9} strokeWidth={2} /> Sealed
                     </span>
                   )}
-                  <span className="chip" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    border: "0.5px solid rgba(253,251,247,0.15)", borderRadius: 100,
+                    padding: "3px 10px", fontSize: 10, letterSpacing: "0.05em",
+                    color: "rgba(253,251,247,0.4)", fontFamily: "var(--font-body)",
+                  }}>
                     {TYPE_ICONS[entry.contentType]}
                     {TYPE_LABELS[entry.contentType]}
                   </span>
                   {entry.unlockAge && (
-                    <span className="chip" style={{ fontSize: 10 }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center",
+                      border: "0.5px solid rgba(253,251,247,0.15)", borderRadius: 100,
+                      padding: "3px 10px", fontSize: 10,
+                      color: "rgba(253,251,247,0.4)", fontFamily: "var(--font-body)",
+                    }}>
                       Opens at {entry.unlockAge}
                     </span>
                   )}
                 </div>
               </div>
               {entry.isSealed && (
-                <button style={{
-                  background: "var(--surface)", border: "1px solid var(--border)",
-                  borderRadius: 8, padding: "7px 14px", fontSize: 11,
-                  color: "var(--text-3)", cursor: "pointer", flexShrink: 0,
-                  whiteSpace: "nowrap",
-                }}>Unlock early</button>
+                <button
+                  onClick={() => { window.location.href = "/reserve"; }}
+                  style={{
+                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(253,251,247,0.12)",
+                    borderRadius: 8, padding: "7px 14px", fontSize: 11,
+                    color: "rgba(253,251,247,0.45)", cursor: "pointer", flexShrink: 0,
+                    whiteSpace: "nowrap",
+                  }}
+                >Unlock early</button>
               )}
             </div>
           </div>
         ))}
         {/* Show more */}
         <div style={{ textAlign: "center", padding: "16px 0" }}>
-          <p style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic", fontFamily: "var(--font-playfair)" }}>
+          <p style={{ fontSize: 13, color: "rgba(253,251,247,0.35)", fontStyle: "italic", fontFamily: "var(--font-playfair)" }}>
             +39 more sealed entries
           </p>
         </div>
