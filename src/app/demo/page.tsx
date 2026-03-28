@@ -216,8 +216,8 @@ function DemoSidebarContent({
 
 // ─── Writing Block (visual-only recreation) ───────────────────────────────────
 function DemoWritingBlock({ childFirst }: { childFirst: string }) {
-  const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
+  const [mode, setMode] = useState<"seal" | "dispatch">("seal");
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   return (
@@ -234,7 +234,7 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
           : "linear-gradient(90deg, rgba(74,94,76,0.4) 0%, rgba(107,143,111,0.3) 50%, rgba(200,168,122,0.35) 100%)",
         transition: "background 300ms ease",
       }} />
-      <div style={{ padding: "20px 24px 0" }}>
+      <div style={{ padding: "20px 24px 0", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
           <span style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 20, fontWeight: 400, color: "var(--green)" }}>
             Dear {childFirst},
@@ -243,20 +243,16 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
             {today}
           </span>
         </div>
-        <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder="Something happened today I want you to know about…"
-          rows={6}
-          style={{
-            width: "100%", border: "none", outline: "none", resize: "none",
-            fontFamily: "var(--font-body)", fontSize: 15, lineHeight: 1.85,
-            color: "var(--text)", background: "transparent", padding: 0,
-            caretColor: "var(--sage)",
-          }}
-        />
+        <p style={{
+          fontFamily: "var(--font-body)", fontSize: 15, lineHeight: 1.85,
+          color: "var(--text-3)", padding: 0, minHeight: 120,
+        }}>
+          Something happened today I want you to know about…
+        </p>
+        {/* Demo overlay — clicking anywhere prompts signup */}
+        <div onClick={() => window.open("/reserve", "_blank")} style={{
+          position: "absolute", inset: 0, cursor: "pointer", zIndex: 2,
+        }} />
       </div>
       {/* Attachment strip */}
       <div style={{ display: "flex", gap: 8, padding: "12px 24px", borderTop: "0.5px solid var(--border)" }}>
@@ -265,7 +261,7 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
           { label: "Photo", icon: "camera" },
           { label: "Video", icon: "video" },
         ].map(btn => (
-          <button key={btn.label} style={{
+          <button key={btn.label} onClick={() => window.open("/reserve", "_blank")} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             padding: "5px 12px", borderRadius: 100,
             border: "1px solid var(--border)", background: "transparent",
@@ -286,19 +282,25 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
           display: "inline-flex", alignItems: "center",
           border: "1px solid var(--border)", borderRadius: 100, overflow: "hidden",
         }}>
-          <button style={{
-            padding: "6px 14px", border: "none", background: "var(--green)", color: "#fff",
-            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+          <button onClick={() => setMode("seal")} style={{
+            padding: "6px 14px", border: "none",
+            background: mode === "seal" ? "var(--green)" : "transparent",
+            color: mode === "seal" ? "#fff" : "var(--text-3)",
+            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: mode === "seal" ? 600 : 400,
             letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+            transition: "all 160ms",
           }}>Seal</button>
-          <button style={{
-            padding: "6px 14px", border: "none", background: "transparent", color: "var(--text-3)",
-            fontFamily: "var(--font-body)", fontSize: 11, letterSpacing: "0.06em",
-            textTransform: "uppercase", cursor: "pointer",
+          <button onClick={() => setMode("dispatch")} style={{
+            padding: "6px 14px", border: "none",
+            background: mode === "dispatch" ? "var(--green)" : "transparent",
+            color: mode === "dispatch" ? "#fff" : "var(--text-3)",
+            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: mode === "dispatch" ? 600 : 400,
+            letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+            transition: "all 160ms",
           }}>Dispatch</button>
         </div>
-        <button className="btn-primary" style={{ padding: "8px 20px", fontSize: 13 }}>
-          Seal letter
+        <button onClick={() => window.open("/reserve", "_blank")} className="btn-primary" style={{ padding: "8px 20px", fontSize: 13 }}>
+          {mode === "seal" ? "Seal letter" : "Send dispatch"}
         </button>
       </div>
     </div>
