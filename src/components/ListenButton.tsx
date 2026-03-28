@@ -19,6 +19,7 @@ export default function ListenButton({ song }: { song: string }) {
   const [showPicker, setShowPicker] = useState(false);
   const [saved, setSaved] = useState<MusicPlatform | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const linkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     setSaved(getSavedPlatform());
@@ -36,12 +37,19 @@ export default function ListenButton({ song }: { song: string }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [showPicker]);
 
+  const openLink = (platform: MusicPlatform) => {
+    const url = getMusicLink(song, platform);
+    // Use a real <a> click to avoid popup blockers on mobile
+    if (linkRef.current) {
+      linkRef.current.href = url;
+      linkRef.current.click();
+    }
+  };
+
   const handleClick = () => {
     if (saved) {
-      // Already chose a platform — go straight there
-      window.open(getMusicLink(song, saved), "_blank", "noopener,noreferrer");
+      openLink(saved);
     } else {
-      // First time — show picker
       setShowPicker(true);
     }
   };
@@ -50,11 +58,14 @@ export default function ListenButton({ song }: { song: string }) {
     savePlatform(platform);
     setSaved(platform);
     setShowPicker(false);
-    window.open(getMusicLink(song, platform), "_blank", "noopener,noreferrer");
+    openLink(platform);
   };
 
   return (
     <div ref={pickerRef} style={{ position: "relative", display: "inline-flex" }}>
+      {/* Hidden anchor for popup-blocker-safe navigation */}
+      <a ref={linkRef} href="#" target="_blank" rel="noopener noreferrer" style={{ display: "none" }} aria-hidden="true" />
+
       <button
         onClick={handleClick}
         style={{
