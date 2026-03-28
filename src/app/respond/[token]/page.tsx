@@ -152,24 +152,29 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
     const stream = streamRef.current;
     if (!stream) return;
 
-    const mimeType = "video/webm";
-    const recorder = MediaRecorder.isTypeSupported(mimeType)
-      ? new MediaRecorder(stream, { mimeType })
-      : new MediaRecorder(stream);
+    // Negotiate mime type: prefer webm, fall back to mp4 for Safari
+    let mimeType = "video/webm";
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "";
+    }
+    const options: MediaRecorderOptions = mimeType ? { mimeType } : {};
+    const recorder = new MediaRecorder(stream, options);
+    const actualMime = recorder.mimeType || mimeType || "video/mp4";
+    const ext = actualMime.includes("mp4") ? "mp4" : "webm";
     chunksRef.current = [];
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     recorder.onstop = () => {
       stream.getTracks().forEach(t => t.stop());
       if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
       streamRef.current = null;
-      const blob = new Blob(chunksRef.current, { type: "video/webm" });
+      const blob = new Blob(chunksRef.current, { type: actualMime });
       setRecordedBlob(blob);
-      const file = new File([blob], `video-${Date.now()}.webm`, { type: "video/webm" });
+      const file = new File([blob], `video-${Date.now()}.${ext}`, { type: actualMime });
       setVideoFile(file);
     };
 
     mediaRecorderRef.current = recorder;
-    recorder.start();
+    recorder.start(1000);
     setIsPreviewing(false);
     setIsRecording(true);
     setRecordingTime(0);
@@ -195,20 +200,29 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
-      const mimeType = type === "voice" ? "audio/webm;codecs=opus" : "video/webm";
-      const recorder = MediaRecorder.isTypeSupported(mimeType)
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
+      // Negotiate mime type for cross-browser (Safari needs mp4)
+      let targetMime = "";
+      if (type === "voice") {
+        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) targetMime = "audio/webm;codecs=opus";
+        else if (MediaRecorder.isTypeSupported("audio/webm")) targetMime = "audio/webm";
+        else if (MediaRecorder.isTypeSupported("audio/mp4")) targetMime = "audio/mp4";
+      } else {
+        if (MediaRecorder.isTypeSupported("video/webm")) targetMime = "video/webm";
+        else if (MediaRecorder.isTypeSupported("video/mp4")) targetMime = "video/mp4";
+      }
+      const options: MediaRecorderOptions = targetMime ? { mimeType: targetMime } : {};
+      const recorder = new MediaRecorder(stream, options);
+      const actualMime = recorder.mimeType || targetMime || (type === "voice" ? "audio/mp4" : "video/mp4");
+      const ext = actualMime.includes("mp4") ? "mp4" : "webm";
       chunksRef.current = [];
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       recorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
         if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
         streamRef.current = null;
-        const blobType = type === "voice" ? "audio/webm" : "video/webm";
-        const blob = new Blob(chunksRef.current, { type: blobType });
+        const blob = new Blob(chunksRef.current, { type: actualMime });
         setRecordedBlob(blob);
-        const file = new File([blob], `${type}-${Date.now()}.webm`, { type: blobType });
+        const file = new File([blob], `${type}-${Date.now()}.${ext}`, { type: actualMime });
         if (type === "voice") setVoiceFile(file);
         else setVideoFile(file);
       };

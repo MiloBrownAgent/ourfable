@@ -66,26 +66,49 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     month: 'long', day: 'numeric', year: 'numeric',
   })
 
+  // ── Detect supported mime types (Safari vs Chrome/Firefox) ──
+  const getAudioMimeType = (): string => {
+    if (typeof MediaRecorder === 'undefined') return 'audio/webm'
+    if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus'
+    if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm'
+    if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4'
+    if (MediaRecorder.isTypeSupported('audio/aac')) return 'audio/aac'
+    return '' // let browser pick default
+  }
+
+  const getVideoMimeType = (): string => {
+    if (typeof MediaRecorder === 'undefined') return 'video/webm'
+    if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) return 'video/webm;codecs=vp9,opus'
+    if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) return 'video/webm;codecs=vp8,opus'
+    if (MediaRecorder.isTypeSupported('video/webm')) return 'video/webm'
+    if (MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4'
+    return '' // let browser pick default
+  }
+
   // Voice recording
   const startRecording = useCallback(async () => {
     setRecorderError('')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' })
+      const mimeType = getAudioMimeType()
+      const options: MediaRecorderOptions = mimeType ? { mimeType } : {}
+      const recorder = new MediaRecorder(stream, options)
+      const actualMime = recorder.mimeType || mimeType || 'audio/webm'
       chunksRef.current = []
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const blob = new Blob(chunksRef.current, { type: actualMime })
         setAudioBlob(blob)
         setAudioDuration(recordingTime)
         stream.getTracks().forEach(t => t.stop())
       }
       mediaRecorderRef.current = recorder
-      recorder.start()
+      recorder.start(1000) // request data every 1s for reliability
       setRecording(true)
       setRecordingTime(0)
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
-    } catch {
+    } catch (err) {
+      console.error('[WritingBlock] Audio recording error:', err)
       setRecorderError('Microphone access denied. Please allow access in your browser settings.')
     }
   }, [recordingTime])
@@ -101,25 +124,39 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const startVideoRecording = useCallback(async () => {
     setRecorderError('')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      if (videoCameraRef.current) { videoCameraRef.current.srcObject = stream; videoCameraRef.current.play() }
-      const recorder = new MediaRecorder(stream)
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: true,
+      })
+      if (videoCameraRef.current) {
+        videoCameraRef.current.srcObject = stream
+        videoCameraRef.current.setAttribute('autoplay', '')
+        videoCameraRef.current.setAttribute('playsinline', '')
+        videoCameraRef.current.muted = true
+        try { await videoCameraRef.current.play() } catch { /* autoplay may be blocked */ }
+      }
+      const mimeType = getVideoMimeType()
+      const options: MediaRecorderOptions = mimeType ? { mimeType } : {}
+      const recorder = new MediaRecorder(stream, options)
+      const actualMime = recorder.mimeType || mimeType || 'video/mp4'
+      const ext = actualMime.includes('mp4') ? 'mp4' : 'webm'
       chunksRef.current = []
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       recorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop())
         if (videoCameraRef.current) videoCameraRef.current.srcObject = null
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+        const blob = new Blob(chunksRef.current, { type: actualMime })
         setVideoBlob(blob)
-        setVideo({ name: `video-${Date.now()}.webm` })
+        setVideo({ name: `video-${Date.now()}.${ext}` })
         setAudioDuration(recordingTime)
       }
       mediaRecorderRef.current = recorder
-      recorder.start()
+      recorder.start(1000) // request data every 1s for reliability
       setRecordingVideo(true)
       setRecordingTime(0)
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
-    } catch {
+    } catch (err) {
+      console.error('[WritingBlock] Video recording error:', err)
       setRecorderError('Camera access denied. Please allow access in your browser settings.')
     }
   }, [recordingTime])
@@ -242,10 +279,10 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       let mediaMimeType: string | undefined
 
       if (videoBlob) {
-        mediaMimeType = 'video/webm'
+        mediaMimeType = videoBlob.type || 'video/mp4'
         mediaStorageId = await uploadMedia(videoBlob, mediaMimeType)
       } else if (audioBlob) {
-        mediaMimeType = 'audio/webm'
+        mediaMimeType = audioBlob.type || 'audio/mp4'
         mediaStorageId = await uploadMedia(audioBlob, mediaMimeType)
       } else if (photos.length > 0 && photoFileRef.current) {
         mediaMimeType = photoFileRef.current.type || 'image/jpeg'
@@ -320,7 +357,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
       if (videoBlob) {
         mediaType = 'video'
-        const storageId = await uploadMedia(videoBlob, 'video/webm')
+        const storageId = await uploadMedia(videoBlob, videoBlob.type || 'video/mp4')
         if (storageId) {
           const urlRes = await fetch('/api/ourfable/data', {
             method: 'POST',
@@ -332,7 +369,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         }
       } else if (audioBlob) {
         mediaType = 'voice'
-        const storageId = await uploadMedia(audioBlob, 'audio/webm')
+        const storageId = await uploadMedia(audioBlob, audioBlob.type || 'audio/mp4')
         if (storageId) {
           const urlRes = await fetch('/api/ourfable/data', {
             method: 'POST',
@@ -414,7 +451,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
       {/* Video camera preview */}
       {recordingVideo && (
-        <video ref={videoCameraRef} muted playsInline style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block', transform: 'scaleX(-1)' }} />
+        <video ref={videoCameraRef} muted playsInline autoPlay style={{ width: '100%', maxHeight: 200, background: '#000', display: 'block', transform: 'scaleX(-1)' }} />
       )}
 
       {/* Recording overlay */}
