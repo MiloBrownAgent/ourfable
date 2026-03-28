@@ -46,7 +46,9 @@ export default function ListenButton({ song }: { song: string }) {
     }
   };
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (saved) {
       openLink(saved);
     } else {
@@ -62,7 +64,7 @@ export default function ListenButton({ song }: { song: string }) {
   };
 
   return (
-    <div ref={pickerRef} style={{ position: "relative", display: "inline-flex" }}>
+    <div ref={pickerRef} style={{ position: "relative", display: "inline-flex" }} onClick={e => e.stopPropagation()}>
       {/* Hidden anchor for popup-blocker-safe navigation */}
       <a ref={linkRef} href="#" target="_blank" rel="noopener noreferrer" style={{ display: "none" }} aria-hidden="true" />
 
