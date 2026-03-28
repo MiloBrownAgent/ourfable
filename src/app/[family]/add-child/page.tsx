@@ -11,6 +11,7 @@ interface CircleMember {
 
 interface Child {
   _id: string;
+  childId: string;
   childName: string;
 }
 

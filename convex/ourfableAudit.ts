@@ -238,6 +238,7 @@ export const seedCanaryFamily = internalMutation({
 });
 
 // Public versions for external canary (Cloudflare Worker)
+// Security: only operates on CANARY_FAMILY_ID, rejects all other familyIds
 export const submitCanaryEntry = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
@@ -268,6 +269,11 @@ export const getCanaryEntry = query({
 export const deleteCanaryEntry = mutation({
   args: { entryId: v.id("ourfable_vault_contributions") },
   handler: async (ctx, { entryId }) => {
+    // Safety: only allow deleting canary entries
+    const entry = await ctx.db.get(entryId);
+    if (!entry || entry.familyId !== CANARY_FAMILY_ID) {
+      throw new Error("Can only delete canary test entries");
+    }
     await ctx.db.delete(entryId);
   },
 });

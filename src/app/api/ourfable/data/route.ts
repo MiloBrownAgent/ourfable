@@ -170,6 +170,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Strip sensitive fields from public query responses
+    if (PUBLIC_QUERIES.has(path) && data.value && typeof data.value === "object") {
+      const SENSITIVE_FIELDS = [
+        "parentEmail", "stripeCustomerId", "stripeSubscriptionId",
+        "passwordHash", "testIntervalMinutes", "childEmailAlias",
+      ];
+      const strip = (obj: Record<string, unknown>) => {
+        for (const field of SENSITIVE_FIELDS) delete obj[field];
+        return obj;
+      };
+      if (Array.isArray(data.value)) {
+        data = { ...data, value: data.value.map((v: Record<string, unknown>) => strip({ ...v })) };
+      } else {
+        data = { ...data, value: strip({ ...data.value }) };
+      }
+    }
+
     return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json({ error: "Upstream error" }, { status: 502 });

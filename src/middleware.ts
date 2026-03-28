@@ -93,7 +93,7 @@ function applySecurityHeaders(res: NextResponse): void {
   );
   res.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    "camera=(self), microphone=(self), geolocation=(), interest-cohort=()"
   );
 }
 
