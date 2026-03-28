@@ -100,81 +100,45 @@ export default function BlogIndexPage() {
             Posts coming soon.
           </p>
         ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
-            gap: 32,
-          }}>
-            {posts.map((post) => (
-              <article key={post.slug} style={{
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-                borderRadius: 16,
-                overflow: "hidden",
-                transition: "box-shadow 0.2s ease, transform 0.2s ease",
-              }}
-              className="blog-card"
-              >
-                <Link href={`/journal/${post.slug}`} style={{ display: "block", textDecoration: "none", color: "inherit", padding: "32px" }}>
-                  {/* Tag */}
-                  {post.primaryKeyword && (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {posts.map((post, i) => (
+              <article key={post.slug}>
+                <Link href={`/journal/${post.slug}`} style={{
+                  display: "block", textDecoration: "none", color: "inherit",
+                  padding: "32px 0",
+                }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
                     <span style={{
-                      display: "inline-block",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      color: "var(--green)",
-                      background: "var(--green-light)",
-                      border: "1px solid var(--green-border)",
-                      borderRadius: 100,
-                      padding: "4px 10px",
-                      marginBottom: 16,
+                      fontSize: 11, fontWeight: 600, letterSpacing: "0.08em",
+                      textTransform: "uppercase", color: "var(--green)",
                     }}>
                       {post.primaryKeyword}
                     </span>
-                  )}
+                    <span style={{ fontSize: 11, color: "var(--text-4)" }}>· {post.readTime}</span>
+                  </div>
 
-                  {/* Title */}
                   <h2 style={{
                     fontFamily: "var(--font-playfair)",
-                    fontSize: 22,
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                    color: "var(--text)",
-                    marginBottom: 12,
+                    fontSize: "clamp(20px, 3vw, 26px)",
+                    fontWeight: 700, lineHeight: 1.3,
+                    color: "var(--text)", marginBottom: 8,
                     letterSpacing: "-0.01em",
                   }}>
                     {post.title}
                   </h2>
 
-                  {/* Excerpt */}
                   <p style={{
-                    fontSize: 15,
-                    lineHeight: 1.65,
-                    color: "var(--text-3)",
-                    marginBottom: 24,
+                    fontSize: 15, lineHeight: 1.65, color: "var(--text-3)",
+                    maxWidth: 640,
                   }}>
-                    {post.excerpt.length > 160
-                      ? post.excerpt.slice(0, 160).trim() + "…"
+                    {post.excerpt.length > 140
+                      ? post.excerpt.slice(0, 140).trim() + "…"
                       : post.excerpt}
                   </p>
-
-                  {/* Meta row */}
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    fontSize: 13,
-                    color: "var(--text-4)",
-                  }}>
-                    <time dateTime={post.publishDate}>
-                      {formatDate(post.publishDate)}
-                    </time>
-                    <span style={{ color: "var(--border-dark)" }}>·</span>
-                    <span>{post.readTime}</span>
-                  </div>
                 </Link>
+                {i < posts.length - 1 && (
+                  <div style={{ height: 1, background: "var(--border)" }} />
+                )}
               </article>
             ))}
           </div>
