@@ -137,13 +137,19 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      <footer style={{ borderTop: "1px solid var(--border)", padding: "24px 40px", background: "var(--bg-2)" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <p style={{ fontSize: 12, color: "var(--text-3)" }}>© {new Date().getFullYear()} Our Fable, Inc.</p>
-          <div style={{ display: "flex", gap: 20 }}>
-            <Link href="/privacy" className="nav-link" style={{ fontSize: 12 }}>Privacy</Link>
-            <Link href="/terms" className="nav-link" style={{ fontSize: 12 }}>Terms</Link>
+      <footer style={{ borderTop: "1px solid var(--border)", padding: "28px 40px", background: "var(--bg)" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <span style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "var(--green)" }}>Our Fable</span>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+            <Link href="/reserve" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
+            <Link href="/faq" className="nav-link" style={{ fontSize: 13 }}>FAQ</Link>
+            <Link href="/journal" className="nav-link" style={{ fontSize: 13 }}>Journal</Link>
+            <Link href="/partners" className="nav-link" style={{ fontSize: 13 }}>Partner with us</Link>
+            <Link href="/support" className="nav-link" style={{ fontSize: 13 }}>Support</Link>
+            <Link href="/privacy" className="nav-link" style={{ fontSize: 13 }}>Privacy</Link>
+            <Link href="/terms" className="nav-link" style={{ fontSize: 13 }}>Terms</Link>
           </div>
+          <p style={{ fontSize: 12, color: "var(--text-4)" }}>© {new Date().getFullYear()} Our Fable, Inc. · Private by design.</p>
         </div>
       </footer>
     </div>

@@ -62,16 +62,20 @@ function contentTypeLabel(type: string): string {
 export default async function FamilyHub({ params }: { params: Promise<{ family: string }> }) {
   const { family: familyId } = await params;
 
-  const [family, vaultEntries, snapshots, notifications, beforeBorn] = await Promise.all([
+  const [family, vaultEntries, snapshots, notifications, beforeBorn, circleMembers, outgoings] = await Promise.all([
     convexQuery<Family>("ourfable:getFamily", { familyId }).catch(() => null),
     convexQuery<VaultEntry[]>("ourfable:listVaultEntries", { familyId }).catch(() => [] as VaultEntry[]),
     convexQuery<Snapshot[]>("ourfable:listSnapshots", { familyId }).catch(() => [] as Snapshot[]),
     convexQuery<Notification[]>("ourfable:listNotifications", { familyId }).catch(() => [] as Notification[]),
     convexQuery<BeforeBorn[]>("ourfable:listBeforeBorn", { familyId }).catch(() => [] as BeforeBorn[]),
+    convexQuery<Array<{ _id: string }>>( "ourfable:listCircle", { familyId }).catch(() => []),
+    convexQuery<Array<{ sentAt: number }>>( "ourfable:listOutgoings", { familyId }).catch(() => []),
   ]);
 
   // beforeBorn used only for dedicated page; suppress unused warning
   void beforeBorn;
+  const circleCount = (circleMembers ?? []).length;
+  const lastDispatchAt = (outgoings ?? []).length > 0 ? (outgoings as Array<{ sentAt: number }>)[0]?.sentAt : undefined;
 
   if (!family) {
     return (
@@ -105,6 +109,8 @@ export default async function FamilyHub({ params }: { params: Promise<{ family: 
         defaultNotifications={notifications ?? []}
         currentSnap={currentSnap}
         unreadNotifs={unreadNotifs}
+        circleCount={circleCount}
+        lastDispatchAt={lastDispatchAt}
       />
     </>
   );

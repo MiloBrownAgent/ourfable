@@ -227,6 +227,7 @@ function LoginForm() {
                   style={{ paddingRight: 44, fontSize: 15 }}
                 />
                 <button type="button" onClick={() => setShow((v) => !v)} className="btn-ghost"
+                  aria-label={show ? "Hide password" : "Show password"}
                   style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", padding: 8 }}>
                   {show ? <EyeOff size={15} strokeWidth={1.5} aria-hidden="true" /> : <Eye size={15} strokeWidth={1.5} aria-hidden="true" />}
                 </button>
