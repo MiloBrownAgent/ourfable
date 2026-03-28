@@ -1,6 +1,7 @@
 "use client";
 import { use, useEffect, useState, useRef } from "react";
 import { Heart, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import { useChildContext } from "@/components/ChildContext";
 
 interface Prompt {
   _id: string;
@@ -128,15 +129,18 @@ function PromptCard({ prompt, familyId, onAnswered }: { prompt: Prompt; familyId
 
 export default function BeforeBornPage({ params }: { params: Promise<{ family: string }> }) {
   const { family: familyId } = use(params);
+  const { selectedChild } = useChildContext();
+  const childId = selectedChild?.childId || selectedChild?._id;
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [childDob, setChildDob] = useState<string>("");
   const [childName, setChildName] = useState("them");
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
+    const queryArgs = childId ? { familyId, childId } : { familyId };
     const [familyRes, promptsRes] = await Promise.all([
       fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }) }).then(r => r.json()),
-      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listBeforeBorn", args: { familyId } }) }).then(r => r.json()),
+      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listBeforeBorn", args: queryArgs }) }).then(r => r.json()),
     ]);
     const fam = familyRes.value;
     setChildName((fam?.childName ?? "them").split(" ")[0]);
@@ -144,14 +148,14 @@ export default function BeforeBornPage({ params }: { params: Promise<{ family: s
     let p = promptsRes.value ?? [];
     if (p.length === 0) {
       await fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:seedBeforeBorn", args: { familyId }, type: "mutation" }) });
-      const refetch = await fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listBeforeBorn", args: { familyId } }) }).then(r => r.json());
+      const refetch = await fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listBeforeBorn", args: queryArgs }) }).then(r => r.json());
       p = refetch.value ?? [];
     }
     setPrompts(p);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [familyId]);
+  useEffect(() => { load(); }, [familyId, childId]);
 
   // How many prompts to reveal: 1 per month since birth anniversary, capped at 10
   const monthsOld = (() => {

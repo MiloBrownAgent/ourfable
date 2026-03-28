@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Gift, Lock, RefreshCw, ChevronDown, Pencil, Check } from "lucide-react";
+import { useChildContext } from "@/components/ChildContext";
 
 interface BirthdayLetter {
   _id: string;
@@ -195,21 +196,24 @@ function PlaceholderCard({ year, childFirst, dob, familyId, onGenerated }: { yea
 }
 
 export default function BirthdayLettersInner({ familyId }: { familyId: string }) {
+  const { selectedChild } = useChildContext();
+  const childId = selectedChild?.childId || selectedChild?._id;
   const [family, setFamily] = useState<Family | null>(null);
   const [letters, setLetters] = useState<BirthdayLetter[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
+    const birthdayArgs = childId ? { familyId, childId } : { familyId };
     const [fRes, lRes] = await Promise.all([
       fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }) }).then(r => r.json()),
-      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listBirthdayLetters", args: { familyId } }) }).then(r => r.json()),
+      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listBirthdayLetters", args: birthdayArgs }) }).then(r => r.json()),
     ]);
     setFamily(fRes.value ?? null);
     setLetters(lRes.value ?? []);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [familyId]);
+  useEffect(() => { load(); }, [familyId, childId]);
 
   const childFirst = family?.childName.split(" ")[0] ?? "them";
   const dob = family?.childDob ?? "";

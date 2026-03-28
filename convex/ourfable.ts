@@ -310,13 +310,15 @@ export const seedMilestones = mutation({
 // ── Letters ────────────────────────────────────────────────────────────────────
 
 export const listLetters = query({
-  args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
-    return await ctx.db
+  args: { familyId: v.string(), childId: v.optional(v.string()) },
+  handler: async (ctx, { familyId, childId }) => {
+    const all = await ctx.db
       .query("ourfable_vault_letters")
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .order("desc")
       .collect();
+    if (!childId) return all;
+    return all.filter((e) => !e.childId || e.childId === childId);
   },
 });
 
@@ -609,16 +611,18 @@ export const getShareData = query({
 export const listVaultEntries = query({
   args: {
     familyId: v.string(),
+    childId: v.optional(v.string()),
     includeSealed: v.optional(v.boolean()),
   },
-  handler: async (ctx, { familyId, includeSealed = false }) => {
+  handler: async (ctx, { familyId, childId, includeSealed = false }) => {
     const all = await ctx.db
       .query("ourfable_vault_contributions")
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .order("desc")
       .collect();
 
-    const filtered = includeSealed ? all : all.filter((e) => e.isOpen);
+    let filtered = includeSealed ? all : all.filter((e) => e.isOpen);
+    if (childId) filtered = filtered.filter((e) => !e.childId || e.childId === childId);
 
     // Resolve Convex storage IDs into renderable URLs
     const resolved = await Promise.all(
@@ -1436,13 +1440,14 @@ export const seedBeforeBorn = mutation({
 });
 
 export const listBeforeBorn = query({
-  args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
+  args: { familyId: v.string(), childId: v.optional(v.string()) },
+  handler: async (ctx, { familyId, childId }) => {
     const all = await ctx.db
       .query("ourfable_vault_before_born")
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .collect();
-    return all.sort((a, b) => a.sortOrder - b.sortOrder);
+    const filtered = childId ? all.filter((e) => !e.childId || e.childId === childId) : all;
+    return filtered.sort((a, b) => a.sortOrder - b.sortOrder);
   },
 });
 
@@ -1493,9 +1498,11 @@ export const generateBirthdayLetter = mutation({
 });
 
 export const listBirthdayLetters = query({
-  args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
-    return await ctx.db.query("ourfable_vault_birthday_letters").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).order("asc").collect();
+  args: { familyId: v.string(), childId: v.optional(v.string()) },
+  handler: async (ctx, { familyId, childId }) => {
+    const all = await ctx.db.query("ourfable_vault_birthday_letters").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).order("asc").collect();
+    if (!childId) return all;
+    return all.filter((e) => !e.childId || e.childId === childId);
   },
 });
 
@@ -2016,12 +2023,13 @@ export const addOurFableVaultEntry = mutation({
 });
 
 export const listOurFableVaultEntries = query({
-  args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
-    const all = await ctx.db
+  args: { familyId: v.string(), childId: v.optional(v.string()) },
+  handler: async (ctx, { familyId, childId }) => {
+    let all = await ctx.db
       .query("ourfable_vault_entries")
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .collect();
+    if (childId) all = all.filter((e) => !e.childId || e.childId === childId);
 
     // Resolve Convex storage IDs into renderable URLs
     const resolved = await Promise.all(

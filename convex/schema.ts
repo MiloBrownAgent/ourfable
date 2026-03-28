@@ -123,6 +123,7 @@ export default defineSchema({
 
   ourfable_vault_letters: defineTable({
     familyId: v.string(),
+    childId: v.optional(v.string()),   // null = first child (backward compat)
     author: v.string(),
     subject: v.string(),
     body: v.string(),

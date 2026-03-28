@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Lock, Unlock, Mail, Plus, ChevronDown, X, Image as ImageIcon, Mic, Video } from "lucide-react";
 import NextImage from "next/image";
 import FileUpload, { UploadedFile } from "@/components/FileUpload";
+import { useChildContext } from "@/components/ChildContext";
 
 interface Letter {
   _id: string; author: string; subject: string; body: string;
@@ -223,21 +224,24 @@ function WriteForm({ familyId, childName, onDone }: { familyId: string; childNam
 }
 
 export default function LettersInner({ familyId }: { familyId: string }) {
+  const { selectedChild } = useChildContext();
+  const childId = selectedChild?.childId || selectedChild?._id;
   const [letters, setLetters] = useState<Letter[]>([]);
   const [family, setFamily] = useState<{ childName: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
   const load = () => {
+    const letterArgs = childId ? { familyId, childId } : { familyId };
     Promise.all([
-      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listLetters", args: { familyId } }) })
+      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listLetters", args: letterArgs }) })
         .then(r => r.json()).then(d => setLetters(d.value ?? [])),
       fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }) })
         .then(r => r.json()).then(d => setFamily(d.value ?? null)),
     ]).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [familyId]);
+  useEffect(() => { load(); }, [familyId, childId]);
 
   const today = new Date().toISOString().slice(0, 10);
   const sealed = letters.filter(l => l.openOn > today);

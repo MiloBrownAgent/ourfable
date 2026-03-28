@@ -6,6 +6,7 @@ import {
   CheckCircle, AlertCircle, FileAudio, FileVideo, GraduationCap,
   Heart, Calendar, Clock, Sparkles,
 } from "lucide-react";
+import { useChildContext } from "@/components/ChildContext";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -837,6 +838,8 @@ type FilterTab = "all" | "sealed" | "open";
 
 export default function VaultPage({ params }: { params: Promise<{ family: string }> }) {
   const { family: familyId } = use(params);
+  const { selectedChild } = useChildContext();
+  const childId = selectedChild?.childId || selectedChild?._id;
   const [entries, setEntries] = useState<VaultEntry[]>([]);
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
@@ -846,16 +849,17 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const load = async () => {
+    const queryArgs = childId ? { familyId, childId } : { familyId };
     const [entriesRes, ourfableEntriesRes, familyRes] = await Promise.all([
       fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { familyId }, format: "json" }),
+        body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { ...queryArgs }, format: "json" }),
       }).then(r => r.json()),
       fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:listOurFableVaultEntries", args: { familyId }, format: "json" }),
+        body: JSON.stringify({ path: "ourfable:listOurFableVaultEntries", args: { ...queryArgs }, format: "json" }),
       }).then(r => r.json()),
       fetch(`/api/ourfable/data`, {
         method: "POST",
@@ -912,7 +916,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [familyId]);
+  useEffect(() => { load(); }, [familyId, childId]);
 
   const handleUnlock = async (entryId: string) => {
     if (!confirm("Unlock this entry early? The contributor will be notified.")) return;
