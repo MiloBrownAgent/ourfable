@@ -86,6 +86,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Send deletion confirmation email with export link
+  try {
+    const RESEND_KEY = process.env.RESEND_FULL_API_KEY;
+    if (RESEND_KEY && family.email) {
+      const childName = (await convexQuery("ourfable:getOurFableFamilyById", { familyId: session.familyId }) as { childName?: string } | null)?.childName ?? "your child";
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Our Fable <hello@ourfable.ai>",
+          to: family.email,
+          subject: `Your Our Fable account has been deleted — download ${childName.split(" ")[0]}'s vault`,
+          html: `<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="color-scheme" content="light"/></head><body style="margin:0;padding:0;background:#FDFBF7;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:48px 20px;background:#FDFBF7;"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;"><tr><td style="background:#FFFFFF;border-radius:16px;border:1px solid #EAE7E1;padding:40px;"><p style="margin:0 0 24px;font-family:Georgia,serif;font-size:24px;color:#1A1A1A;line-height:1.3;">Your account has been deleted.</p><p style="margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">We're sorry to see you go. Your data will be permanently removed in <strong>60 days</strong>.</p><p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Before that happens, you can download everything — every letter, photo, voice memo, and video in ${childName.split(" ")[0]}'s vault.</p><table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;"><a href="https://ourfable.ai/api/ourfable/export" style="display:inline-block;padding:14px 32px;font-family:-apple-system,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;">Download your vault</a></td></tr></table><p style="margin:24px 0 0;font-family:-apple-system,sans-serif;font-size:13px;color:#9A9590;line-height:1.6;">We'll send you weekly reminders until day 60. If you change your mind, just sign up again with the same email — we'll restore everything.</p></td></tr><tr><td align="center" style="padding-top:20px;"><p style="font-family:-apple-system,sans-serif;font-size:11px;color:#B0A9A0;">Our Fable · ourfable.ai</p></td></tr></table></td></tr></table></body></html>`,
+        }),
+      });
+      console.log(`[delete-account] Sent deletion confirmation email to ${family.email}`);
+    }
+  } catch (emailErr) {
+    console.error("[delete-account] Failed to send deletion email:", emailErr);
+  }
+
   // Clear session cookie
   const res = NextResponse.json({ success: true });
   res.cookies.set(COOKIE, "", {

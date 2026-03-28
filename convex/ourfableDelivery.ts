@@ -547,3 +547,57 @@ export const sendCancellationSaveEmail = internalAction({
     // Left as a reusable action
   },
 });
+
+// ── Weekly deletion reminder — emails users who soft-deleted to download vault ──
+export const sendDeletionReminders = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const deletedFamilies = await ctx.runQuery(
+      internal.ourfable.listDeletedFamiliesInternal, {}
+    ) as Array<{
+      familyId: string; email: string; childName?: string;
+      deletedAt?: number; createdAt: number;
+    }>;
+
+    const RESEND_KEY = process.env.RESEND_FULL_API_KEY;
+    if (!RESEND_KEY) { console.error("[deletion-reminders] No RESEND_FULL_API_KEY"); return; }
+
+    let sent = 0;
+    for (const fam of deletedFamilies) {
+      const deletedAt = fam.deletedAt ?? fam.createdAt;
+      const daysSinceDelete = Math.floor((Date.now() - deletedAt) / (1000 * 60 * 60 * 24));
+      const daysRemaining = 60 - daysSinceDelete;
+
+      // Only send if within 60-day window and hasn't expired
+      if (daysRemaining <= 0 || daysRemaining > 60) continue;
+      if (!fam.email) continue;
+
+      const childFirst = fam.childName?.split(" ")[0] ?? "your child";
+      const urgency = daysRemaining <= 7 ? "final" : daysRemaining <= 14 ? "urgent" : "standard";
+      const subject = urgency === "final"
+        ? `Final notice: ${childFirst}'s vault will be permanently deleted in ${daysRemaining} days`
+        : urgency === "urgent"
+        ? `${daysRemaining} days left to download ${childFirst}'s vault`
+        : `Reminder: Download ${childFirst}'s vault before it's gone (${daysRemaining} days left)`;
+
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: "Our Fable <hello@ourfable.ai>",
+            to: fam.email,
+            subject,
+            html: `<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="color-scheme" content="light"/></head><body style="margin:0;padding:0;background:#FDFBF7;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:48px 20px;background:#FDFBF7;"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;"><tr><td style="background:#FFFFFF;border-radius:16px;border:1px solid #EAE7E1;padding:40px;"><p style="margin:0 0 24px;font-family:Georgia,serif;font-size:22px;color:#1A1A1A;line-height:1.3;">${urgency === "final" ? "This is your last chance." : "A reminder about " + childFirst + "'s vault."}</p><p style="margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">You deleted your Our Fable account ${daysSinceDelete} days ago. <strong>${childFirst}'s vault — every letter, photo, voice memo, and video — will be permanently deleted in ${daysRemaining} days.</strong></p><p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Download everything now so nothing is lost.</p><table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:${urgency === "final" ? "#C25450" : "#4A5E4C"};"><a href="https://ourfable.ai/api/ourfable/export" style="display:inline-block;padding:14px 32px;font-family:-apple-system,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;">Download your vault now</a></td></tr></table><p style="margin:24px 0 0;font-family:-apple-system,sans-serif;font-size:13px;color:#9A9590;">Changed your mind? Sign up again with the same email and we'll restore everything.</p></td></tr><tr><td align="center" style="padding-top:20px;"><p style="font-family:-apple-system,sans-serif;font-size:11px;color:#B0A9A0;">Our Fable · ourfable.ai</p></td></tr></table></td></tr></table></body></html>`,
+          }),
+        });
+        sent++;
+      } catch (err) {
+        console.error(`[deletion-reminders] Failed for ${fam.email}:`, err);
+      }
+    }
+
+    console.log(`[deletion-reminders] Sent ${sent} reminders to ${deletedFamilies.length} deleted families`);
+    return { sent, total: deletedFamilies.length };
+  },
+});

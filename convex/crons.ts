@@ -77,4 +77,12 @@ crons.cron(
   internal.ourfableAudit.hourlyHealthCheck
 );
 
+// OurFable: Weekly deletion reminders — Wednesdays at 10 AM CT (15:00 UTC)
+// Emails soft-deleted families to download their vault before permanent deletion at 60 days
+crons.cron(
+  "ourfable-deletion-reminders",
+  "0 15 * * 3",
+  internal.ourfableDelivery.sendDeletionReminders
+);
+
 export default crons;

@@ -2834,12 +2834,12 @@ export const listDeletedFamiliesInternal = internalQuery({
   },
 });
 
-// ── Cleanup deleted families older than 30 days (runs via cron) ─────────────
+// ── Cleanup deleted families older than 60 days (runs via cron) ─────────────
 
 export const cleanupDeletedFamilies = internalAction({
   args: {},
   handler: async (ctx): Promise<{ processed: number; cleaned: number }> => {
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
 
     // Get all soft-deleted families
     const deletedFamilies = await ctx.runQuery(internal.ourfable.listDeletedFamiliesInternal, {});
@@ -2847,7 +2847,7 @@ export const cleanupDeletedFamilies = internalAction({
     let cleaned = 0;
     for (const fam of deletedFamilies as Array<{ familyId: string; deletedAt?: number; createdAt: number }>) {
       const deletedAt = fam.deletedAt ?? fam.createdAt;
-      if (deletedAt < thirtyDaysAgo) {
+      if (deletedAt < sixtyDaysAgo) {
         await ctx.runMutation(internal.ourfable.hardDeleteOurFableFamily, {
           familyId: fam.familyId,
         });
