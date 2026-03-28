@@ -6,7 +6,7 @@ import Greeting from "@/components/Greeting";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
   Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
-  Mail, PackageOpen, Lock, FileText, Mic, Video,
+  Mail, PackageOpen, Lock, FileText, Mic, Video, Music,
   Image as ImageIcon, MapPin, Check, GraduationCap,
 } from "lucide-react";
 
@@ -261,9 +261,9 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
       {/* Attachment strip */}
       <div style={{ display: "flex", gap: 8, padding: "12px 24px", borderTop: "0.5px solid var(--border)" }}>
         {[
-          { label: "Voice", icon: "🎙" },
-          { label: "Photo", icon: "📷" },
-          { label: "Video", icon: "🎥" },
+          { label: "Voice", icon: "mic" },
+          { label: "Photo", icon: "camera" },
+          { label: "Video", icon: "video" },
         ].map(btn => (
           <button key={btn.label} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
@@ -272,7 +272,7 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
             fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
             cursor: "pointer", letterSpacing: "0.02em",
           }}>
-            <span style={{ fontSize: 13 }}>{btn.icon}</span>
+            {btn.icon === "mic" ? <Mic size={13} strokeWidth={1.5} /> : btn.icon === "camera" ? <ImageIcon size={13} strokeWidth={1.5} /> : <Video size={13} strokeWidth={1.5} />}
             {btn.label}
           </button>
         ))}
@@ -306,15 +306,15 @@ function DemoWritingBlock({ childFirst }: { childFirst: string }) {
 }
 
 // ─── HOME / DASHBOARD SECTION ─────────────────────────────────────────────────
-function HomeSection() {
+function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
   const { months, days, totalDays } = calcAge(CHILD_DOB);
   const ageLong = formatAgeLong(months, days);
   const nextMilestone = getNextMilestone(CHILD_DOB);
   const totalVault = 47;
 
   const vaultEntries = [
-    { id: "1", memberName: "Grandma Betty", memberRelationship: "Grandmother", contentType: "Letter", isSealed: true },
-    { id: "2", memberName: "Grandpa Jim", memberRelationship: "Grandfather", contentType: "Voice memo", isSealed: true },
+    { id: "1", memberName: "Grandma", memberRelationship: "Grandmother", contentType: "Letter", isSealed: true },
+    { id: "2", memberName: "Grandpa", memberRelationship: "Grandfather", contentType: "Voice memo", isSealed: true },
   ];
 
   return (
@@ -441,7 +441,7 @@ function HomeSection() {
       {/* 6. CARDS */}
       <div style={{ padding: "0 0 0" }}>
         {/* Dispatches */}
-        <div className="card-hover-luxury" style={{
+        <div className="card-hover-luxury" onClick={() => onNavigate?.("dispatches")} style={{
           padding: "44px 32px 36px", borderTop: "0.5px solid var(--border)",
           borderLeft: "2px solid var(--sage)", cursor: "pointer",
           animation: "fadeUp 0.6s var(--spring) 0.5s both",
@@ -462,7 +462,7 @@ function HomeSection() {
         </div>
 
         {/* Circle */}
-        <div className="card-hover-luxury" style={{
+        <div className="card-hover-luxury" onClick={() => onNavigate?.("circle")} style={{
           padding: "44px 32px 36px", borderTop: "0.5px solid var(--border)",
           borderLeft: "2px solid var(--sage)", cursor: "pointer",
           animation: "fadeUp 0.6s var(--spring) 0.6s both",
@@ -486,7 +486,7 @@ function HomeSection() {
       {/* 7. WORLD SNAPSHOT */}
       <div style={{ marginBottom: 4 }}>
         <p style={{ textAlign: "center", padding: "32px 0 8px", fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
-        <div className="card-hover-luxury" style={{
+        <div className="card-hover-luxury" onClick={() => onNavigate?.("world")} style={{
           padding: "44px 32px 36px", borderTop: "2px solid var(--gold)", cursor: "pointer",
           animation: "fadeUp 0.6s var(--spring) 0.7s both",
         }}>
@@ -498,10 +498,10 @@ function HomeSection() {
             fontSize: 22, fontWeight: 400, color: "var(--text)", lineHeight: 1.25, marginBottom: 12,
           }}>March 2026</h3>
           <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 8, fontFamily: "var(--font-body)" }}>
-            Global trade tensions reshape supply chains as tariff negotiations stall for the third consecutive month.
+            Spring is arriving early across the Pacific Northwest — cherry blossoms two weeks ahead of schedule.
           </p>
-          <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
-            🎵 Not Like Us — Kendrick Lamar
+          <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic", display: "flex", alignItems: "center", gap: 6 }}>
+            <Music size={13} strokeWidth={1.5} /> Not Like Us — Kendrick Lamar
           </p>
         </div>
       </div>
@@ -514,12 +514,12 @@ function HomeSection() {
 // ─── VAULT SECTION ────────────────────────────────────────────────────────────
 function VaultSection() {
   const vaultEntries = [
-    { id: "1", memberName: "Grandma Betty", memberRelationship: "Grandmother", contentType: "text" as const, isSealed: true, unlockAge: 13 },
-    { id: "2", memberName: "Grandpa Jim", memberRelationship: "Grandfather", contentType: "voice" as const, isSealed: true, unlockAge: 13 },
-    { id: "3", memberName: "Aunt Lisa", memberRelationship: "Aunt", contentType: "photo" as const, isSealed: true, unlockAge: 18 },
-    { id: "4", memberName: "Uncle Dave", memberRelationship: "Uncle", contentType: "video" as const, isSealed: true, unlockAge: 13 },
-    { id: "5", memberName: "Godmother Carol", memberRelationship: "Godparent", contentType: "text" as const, isSealed: true, unlockAge: 18 },
-    { id: "6", memberName: "Grandma Ellis", memberRelationship: "Grandmother", contentType: "voice" as const, isSealed: true, unlockAge: 13 },
+    { id: "1", memberName: "Grandma", memberRelationship: "Grandmother", contentType: "text" as const, isSealed: true, unlockAge: 13 },
+    { id: "2", memberName: "Grandpa", memberRelationship: "Grandfather", contentType: "voice" as const, isSealed: true, unlockAge: 13 },
+    { id: "3", memberName: "Auntie", memberRelationship: "Aunt", contentType: "photo" as const, isSealed: true, unlockAge: 18 },
+    { id: "4", memberName: "Uncle", memberRelationship: "Uncle", contentType: "video" as const, isSealed: true, unlockAge: 13 },
+    { id: "5", memberName: "Godmother", memberRelationship: "Godparent", contentType: "text" as const, isSealed: true, unlockAge: 18 },
+    { id: "6", memberName: "Nana", memberRelationship: "Grandmother", contentType: "voice" as const, isSealed: true, unlockAge: 13 },
     { id: "7", memberName: "Dad", memberRelationship: "Father", contentType: "text" as const, isSealed: false },
     { id: "8", memberName: "Mom", memberRelationship: "Mother", contentType: "photo" as const, isSealed: false },
   ];
@@ -640,19 +640,19 @@ function WorldSection() {
   // Demo snapshot data
   const snapshots: Record<string, { topHeadline: string; topSong: string; weatherDesc: string; tempHigh: number }> = {
     "2025-7": {
-      topHeadline: "Record heat grips the Midwest as temperatures soar past 100°F for the fourth straight week",
+      topHeadline: "Summer is here — long days, fireflies, and the whole country moving a little slower",
       topSong: "Not Like Us — Kendrick Lamar",
       weatherDesc: "Hot and humid, thunderstorms late in the week",
       tempHigh: 98,
     },
     "2025-8": {
-      topHeadline: "Back-to-school season begins with record enrollment numbers across US public schools",
+      topHeadline: "Back-to-school season — yellow buses rolling again, the smell of new notebooks, summer fading",
       topSong: "Good Luck, Babe! — Chappell Roan",
       weatherDesc: "Warm with occasional showers, humidity dropping",
       tempHigh: 88,
     },
     "2025-9": {
-      topHeadline: "Federal Reserve holds interest rates steady, citing cooling inflation data",
+      topHeadline: "The leaves are turning — fall foliage peaks a week early across New England and the Midwest",
       topSong: "APT. — ROSÉ & Bruno Mars",
       weatherDesc: "Mild autumn conditions, first frost possible by month end",
       tempHigh: 72,
@@ -664,31 +664,31 @@ function WorldSection() {
       tempHigh: 58,
     },
     "2025-11": {
-      topHeadline: "Holiday shopping season kicks off early as retailers report strong early November traffic",
+      topHeadline: "The holidays arrive early — families gather as the first big snow blankets the northern states",
       topSong: "Now And Then — The Beatles",
       weatherDesc: "First snowfall of the season, temperatures dropping sharply",
       tempHigh: 38,
     },
     "2025-12": {
-      topHeadline: "Year in review: 2025 marked by AI breakthroughs and shifting global trade alliances",
+      topHeadline: "The year comes to a close — a season of lights, family gatherings, and looking ahead",
       topSong: "Blinding Lights (Redux) — The Weeknd",
-      weatherDesc: "Cold and snowy, classic Minnesota December",
+      weatherDesc: "Cold and snowy, cold and snowy, perfect for staying in",
       tempHigh: 22,
     },
     "2026-1": {
-      topHeadline: "New year begins with optimism as job numbers beat expectations for the first time in six months",
+      topHeadline: "A new year begins — resolutions, fresh starts, and the quiet hope that comes with turning the calendar",
       topSong: "luther — Kendrick Lamar & SZA",
       weatherDesc: "Bitter cold, wind chills below -20°F",
       tempHigh: 8,
     },
     "2026-2": {
-      topHeadline: "Super Bowl LX draws 130 million viewers, highest since 2016",
+      topHeadline: "The coldest month — mittens, hot chocolate, and the quiet beauty of a world under snow",
       topSong: "Espresso — Sabrina Carpenter",
       weatherDesc: "Heavy snow and ice, travel advisories in effect",
       tempHigh: 18,
     },
     "2026-3": {
-      topHeadline: "Global trade tensions reshape supply chains as tariff negotiations stall for the third consecutive month",
+      topHeadline: "Spring is arriving early across the Pacific Northwest — cherry blossoms two weeks ahead of schedule",
       topSong: "Not Like Us — Kendrick Lamar",
       weatherDesc: "Early spring thaw, highs reaching above freezing for first time in months",
       tempHigh: 42,
@@ -847,14 +847,14 @@ function WorldSection() {
 // ─── CIRCLE SECTION ───────────────────────────────────────────────────────────
 function CircleSection() {
   const members = [
-    { id: "1", name: "Grandma Betty", relationship: "Grandmother", city: "Phoenix, AZ", contributions: 8, active: true },
-    { id: "2", name: "Grandpa Jim", relationship: "Grandfather", city: "Phoenix, AZ", contributions: 5, active: true },
-    { id: "3", name: "Grandma Ellis", relationship: "Grandmother", city: "Chicago, IL", contributions: 3, active: true },
-    { id: "4", name: "Grandpa Ellis", relationship: "Grandfather", city: "Chicago, IL", contributions: 2, active: false },
-    { id: "5", name: "Aunt Lisa", relationship: "Aunt", city: "Seattle, WA", contributions: 6, active: true },
-    { id: "6", name: "Uncle Dave", relationship: "Uncle", city: "Denver, CO", contributions: 4, active: true },
-    { id: "7", name: "Godmother Carol", relationship: "Godparent", city: "Portland, MN", contributions: 7, active: true },
-    { id: "8", name: "Family Friend Mike", relationship: "Family friend", city: "Portland, MN", contributions: 1, active: false },
+    { id: "1", name: "Grandma", relationship: "Grandmother", city: "Phoenix, AZ", contributions: 8, active: true },
+    { id: "2", name: "Grandpa", relationship: "Grandfather", city: "Phoenix, AZ", contributions: 5, active: true },
+    { id: "3", name: "Nana", relationship: "Grandmother", city: "Chicago, IL", contributions: 3, active: true },
+    { id: "4", name: "Papa", relationship: "Grandfather", city: "Chicago, IL", contributions: 2, active: false },
+    { id: "5", name: "Auntie", relationship: "Aunt", city: "Seattle, WA", contributions: 6, active: true },
+    { id: "6", name: "Uncle", relationship: "Uncle", city: "Denver, CO", contributions: 4, active: true },
+    { id: "7", name: "Godmother", relationship: "Godparent", city: "Portland, OR", contributions: 7, active: true },
+    { id: "8", name: "Family Friend", relationship: "Family friend", city: "Portland, OR", contributions: 1, active: false },
   ];
 
   return (
@@ -947,7 +947,7 @@ function LettersSection() {
   const letters = [
     { id: "1", from: "Mom", date: "March 20, 2026", preview: "Dear Noah, today you did something that made me laugh until I cried…", sealed: false },
     { id: "2", from: "Dad", date: "March 15, 2026", preview: "Something I want you to know about the day the world was…", sealed: true },
-    { id: "3", from: "Grandma Betty", date: "February 28, 2026", preview: "My darling Noah, your grandfather and I were talking about you…", sealed: true },
+    { id: "3", from: "Grandma", date: "February 28, 2026", preview: "My darling Noah, your grandfather and I were talking about you…", sealed: true },
   ];
 
   return (
@@ -1058,7 +1058,7 @@ export default function DemoPage() {
 
   function renderSection() {
     switch (activeSection) {
-      case "home": return <HomeSection />;
+      case "home": return <HomeSection onNavigate={s => { setActiveSection(s); window.scrollTo(0, 0); }} />;
       case "vault": return <VaultSection />;
       case "world": return <WorldSection />;
       case "before-born": return <BeforeBornSection />;
@@ -1066,7 +1066,7 @@ export default function DemoPage() {
       case "dispatches": return <DispatchesSection />;
       case "circle": return <CircleSection />;
       case "delivery": return <DeliverySection />;
-      default: return <HomeSection />;
+      default: return <HomeSection onNavigate={s => { setActiveSection(s); window.scrollTo(0, 0); }} />;
     }
   }
 
