@@ -130,7 +130,7 @@ export function waitlistWelcomeEmail(childName?: string): { subject: string; htm
               <!-- CTA -->
               <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.75;color:#4A4A45;">
                 We're opening Our Fable to founding families first — limited to 1,000 families.
-                As a founding member, your rate is locked for life: <strong style="color:#1A1A18;">$79/year</strong> (regular $99/year).
+                As a founding member, your rate is locked for life: <strong style="color:#1A1A18;">$79/year</strong> (regular $99/year) for Our Fable, or <strong style="color:#1A1A18;">$99/year</strong> (regular $149/year) for Our Fable+.
                 You're on the list. We'll be in touch when ${name ? name + "'s" : "your"} vault is ready.
               </p>
 
@@ -183,7 +183,7 @@ What's being built for them:
 
 "Imagine your child at 18, opening a voice memo from their great-grandmother — recorded when they were 9 months old. Their great-grandmother, who is no longer alive. Telling them how she wants to be remembered."
 
-We're opening Our Fable to founding families first — limited to 1,000 families. As a founding member, your rate is locked for life: $79/year (regular $99/year). You're on the list. We'll be in touch when your vault is ready.
+We're opening Our Fable to founding families first — limited to 1,000 families. As a founding member, your rate is locked for life: $79/year for Our Fable (regular $99/year) or $99/year for Our Fable+ (regular $149/year). You're on the list. We'll be in touch when your vault is ready.
 
 Know someone who'd love this? Forward this email or send them to https://ourfable.ai
 

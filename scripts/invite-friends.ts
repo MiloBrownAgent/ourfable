@@ -30,8 +30,8 @@ interface CompAccountResponse {
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
-const RESEND_API_KEY = "re_TVvdECtb_F5devaVXn3wqNzTioDEm5pMg";
-const ADMIN_SECRET = "OurFable2026Admin";
+const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? ""; // ⚠️ do NOT hardcode — use env var
+const ADMIN_SECRET = process.env.OURFABLE_ADMIN_SECRET ?? ""; // ⚠️ do NOT hardcode — use env var
 const COMP_ACCOUNT_URL = "https://ourfable.ai/api/admin/comp-account";
 const FROM_EMAIL = "Dave & Amanda via Our Fable <hello@ourfable.ai>";
 

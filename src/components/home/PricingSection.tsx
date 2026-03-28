@@ -230,7 +230,7 @@ export function PricingSection() {
             <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 6, fontFamily: "var(--font-sans, Inter, sans-serif)" }}>
               🔒 Private vault · Your data is never shared · Export anytime
             </p>
-            <p style={{ fontSize: 13, color: "var(--text-3)" }}>Founding rate: $79/yr · Limited to 1,000 families · Locked for life</p>
+            <p style={{ fontSize: 13, color: "var(--text-3)" }}>Starting at $99/yr · Founding rate $79/yr · Limited to 1,000 families · Locked for life</p>
           </div>
         </Reveal>
       </section>
