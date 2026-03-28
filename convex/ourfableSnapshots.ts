@@ -89,7 +89,12 @@ ALWAYS PREFER:
 - Cultural vibes and collective feelings
 - Small, charming details of everyday life (what people were eating, wearing, doing on weekends)
 - Nature, holidays, family rhythms
-- Things that will feel nostalgic in 10-15 years`;
+- Things that will feel nostalgic in 10-15 years
+
+CRITICAL — SONG ACCURACY:
+- The topSong MUST be the actual Billboard Hot 100 #1 song for that month. Do NOT guess or hallucinate.
+- If you are not 100% certain of the #1 song, use the most culturally dominant/memorable song of the month instead.
+- NEVER fabricate a song title or artist. Real songs only.`;
 
     const userPrompt = `Generate a World Snapshot for ${monthName} ${year}.
 
