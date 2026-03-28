@@ -298,9 +298,100 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     }
   }
 
-  const handleDispatch = () => {
-    setDispatchMsg('Coming soon')
-    setTimeout(() => setDispatchMsg(''), 2500)
+  const handleDispatch = async () => {
+    setDispatchMsg('')
+    setValidationMsg('')
+    if (!hasContent) {
+      setValidationMsg('Write something first')
+      setTimeout(() => setValidationMsg(''), 2500)
+      return
+    }
+    if (selectedMembers.length === 0) {
+      setValidationMsg('Select at least one person to send to')
+      setTimeout(() => setValidationMsg(''), 2500)
+      return
+    }
+    if (!familyId) return
+    setSealing(true)
+    try {
+      // Upload media if present
+      let mediaUrls: string[] = []
+      let mediaType: string | undefined
+
+      if (videoBlob) {
+        mediaType = 'video'
+        const storageId = await uploadMedia(videoBlob, 'video/webm')
+        if (storageId) {
+          const urlRes = await fetch('/api/ourfable/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'ourfable:getMediaUrl', args: { storageId }, type: 'query' }),
+          })
+          const urlData = await urlRes.json()
+          if (urlData.value) mediaUrls.push(urlData.value)
+        }
+      } else if (audioBlob) {
+        mediaType = 'voice'
+        const storageId = await uploadMedia(audioBlob, 'audio/webm')
+        if (storageId) {
+          const urlRes = await fetch('/api/ourfable/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'ourfable:getMediaUrl', args: { storageId }, type: 'query' }),
+          })
+          const urlData = await urlRes.json()
+          if (urlData.value) mediaUrls.push(urlData.value)
+        }
+      } else if (photos.length > 0 && photoFileRef.current) {
+        mediaType = 'photo'
+        const storageId = await uploadMedia(photoFileRef.current, photoFileRef.current.type || 'image/jpeg')
+        if (storageId) {
+          const urlRes = await fetch('/api/ourfable/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'ourfable:getMediaUrl', args: { storageId }, type: 'query' }),
+          })
+          const urlData = await urlRes.json()
+          if (urlData.value) mediaUrls.push(urlData.value)
+        }
+      }
+
+      const res = await fetch('/api/ourfable/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: 'ourfable:createOutgoing',
+          args: {
+            familyId,
+            subject: 'Dispatch',
+            body: text.trim(),
+            mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+            mediaType,
+            sentToAll: selectedMembers.length === circleMembers.length,
+            sentToMemberIds: selectedMembers,
+            sentByName: 'Parent',
+            recipientCount: selectedMembers.length,
+          },
+          type: 'mutation',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to send dispatch')
+      setDispatchMsg('Dispatch sent!')
+      setTimeout(() => {
+        setDispatchMsg('')
+        setText('')
+        setPhotos([])
+        setVideo(null)
+        setVideoBlob(null)
+        removeAudio()
+        setMode('seal')
+        onSealed?.()
+      }, 2000)
+    } catch {
+      setSealError('Something went wrong. Please try again.')
+    } finally {
+      setSealing(false)
+    }
   }
 
   return (
