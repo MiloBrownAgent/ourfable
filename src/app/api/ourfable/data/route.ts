@@ -66,6 +66,10 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:updateOurFableLapseNotification",
   "ourfable:getOurFableFamilyByEmail",
   "ourfable:updateOurFablePasswordHash",
+  "ourfable:getReferralByCode",
+  "ourfable:listReferralCodes",
+  "ourfable:createReferralCodes",
+  "ourfable:redeemReferral",
 ]);
 
 // Public — no session required (join/share flows)
