@@ -62,7 +62,7 @@ function contentTypeLabel(type: string): string {
 export default async function FamilyHub({ params }: { params: Promise<{ family: string }> }) {
   const { family: familyId } = await params;
 
-  const [family, vaultEntries, snapshots, notifications, beforeBorn, circleMembers, outgoings] = await Promise.all([
+  const [family, vaultEntries, snapshots, notifications, beforeBorn, circleMembers, outgoings, parentEntries] = await Promise.all([
     convexQuery<Family>("ourfable:getFamily", { familyId }).catch(() => null),
     convexQuery<VaultEntry[]>("ourfable:listVaultEntries", { familyId }).catch(() => [] as VaultEntry[]),
     convexQuery<Snapshot[]>("ourfable:listSnapshots", { familyId }).catch(() => [] as Snapshot[]),
@@ -70,12 +70,24 @@ export default async function FamilyHub({ params }: { params: Promise<{ family: 
     convexQuery<BeforeBorn[]>("ourfable:listBeforeBorn", { familyId }).catch(() => [] as BeforeBorn[]),
     convexQuery<Array<{ _id: string }>>( "ourfable:listCircle", { familyId }).catch(() => []),
     convexQuery<Array<{ sentAt: number }>>( "ourfable:listOutgoings", { familyId }).catch(() => []),
+    convexQuery<Array<{ _id: string; authorName?: string; type?: string; isSealed?: boolean; createdAt?: number }>>( "ourfable:listOurFableVaultEntries", { familyId }).catch(() => []),
   ]);
 
   // beforeBorn used only for dedicated page; suppress unused warning
   void beforeBorn;
   const circleCount = (circleMembers ?? []).length;
   const lastDispatchAt = (outgoings ?? []).length > 0 ? (outgoings as Array<{ sentAt: number }>)[0]?.sentAt : undefined;
+
+  // Merge circle contributions + parent entries for dashboard vault count
+  const normalizedParentEntries: VaultEntry[] = (parentEntries ?? []).map((e) => ({
+    _id: e._id,
+    memberName: e.authorName ?? "Parent",
+    memberRelationship: "Parent",
+    contentType: (e.type === "text" ? "text" : e.type ?? "text") as "text",
+    isSealed: e.isSealed ?? true,
+    createdAt: e.createdAt,
+  }));
+  const allVaultEntries = [...(vaultEntries ?? []), ...normalizedParentEntries].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 
   if (!family) {
     return (
@@ -105,7 +117,7 @@ export default async function FamilyHub({ params }: { params: Promise<{ family: 
         familyId={familyId}
         defaultChildName={family.childName}
         defaultChildDob={family.childDob}
-        defaultVaultEntries={vaultEntries ?? []}
+        defaultVaultEntries={allVaultEntries}
         defaultNotifications={notifications ?? []}
         currentSnap={currentSnap}
         unreadNotifs={unreadNotifs}

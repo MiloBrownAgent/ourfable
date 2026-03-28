@@ -644,32 +644,7 @@ export const listVaultEntries = query({
       })
     );
 
-    // Also pull parent-authored entries from ourfable_vault_entries
-    const parentEntries = await ctx.db
-      .query("ourfable_vault_entries")
-      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
-      .order("desc")
-      .collect();
-
-    // Normalize parent entries to match the contribution shape
-    const normalizedParent = parentEntries.map(e => ({
-      ...e,
-      memberId: "parent",
-      memberName: e.authorName ?? "Parent",
-      memberRelationship: "Parent",
-      contentType: e.type === "text" ? "text" : e.type === "dispatch" ? "text" : e.type,
-      textContent: e.content,
-      isSealed: e.isSealed ?? true,
-    }));
-
-    // Merge and sort by createdAt desc
-    const merged = [...resolved, ...normalizedParent].sort((a, b) => {
-      const aTime = (a as { createdAt?: number }).createdAt ?? (a as { submittedAt?: number }).submittedAt ?? 0;
-      const bTime = (b as { createdAt?: number }).createdAt ?? (b as { submittedAt?: number }).submittedAt ?? 0;
-      return bTime - aTime;
-    });
-
-    return merged;
+    return resolved;
   },
 });
 
