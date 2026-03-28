@@ -94,7 +94,7 @@ export const verifyMediaStorage = internalAction({
     });
 
     // Immediate alert for storage verification failures
-    await sendTelegramAlert(
+    await sendAlert(
       `🚨 VAULT STORAGE FAILURE\n\n${memberName}'s ${contentType} for ${childName} was submitted but the file could not be verified in storage.\n\nstorageId: ${mediaStorageId}\nfamilyId: ${familyId}\nTime: ${new Date().toISOString()}\n\nThis means the user saw "Sealed" but the file may not exist.`
     );
   },
@@ -176,7 +176,7 @@ export const runCanary = internalAction({
       });
 
       // IMMEDIATE alert — canary failures are always critical
-      await sendTelegramAlert(
+      await sendAlert(
         `🚨 CANARY FAILURE — VAULT IS BROKEN\n\nThe daily vault write test failed.\n\nError: ${errorMsg}\nDuration: ${durationMs}ms\nTime: ${new Date().toISOString()}\n\nThis means the vault submission pipeline may be broken for all users. Investigate immediately.`
       );
     }
@@ -315,7 +315,7 @@ export const hourlyHealthCheck = internalAction({
 
     const severity = parseFloat(failRate) > 5 ? "🚨 CRITICAL" : "⚠️ WARNING";
 
-    await sendTelegramAlert(
+    await sendAlert(
       `${severity} — VAULT HEALTH CHECK\n\n${failCount} failed submission${failCount !== 1 ? "s" : ""} in the last hour (${failRate}% failure rate)\nTotal submissions: ${total}\n\nFirst failure:\n• ${firstFailure?.memberName ?? "Unknown"}'s ${firstFailure?.contentType ?? "?"} for ${firstFailure?.childName ?? "?"}\n• Error: ${firstFailure?.errorMessage ?? "none"}\n• Time: ${new Date(firstFailure?.timestamp ?? 0).toISOString()}`
     );
   },
@@ -372,29 +372,60 @@ async function writeShadowLedger(entry: {
 // Telegram Alerts
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function sendTelegramAlert(message: string) {
+async function sendAlert(message: string) {
+  // Layer 1: Try Telegram
   const BOT_TOKEN = process.env.TELEGRAM_ALERT_BOT_TOKEN;
   const CHAT_ID = process.env.TELEGRAM_ALERT_CHAT_ID;
 
-  if (!BOT_TOKEN || !CHAT_ID) {
-    console.error(`[audit] ALERT (no Telegram configured): ${message}`);
-    return;
+  if (BOT_TOKEN && CHAT_ID) {
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: message,
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        }),
+      });
+    } catch (err) {
+      console.error("[audit] Telegram alert failed:", err);
+    }
   }
 
-  try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
-    });
-  } catch (err) {
-    console.error("[audit] Telegram alert failed:", err);
+  // Layer 2: Always email Dave (Resend)
+  const RESEND_KEY = process.env.RESEND_FULL_API_KEY;
+  const ALERT_EMAIL = process.env.ALERT_EMAIL ?? "hello@ourfable.ai";
+
+  if (RESEND_KEY) {
+    try {
+      // Strip HTML tags for plain text email subject
+      const plainText = message.replace(/<[^>]*>/g, "").replace(/\n+/g, " ").slice(0, 100);
+      const severity = message.includes("CRITICAL") || message.includes("CANARY FAILURE")
+        ? "🚨 CRITICAL"
+        : "⚠️ WARNING";
+
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${RESEND_KEY}`,
+        },
+        body: JSON.stringify({
+          from: "OurFable Alerts <hello@ourfable.ai>",
+          to: ALERT_EMAIL,
+          subject: `${severity} — OurFable Vault Alert`,
+          html: `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap;">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`,
+        }),
+      });
+    } catch (err) {
+      console.error("[audit] Email alert failed:", err);
+    }
   }
+
+  // Always log to console as final fallback
+  console.error(`[VAULT ALERT] ${message}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
