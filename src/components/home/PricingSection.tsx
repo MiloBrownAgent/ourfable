@@ -219,7 +219,7 @@ export function PricingSection() {
         <Reveal>
           <div style={{ maxWidth: 600, margin: "0 auto" }}>
             <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "clamp(1.1rem, 2vw, 1.4rem)", color: "var(--text-3)", marginBottom: 24, lineHeight: 1.6 }}>
-              &ldquo;The people who love your child won&apos;t be here forever.&rdquo;
+              &ldquo;Every person in your child&apos;s life sees them differently. Capture all of it.&rdquo;
             </p>
             <h2 style={{ fontFamily: "var(--font-playfair)", fontWeight: 800, fontSize: "clamp(2.5rem, 5vw, 4rem)", letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 20 }}>
               Start{" "}
