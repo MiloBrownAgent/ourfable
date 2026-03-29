@@ -108,6 +108,7 @@ export default function HomeClient() {
       <ProofStrip />
       <VignettesSection />
       <DispatchSection />
+      <TrustSection />
       <LetterMomentSection />
       <VideoMomentSection />
       <CircleSection />
@@ -118,7 +119,6 @@ export default function HomeClient() {
       <StatsSection />
       <FounderNote />
       <MidPageCapture />
-      <TrustSection />
       <PricingSection />
       <FooterSection />
 
