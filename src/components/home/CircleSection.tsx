@@ -4,15 +4,15 @@ import { Reveal } from "./Reveal";
 import { ChevronDown } from "lucide-react";
 
 const CIRCLE_NODES = [
-  { id: "mom",          label: "Mom & Dad",     emoji: "💛", prompt: "Write them a letter for their wedding day. Tell them what love actually looks like." },
-  { id: "grandma",      label: "Grandma",       emoji: "🤍", prompt: "What do you want them to know about where this family came from?" },
-  { id: "grandpa",      label: "Grandpa",       emoji: "🤍", prompt: "Tell them a story about your own father. Something you've never said out loud." },
-  { id: "godparent",    label: "Godparent",     emoji: "✨", prompt: "What do you hope they carry with them from this family?" },
-  { id: "aunt",         label: "Aunt",          emoji: "💜", prompt: "What do you see in them that reminds you of their parent at that age?" },
-  { id: "uncle",        label: "Uncle",         emoji: "💙", prompt: "Tell them something about their parent that they'd never tell themselves." },
-  { id: "familyfriend", label: "Family friend",  emoji: "🧡", prompt: "Tell them who their parent was before they became someone's parent." },
-  { id: "neighbor",     label: "Neighbor",      emoji: "🏡", prompt: "What was life like on this street when they were small?" },
-  { id: "oldfriend",    label: "Old friend",    emoji: "💚", prompt: "Share a memory of their parent that made you proud to know them." },
+  { id: "mom",          label: "Mom & Dad",     initials: "M+D", prompt: "Write them a letter for their wedding day. Tell them what love actually looks like." },
+  { id: "grandma",      label: "Grandma",       initials: "G", prompt: "What do you want them to know about where this family came from?" },
+  { id: "grandpa",      label: "Grandpa",       initials: "G", prompt: "Tell them a story about your own father. Something you've never said out loud." },
+  { id: "godparent",    label: "Godparent",     initials: "GP", prompt: "What do you hope they carry with them from this family?" },
+  { id: "aunt",         label: "Aunt",          initials: "A", prompt: "What do you see in them that reminds you of their parent at that age?" },
+  { id: "uncle",        label: "Uncle",         initials: "U", prompt: "Tell them something about their parent that they'd never tell themselves." },
+  { id: "familyfriend", label: "Family friend",  initials: "FF", prompt: "Tell them who their parent was before they became someone's parent." },
+  { id: "neighbor",     label: "Neighbor",      initials: "N", prompt: "What was life like on this street when they were small?" },
+  { id: "oldfriend",    label: "Old friend",    initials: "OF", prompt: "Share a memory of their parent that made you proud to know them." },
 ];
 
 export function CircleSection() {
@@ -85,11 +85,16 @@ export function CircleSection() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 16,
                       flexShrink: 0,
                       transition: "all 200ms ease",
                     }}>
-                      {node.emoji}
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: isActive ? "var(--green)" : "var(--sage)",
+                        fontFamily: "var(--font-body)",
+                        letterSpacing: "0.02em",
+                      }}>{node.initials}</span>
                     </div>
 
                     {/* Name + preview */}
