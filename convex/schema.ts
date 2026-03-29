@@ -645,6 +645,18 @@ export default defineSchema({
     .index("by_token", ["token"]),
 
   // ---------------------------------------------------------------------------
+  // Login Rate Limiting — tracks failed login attempts per IP (HIGH-3 fix)
+  // Convex-backed for serverless compatibility (replaces in-memory Map)
+  // ---------------------------------------------------------------------------
+  ourfable_login_attempts: defineTable({
+    ipKey: v.string(),
+    failedCount: v.number(),
+    lastFailedAt: v.number(),
+    lockedUntil: v.optional(v.number()),
+  })
+    .index("by_ipKey", ["ipKey"]),
+
+  // ---------------------------------------------------------------------------
   // 2FA Rate Limiting — tracks failed attempts per family (H1 fix)
   // ---------------------------------------------------------------------------
   ourfable_2fa_attempts: defineTable({

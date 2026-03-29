@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { subject, messageBody, mediaUrls, mediaType, memberIds, sentToAll } = body;
-    const familyId = body.familyId ?? session.familyId;
+    const familyId = session.familyId;
     const sentByName = body.sentByName;
 
     if (!familyId) return NextResponse.json({ error: "familyId is required" }, { status: 400 });

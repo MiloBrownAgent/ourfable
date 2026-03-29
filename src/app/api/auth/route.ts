@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { createSession, COOKIE, SESSION_MAX_AGE, checkLoginRateLimit, clearLoginRateLimit } from "@/lib/auth";
+import { createSession, COOKIE, SESSION_MAX_AGE, checkLoginRateLimit, clearLoginRateLimit, recordLoginFailure } from "@/lib/auth";
 import { getAccount, verifyPassword, needsHashUpgrade, hashPassword } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
@@ -31,12 +31,14 @@ export async function POST(req: NextRequest) {
   // Look up account (now async — queries Convex)
   const account = await getAccount(email);
   if (!account) {
-    return NextResponse.json({ error: "No account found for that email." }, { status: 401 });
+    await recordLoginFailure(ip);
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
   // Verify password
   if (!verifyPassword(password, account.passwordHash)) {
-    return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
+    await recordLoginFailure(ip);
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
   // Auth success — clear rate limit

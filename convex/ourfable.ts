@@ -4209,6 +4209,71 @@ export const consumeSignupToken = internalMutation({
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+// Login Rate Limiting — Convex-backed (HIGH-3 fix)
+// Replaces in-memory Map that doesn't work on serverless
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const checkLoginRateLimit = internalQuery({
+  args: { ipKey: v.string() },
+  handler: async (ctx, { ipKey }) => {
+    const record = await ctx.db
+      .query("ourfable_login_attempts")
+      .withIndex("by_ipKey", (q) => q.eq("ipKey", ipKey))
+      .first();
+    if (!record) return { allowed: true, remaining: 5 };
+
+    const now = Date.now();
+    if (record.lockedUntil && now < record.lockedUntil) {
+      return { allowed: false, remaining: 0, lockedUntil: record.lockedUntil };
+    }
+    if (now - record.lastFailedAt > 15 * 60 * 1000) {
+      return { allowed: true, remaining: 5 };
+    }
+    const remaining = Math.max(0, 5 - record.failedCount);
+    return { allowed: remaining > 0, remaining };
+  },
+});
+
+export const recordLoginFailure = internalMutation({
+  args: { ipKey: v.string() },
+  handler: async (ctx, { ipKey }) => {
+    const now = Date.now();
+    const record = await ctx.db
+      .query("ourfable_login_attempts")
+      .withIndex("by_ipKey", (q) => q.eq("ipKey", ipKey))
+      .first();
+
+    if (!record) {
+      await ctx.db.insert("ourfable_login_attempts", {
+        ipKey, failedCount: 1, lastFailedAt: now,
+      });
+      return;
+    }
+    if (now - record.lastFailedAt > 15 * 60 * 1000) {
+      await ctx.db.patch(record._id, { failedCount: 1, lastFailedAt: now, lockedUntil: undefined });
+      return;
+    }
+    const newCount = record.failedCount + 1;
+    const patch: Record<string, unknown> = { failedCount: newCount, lastFailedAt: now };
+    if (newCount >= 5) {
+      patch.lockedUntil = now + 15 * 60 * 1000;
+    }
+    await ctx.db.patch(record._id, patch);
+  },
+});
+
+export const clearLoginAttempts = internalMutation({
+  args: { ipKey: v.string() },
+  handler: async (ctx, { ipKey }) => {
+    const record = await ctx.db
+      .query("ourfable_login_attempts")
+      .withIndex("by_ipKey", (q) => q.eq("ipKey", ipKey))
+      .first();
+    if (record) await ctx.db.delete(record._id);
+  },
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 // 2FA Rate Limiting — Convex-backed (H1 fix)
 // ══════════════════════════════════════════════════════════════════════════════
 

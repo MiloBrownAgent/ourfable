@@ -48,7 +48,7 @@ function jsonResponse(data: unknown, status = 200) {
 // Body: { "fn": "ourfable:functionName", "args": {...}, "type": "query"|"mutation" }
 
 http.route({
-  path: "/api/internal",
+  path: "/internal",
   method: "POST",
   handler: httpAction(async (ctx, req) => {
     if (!(await validateSecret(req))) return unauthorized();

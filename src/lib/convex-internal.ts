@@ -23,7 +23,7 @@ export async function internalConvexQuery<T = unknown>(
   fn: string,
   args: Record<string, unknown> = {}
 ): Promise<T> {
-  const res = await fetch(`${CONVEX_URL}/api/internal`, {
+  const res = await fetch(`${CONVEX_URL}/internal`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export async function internalConvexMutation<T = unknown>(
   fn: string,
   args: Record<string, unknown> = {}
 ): Promise<T> {
-  const res = await fetch(`${CONVEX_URL}/api/internal`, {
+  const res = await fetch(`${CONVEX_URL}/internal`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

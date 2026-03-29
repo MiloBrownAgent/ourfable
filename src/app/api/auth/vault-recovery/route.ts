@@ -2,12 +2,13 @@
  * Vault Recovery API — handles encryption key re-wrapping and recovery code
  * verification during password reset flow.
  * 
- * SECURITY: These operations use internal Convex functions. The familyId
- * must be validated (exists in ourfable_families). The recovery code
- * consumption provides its own authorization (code must be valid).
+ * SECURITY: Both actions require a valid, unconsumed recovery code to prove
+ * the caller has legitimate access to the family's recovery material.
+ * updateEncryptedFamilyKey requires a recovery code hash to be verified first.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { verifySession, COOKIE } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,19 +16,40 @@ export async function POST(req: NextRequest) {
     const { action } = body as { action: string };
 
     if (action === "updateEncryptedFamilyKey") {
-      const { familyId, encryptedFamilyKey, keySalt } = body as {
+      const { familyId, encryptedFamilyKey, keySalt, codeHash } = body as {
         familyId: string;
         encryptedFamilyKey: string;
         keySalt: string;
+        codeHash?: string;
       };
       if (!familyId || !encryptedFamilyKey) {
         return NextResponse.json({ error: "Missing fields" }, { status: 400 });
       }
-      // Verify family exists
-      const family = await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId });
-      if (!family) {
-        return NextResponse.json({ error: "Family not found" }, { status: 404 });
+
+      // SECURITY: Require either a valid session OR a valid recovery code.
+      // During password reset, user won't have a session, so recovery code is the auth.
+      const sessionToken = req.cookies.get(COOKIE)?.value;
+      const session = sessionToken ? await verifySession(sessionToken) : null;
+
+      if (session) {
+        // Authenticated user — must be updating their own family
+        if (session.familyId !== familyId) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+      } else if (codeHash) {
+        // No session — must provide a valid recovery code as proof of ownership
+        try {
+          await internalConvexMutation("ourfable:verifyAndConsumeRecoveryCode", {
+            familyId,
+            codeHash,
+          });
+        } catch {
+          return NextResponse.json({ error: "Invalid recovery code" }, { status: 403 });
+        }
+      } else {
+        return NextResponse.json({ error: "Unauthorized — session or recovery code required" }, { status: 401 });
       }
+
       const result = await internalConvexMutation("ourfable:updateEncryptedFamilyKey", {
         familyId,
         encryptedFamilyKey,

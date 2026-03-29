@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Soft delete in Convex
-  await convexMutation("ourfable:softDeleteOurFableFamily", { familyId: session.familyId });
+  await internalConvexMutation("ourfable:softDeleteOurFableFamily", { familyId: session.familyId });
 
   // Delete Stripe customer if exists
   if (family.stripeCustomerId) {

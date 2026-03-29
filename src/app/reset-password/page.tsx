@@ -15,8 +15,6 @@ import {
   importKey,
 } from "@/lib/vault-encryption";
 
-const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
-
 // Route through the data proxy (which handles auth + routes to Convex internal gateway)
 async function convexQuery(path: string, args: Record<string, unknown>) {
   const res = await fetch("/api/ourfable/data", {

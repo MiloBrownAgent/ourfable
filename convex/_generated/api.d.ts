@@ -9,6 +9,7 @@
  */
 
 import type * as crons from "../crons.js";
+import type * as http from "../http.js";
 import type * as ourfable from "../ourfable.js";
 import type * as ourfableAI from "../ourfableAI.js";
 import type * as ourfableAudit from "../ourfableAudit.js";
@@ -28,6 +29,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
+  http: typeof http;
   ourfable: typeof ourfable;
   ourfableAI: typeof ourfableAI;
   ourfableAudit: typeof ourfableAudit;

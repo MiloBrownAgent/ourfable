@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const { memberId, testEmail } = body;
-    const familyId = body.familyId ?? session.familyId;
+    const familyId = session.familyId;
     if (!familyId) {
       return NextResponse.json({ error: "familyId is required" }, { status: 400 });
     }

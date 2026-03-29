@@ -85,9 +85,46 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
   } catch { return null; }
 }
 
-// ── Rate limiting (in-memory, per Edge instance) ──────────────────────────────
-// Lightweight — resets on cold start but good enough for auth brute-force protection
+// ── Rate limiting — Convex-backed for serverless (HIGH-3 fix) ──────────────
+// Uses Convex to persist rate limit state across serverless invocations.
+// Falls back to in-memory for non-login rate limiting (Edge middleware, etc.)
+// Note: Dynamic import of convex-internal to avoid loading in Edge middleware context.
 
+// Convex-backed login rate limiting (works on serverless)
+export async function checkLoginRateLimit(ip: string): Promise<{ allowed: boolean; remaining: number }> {
+  try {
+    const { internalConvexQuery } = await import("@/lib/convex-internal");
+    const result = await internalConvexQuery<{
+      allowed: boolean;
+      remaining: number;
+      lockedUntil?: number;
+    }>("ourfable:checkLoginRateLimit", { ipKey: `auth:${ip}` });
+    return result;
+  } catch {
+    // Fallback: allow if Convex is unreachable
+    return { allowed: true, remaining: 5 };
+  }
+}
+
+export async function recordLoginFailure(ip: string): Promise<void> {
+  try {
+    const { internalConvexMutation } = await import("@/lib/convex-internal");
+    await internalConvexMutation("ourfable:recordLoginFailure", { ipKey: `auth:${ip}` });
+  } catch {
+    // Non-fatal
+  }
+}
+
+export async function clearLoginRateLimit(ip: string): Promise<void> {
+  try {
+    const { internalConvexMutation } = await import("@/lib/convex-internal");
+    await internalConvexMutation("ourfable:clearLoginAttempts", { ipKey: `auth:${ip}` });
+  } catch {
+    // Non-fatal
+  }
+}
+
+// Legacy in-memory rate limiting (for Edge middleware and non-critical paths)
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
 export function checkRateLimit(key: string, maxAttempts = 5, windowMs = 15 * 60 * 1000): { allowed: boolean; remaining: number } {

@@ -129,7 +129,6 @@ const PUBLIC_QUERIES = new Set([
   "ourfable:getGift",
   "ourfable:getPromptByToken",
   "ourfable:getReferralByCode",
-  "ourfable:getRecoveryInfo",
 ]);
 
 // Queries that use token-based auth instead of familyId (circle member submissions)
