@@ -154,6 +154,8 @@ export default defineSchema({
       v.literal("quarterly"),
       v.literal("paused"),
     )),
+    // E2E encryption: invite key wrapped with family key (JSON-encoded WrappedKey)
+    encryptedInviteKey: v.optional(v.string()),
   })
     .index("by_familyId", ["familyId"])
     .index("by_inviteToken", ["inviteToken"])

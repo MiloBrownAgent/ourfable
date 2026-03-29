@@ -2,6 +2,12 @@
 import { use, useEffect, useState, useRef, useCallback } from "react";
 import { Check, Upload, X, Mic, Video, Square, Pen, Camera, Lock } from "lucide-react";
 import Image from "next/image";
+import {
+  importInviteKey,
+  encryptText,
+  serializeEncryptedText,
+  hashContent,
+} from "@/lib/vault-encryption";
 
 // All Convex calls go through /api/ourfable/data proxy
 
@@ -271,6 +277,35 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
+  // E2E encryption: read invite key from URL fragment or localStorage
+  const [inviteKey, setInviteKey] = useState<CryptoKey | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Check URL fragment first
+    const hash = window.location.hash;
+    const match = hash.match(/^#key=(.+)$/);
+    if (match) {
+      const b64 = decodeURIComponent(match[1]);
+      importInviteKey(b64)
+        .then(setInviteKey)
+        .catch((err) => console.error("[respond] Failed to import invite key:", err));
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  // Once data loads, try localStorage if no key from fragment
+  useEffect(() => {
+    if (inviteKey || !data?.memberId) return;
+    try {
+      const stored = localStorage.getItem(`ourfable_ik_${data.memberId}`);
+      if (stored) {
+        importInviteKey(stored)
+          .then(setInviteKey)
+          .catch((err) => console.error("[respond] Failed to import stored invite key:", err));
+      }
+    } catch {}
+  }, [inviteKey, data?.memberId]);
+
   useEffect(() => {
     async function load() {
       try {
@@ -377,8 +412,19 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
         type: tab,
         submissionToken: token,
       };
-      if (tab === "write") entryArgs.body = body;
-      if (tab === "photo") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = photoFile?.type; if (caption.trim()) entryArgs.body = caption; }
+      // Encrypt text content if invite key is available
+      const plaintext = tab === "write" ? body : (tab === "photo" && caption.trim() ? caption.trim() : "");
+      if (tab === "write" || (tab === "photo" && caption.trim())) {
+        if (inviteKey && plaintext) {
+          const encrypted = await encryptText(plaintext, inviteKey);
+          entryArgs.encryptedBody = serializeEncryptedText(encrypted);
+          entryArgs.contentHash = await hashContent(plaintext);
+          entryArgs.encryptionVersion = 1;
+        } else if (plaintext) {
+          entryArgs.body = plaintext;
+        }
+      }
+      if (tab === "photo") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = photoFile?.type; }
       if (tab === "voice") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = voiceFile?.type ?? "audio/mp4"; }
       if (tab === "video") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = videoFile?.type ?? "video/mp4"; }
       if (data.promptUnlocksAtAge) entryArgs.unlocksAtAge = data.promptUnlocksAtAge;

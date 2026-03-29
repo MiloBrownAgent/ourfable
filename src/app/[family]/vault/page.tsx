@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useChildContext } from "@/components/ChildContext";
 import { useVaultKey } from "@/lib/vault-key-context";
-import { decryptText, deserializeEncryptedText } from "@/lib/vault-encryption";
+import { decryptText, deserializeEncryptedText, unwrapInviteKey } from "@/lib/vault-encryption";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -949,7 +949,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
 
   const load = async () => {
     const queryArgs = childId ? { familyId, childId } : { familyId };
-    const [entriesRes, ourfableEntriesRes, familyRes] = await Promise.all([
+    const [entriesRes, ourfableEntriesRes, familyRes, circleRes] = await Promise.all([
       fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -965,7 +965,20 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
       }).then(r => r.json()),
+      fetch(`/api/ourfable/data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId }, format: "json" }),
+      }).then(r => r.json()),
     ]);
+
+    // Build map of memberId → encryptedInviteKey for decryption
+    const memberInviteKeys: Record<string, string> = {};
+    for (const m of (circleRes.value ?? [])) {
+      if (m.encryptedInviteKey) {
+        memberInviteKeys[m._id] = m.encryptedInviteKey;
+      }
+    }
 
     // Normalize legacy contributions entries
     // SECURITY: Strip content from sealed entries — parents see metadata only
@@ -995,11 +1008,27 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
 
     // Decrypt encrypted contribution entries if family key is available
     if (familyKey) {
+      // Cache unwrapped invite keys to avoid redundant unwraps
+      const inviteKeyCache: Record<string, CryptoKey> = {};
       for (const entry of legacyEntries) {
         if (entry.encryptedBody && !entry.textContent && !entry.isSealed) {
           try {
             const encrypted = deserializeEncryptedText(entry.encryptedBody);
-            entry.textContent = await decryptText(encrypted, familyKey);
+            // Try family key first (for parent-encrypted entries)
+            try {
+              entry.textContent = await decryptText(encrypted, familyKey);
+            } catch {
+              // If family key fails, try unwrapping the circle member's invite key
+              const wrappedKey = memberInviteKeys[entry.memberId];
+              if (wrappedKey) {
+                if (!inviteKeyCache[entry.memberId]) {
+                  inviteKeyCache[entry.memberId] = await unwrapInviteKey(wrappedKey, familyKey);
+                }
+                entry.textContent = await decryptText(encrypted, inviteKeyCache[entry.memberId]);
+              } else {
+                entry.textContent = "[Encrypted — unable to decrypt]";
+              }
+            }
           } catch (err) {
             console.error("[vault] Failed to decrypt contribution:", entry._id, err);
             entry.textContent = "[Encrypted — unable to decrypt]";
@@ -1050,6 +1079,8 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
             const encrypted = deserializeEncryptedText(entry.encryptedBody);
             entry.textContent = await decryptText(encrypted, familyKey);
           } catch (err) {
+            // ourfable_vault_entries won't have invite-key-encrypted content
+            // (those go through contributions), but handle gracefully
             console.error("[vault] Failed to decrypt entry:", entry._id, err);
             entry.textContent = "[Encrypted — unable to decrypt]";
           }

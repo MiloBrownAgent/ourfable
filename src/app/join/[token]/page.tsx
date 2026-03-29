@@ -2,6 +2,13 @@
 import { useState, useEffect, useRef, useCallback, use } from "react";
 import { Heart, Send, Check, Lock, Mic, Camera, Video, Pen, Square, X, Upload } from "lucide-react";
 import Image from "next/image";
+import {
+  importInviteKey,
+  encryptText,
+  encryptBlob,
+  serializeEncryptedText,
+  hashContent,
+} from "@/lib/vault-encryption";
 
 // All Convex calls go through /api/ourfable/data proxy
 
@@ -107,6 +114,30 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
 
   const [recorderError, setRecorderError] = useState("");
   const [uploadStatus, setUploadStatus] = useState("");
+
+  // E2E encryption: read invite key from URL fragment
+  const [inviteKey, setInviteKey] = useState<CryptoKey | null>(null);
+  const inviteKeyB64Ref = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    const match = hash.match(/^#key=(.+)$/);
+    if (match) {
+      const b64 = decodeURIComponent(match[1]);
+      inviteKeyB64Ref.current = b64;
+      importInviteKey(b64)
+        .then(setInviteKey)
+        .catch((err) => console.error("[join] Failed to import invite key:", err));
+      // Strip the key from the URL bar to prevent accidental sharing
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  // Once we know the memberId, persist the invite key for future respond pages
+  useEffect(() => {
+    if (!member || !inviteKeyB64Ref.current) return;
+    try { localStorage.setItem(`ourfable_ik_${member._id}`, inviteKeyB64Ref.current); } catch {}
+  }, [member]);
 
   useEffect(() => {
     fetch(`/api/ourfable/data`, {
@@ -373,11 +404,18 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
         contentType,
       };
 
-      // Include text
-      if (tab === "write" && body.trim()) {
-        entryArgs.body = body.trim();
-      } else if (tab === "photo" && caption.trim()) {
-        entryArgs.body = caption.trim();
+      // Include text — encrypt if invite key is available
+      const plaintext = tab === "write" ? body.trim() : (tab === "photo" ? caption.trim() : "");
+      if (plaintext) {
+        if (inviteKey) {
+          const encrypted = await encryptText(plaintext, inviteKey);
+          entryArgs.encryptedBody = serializeEncryptedText(encrypted);
+          entryArgs.contentHash = await hashContent(plaintext);
+          entryArgs.encryptionVersion = 1;
+          // Don't send plaintext body when encrypted
+        } else {
+          entryArgs.body = plaintext;
+        }
       }
 
       // Include media

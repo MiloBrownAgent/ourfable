@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { memberId, testEmail } = body;
+    const { memberId, testEmail, inviteUrl: clientInviteUrl } = body;
     const familyId = session.familyId;
     if (!familyId) {
       return NextResponse.json({ error: "familyId is required" }, { status: 400 });
@@ -221,7 +221,8 @@ export async function POST(req: NextRequest) {
     const childFirst = childFirstName(family.childName);
 
     const baseUrl = `https://ourfable.ai`;
-    const inviteUrl = `${baseUrl}/join/${member.inviteToken}`;
+    // Use client-provided invite URL (includes #key fragment for E2E encryption) if available
+    const inviteUrl = clientInviteUrl || `${baseUrl}/join/${member.inviteToken}`;
     // Parent names for footer — pulled from familyName or hardcoded for Sweeney
     const parentNames = family.parentNames ?? "the family";
 

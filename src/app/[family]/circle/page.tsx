@@ -3,6 +3,8 @@ import { useState, useEffect, use } from "react";
 import { Users, Copy, Check, ExternalLink, MapPin, Plus, X, Mail, Loader2, Sparkles, ArrowRight, ChevronDown, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useChildContext } from "@/components/ChildContext";
+import { useVaultKey } from "@/lib/vault-key-context";
+import { generateInviteKeyRaw, wrapInviteKey, unwrapInviteKey, exportKey } from "@/lib/vault-encryption";
 
 // All mutations routed through the auth proxy at /api/ourfable/data
 
@@ -11,6 +13,7 @@ interface CircleMember {
   email?: string; phone?: string; city?: string;
   inviteToken: string; shareToken: string; hasAccepted: boolean;
   contributionCount?: number; lastActiveAt?: number;
+  encryptedInviteKey?: string;
 }
 
 function CopyBtn({ text }: { text: string }) {
@@ -227,7 +230,26 @@ function HeadsUpNudge({ text, memberName, sent }: { text: string; memberName: st
 
 function MemberCard({ member, familyId, activeChildId }: { member: CircleMember; familyId: string; activeChildId?: string }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const inviteUrl = `${origin}/join/${member.inviteToken}`;
+  const { familyKey } = useVaultKey();
+  const [inviteKeyFragment, setInviteKeyFragment] = useState<string | null>(null);
+
+  // Unwrap the invite key to build the full invite URL with fragment
+  useEffect(() => {
+    if (!familyKey || !member.encryptedInviteKey) return;
+    (async () => {
+      try {
+        const inviteKey = await unwrapInviteKey(member.encryptedInviteKey!, familyKey);
+        const rawB64 = await exportKey(inviteKey);
+        setInviteKeyFragment(rawB64);
+      } catch (err) {
+        console.error("[circle] Failed to unwrap invite key for", member.name, err);
+      }
+    })();
+  }, [familyKey, member.encryptedInviteKey, member.name]);
+
+  const inviteUrl = inviteKeyFragment
+    ? `${origin}/join/${member.inviteToken}#key=${encodeURIComponent(inviteKeyFragment)}`
+    : `${origin}/join/${member.inviteToken}`;
   const shareUrl = `${origin}/${familyId}/share/${member.shareToken}`;
   const initials = member.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   const [sending, setSending] = useState(false);
@@ -240,7 +262,7 @@ function MemberCard({ member, familyId, activeChildId }: { member: CircleMember;
       const res = await fetch("/api/ourfable/send-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId: member._id, familyId }),
+        body: JSON.stringify({ memberId: member._id, familyId, inviteUrl }),
       });
       const d = await res.json();
       if (res.ok) setSent(true); else setSendErr(d.error ?? "Failed");
@@ -337,6 +359,7 @@ const REL_OPTIONS = [
 ];
 
 function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: () => void; onAdded: () => void }) {
+  const { familyKey } = useVaultKey();
   const [name, setName] = useState(""); const [rel, setRel] = useState(REL_OPTIONS[0].label);
   const [email, setEmail] = useState(""); const [city, setCity] = useState("");
   const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
@@ -353,7 +376,28 @@ function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: (
         body: JSON.stringify({ path: "ourfable:addCircleMember", args: { familyId, name: name.trim(), relationship: rel, relationshipKey: relObj?.key ?? "other", ...(email.trim() ? { email: email.trim() } : {}), ...(city.trim() ? { city: city.trim() } : {}) }, type: "mutation" }),
       });
       const d = await res.json();
-      if (d.value) { onAdded(); onClose(); } else setErr("Something went wrong");
+      if (d.value) {
+        // Generate and store invite encryption key if family key is available
+        if (familyKey) {
+          try {
+            const rawKey = generateInviteKeyRaw();
+            const wrappedJson = await wrapInviteKey(rawKey, familyKey);
+            await fetch(`/api/ourfable/data`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                path: "ourfable:setMemberInviteKey",
+                args: { memberId: d.value, encryptedInviteKey: wrappedJson },
+                type: "mutation",
+              }),
+            });
+          } catch (keyErr) {
+            console.error("[circle] Failed to generate invite key:", keyErr);
+            // Non-fatal — member was created, just without E2E encryption
+          }
+        }
+        onAdded(); onClose();
+      } else setErr("Something went wrong");
     } catch { setErr("Network error"); } finally { setSaving(false); }
   };
 

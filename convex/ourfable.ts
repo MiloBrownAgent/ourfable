@@ -452,6 +452,16 @@ export const addCircleMember = internalMutation({
   },
 });
 
+export const setMemberInviteKey = internalMutation({
+  args: {
+    memberId: v.id("ourfable_vault_circle"),
+    encryptedInviteKey: v.string(),
+  },
+  handler: async (ctx, { memberId, encryptedInviteKey }) => {
+    await ctx.db.patch(memberId, { encryptedInviteKey });
+  },
+});
+
 export const seedCircle = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
@@ -512,13 +522,19 @@ export const submitContribution = internalMutation({
       await ctx.db.insert("ourfable_vault_entries", {
         familyId: args.familyId,
         type: vaultType,
-        content: args.body,
+        content: args.encryptedBody ? undefined : args.body,
         mediaUrl: resolvedMediaUrl,
         authorEmail: member.email ?? "circle@ourfable.ai",
         authorName: member.name,
         isSealed: !isOpen,
         createdAt: Date.now(),
         sourceType: "letter",
+        // Pass through encryption fields
+        ...(args.encryptedBody ? {
+          encryptedBody: args.encryptedBody,
+          contentHash: args.contentHash,
+          encryptionVersion: args.encryptionVersion,
+        } : {}),
       });
 
       // Reset consecutiveMissed for the matching ourfable_circle_member (if any)

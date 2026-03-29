@@ -305,12 +305,58 @@ export async function hashBlob(blob: Blob): Promise<string> {
     .join("");
 }
 
-// ── Invite Key Derivation ────────────────────────────────────────────────────
+// ── Invite Key Management ────────────────────────────────────────────────────
 
 /**
- * Derive an encryption key from an invite token (for circle members).
- * The invite token contains entropy from the URL fragment (after #).
- * This lets circle members encrypt content without having the family key directly.
+ * Generate a random 32-byte invite key as a base64 string.
+ * This key goes in the URL fragment (never sent to server).
+ */
+export function generateInviteKeyRaw(): string {
+  return toBase64(getRandomBytes(32));
+}
+
+/**
+ * Import a base64 invite key from the URL fragment into a CryptoKey.
+ */
+export async function importInviteKey(b64Key: string): Promise<CryptoKey> {
+  const raw = fromBase64(b64Key);
+  return getSubtleCrypto().importKey(
+    "raw",
+    raw,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * Wrap (encrypt) an invite key with the family key using AES-GCM.
+ * Returns a JSON string of { wrappedKey, iv } for storage in Convex.
+ */
+export async function wrapInviteKey(
+  inviteKeyB64: string,
+  familyKey: CryptoKey
+): Promise<string> {
+  const inviteKey = await importInviteKey(inviteKeyB64);
+  const wrapped = await wrapFamilyKey(inviteKey, familyKey);
+  return JSON.stringify(wrapped);
+}
+
+/**
+ * Unwrap (decrypt) an invite key using the family key.
+ * Takes the JSON string stored on the member record.
+ */
+export async function unwrapInviteKey(
+  wrappedJson: string,
+  familyKey: CryptoKey
+): Promise<CryptoKey> {
+  const wrapped: WrappedKey = JSON.parse(wrappedJson);
+  return unwrapFamilyKey(wrapped, familyKey);
+}
+
+/**
+ * Legacy: Derive an encryption key from an invite token (for circle members).
+ * @deprecated Use generateInviteKeyRaw + importInviteKey instead.
  */
 export async function deriveInviteKey(inviteToken: string): Promise<CryptoKey> {
   const subtle = getSubtleCrypto();
@@ -322,7 +368,6 @@ export async function deriveInviteKey(inviteToken: string): Promise<CryptoKey> {
     ["deriveBits", "deriveKey"]
   );
 
-  // Use a fixed salt for invite keys (token itself provides entropy)
   const salt = new TextEncoder().encode("ourfable-invite-v1");
 
   return subtle.deriveKey(
