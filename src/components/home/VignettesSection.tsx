@@ -9,15 +9,15 @@ export function LetterMomentSection() {
         <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center", position: "relative" }}>
           <div style={{ width: 48, height: 1, background: "rgba(201,169,110,0.4)", margin: "0 auto 40px" }} />
           <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontWeight: 500, fontSize: "clamp(1.25rem, 3vw, 2.4rem)", lineHeight: 1.6, color: "#FFFFFF", marginBottom: 32 }}>
-            &ldquo;Imagine your child at 18, opening a voice memo from their great-grandmother — recorded when they were 9 months old.
+            &ldquo;Your daughter turns 13 and opens a letter from her aunt — written when she was six weeks old.
             <br /><br />
-            Singing the lullaby she sang to everyone in the family.
+            It&apos;s about the first time she held her. How tiny her fingers were. How she smelled like milk and laundry detergent.
             <br /><br />
-            In a voice your child will recognize instantly.&rdquo;
+            She reads it three times.&rdquo;
           </p>
           <div style={{ width: 48, height: 1, background: "rgba(201,169,110,0.4)", margin: "0 auto 32px" }} />
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: 500, margin: "0 auto" }}>
-            Our Fable makes this happen because once a month, it asked. She answered. Her voice is in the Vault — sealed, waiting for the perfect moment.
+            That letter exists because once a month, Our Fable asked. Her aunt answered. And it waited — sealed in the vault — for the right moment.
           </p>
         </div>
       </Reveal>
@@ -43,14 +43,14 @@ const VIGNETTES = [
   {
     who: "Your best friend from college",
     age: "Knew you before any of this",
-    excerpt: "She wrote about who you were before you became someone's parent — the road trips, the bad decisions, the version of you your child will never meet. Things they'd never find out any other way.",
+    excerpt: "She wrote about the road trip where you got lost in New Mexico and slept in the car. About the version of you that existed before parenthood. Things your child would never hear otherwise.",
     seal: "Sealed until graduation.",
     color: "var(--gold)",
   },
   {
     who: "Grandma",
     age: "Lives two states away",
-    excerpt: "She's not good with technology. She said so herself. But she clicked the link, hit record, and sang the lullaby her mother sang to her. In a language your child doesn't speak yet.",
+    excerpt: "She's not good with technology. She said so herself. But she clicked the link, hit record, and sang the lullaby her mother sang to her. Three generations of the same melody, now in the vault.",
     seal: "Sealed until age 13.",
     color: "var(--sage)",
   },
@@ -63,9 +63,12 @@ export function VignettesSection() {
         <Reveal>
           <div style={{ textAlign: "center", marginBottom: 80 }}>
             <p className="label label-green" style={{ marginBottom: 16 }}>Why it matters</p>
-            <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, maxWidth: 600, margin: "0 auto" }}>
-              The people who love your child<br />have stories worth keeping.
+            <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, maxWidth: 600, margin: "0 auto 20px" }}>
+              Every person in your child&apos;s life<br />sees them differently.
             </h2>
+            <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.8, maxWidth: 520, margin: "0 auto" }}>
+              Grandpa tells the farm stories. Your college roommate remembers who you were at 22. Uncle Mike makes everyone laugh. Grandma sings. Our Fable collects all of it — every perspective, every voice, every version of the truth.
+            </p>
           </div>
         </Reveal>
 
@@ -152,7 +155,7 @@ export function VideoMomentSection() {
             color: "var(--text)",
             marginBottom: 40,
           }}>
-            There&apos;s nothing like hearing someone&apos;s voice — really hearing it — years later.
+            A photo captures a face.<br />A video captures a person.
           </p>
 
           <p style={{
@@ -162,7 +165,17 @@ export function VideoMomentSection() {
             marginBottom: 28,
             maxWidth: 580,
           }}>
-            Not a photo. Not a story someone else told you. A video. Grandma, looking at the camera, saying your child&apos;s name. Laughing the way she laughs. Telling them what she hopes for them.
+            Grandma looking at the camera, saying your child&apos;s name. The way she laughs. The way she tilts her head when she&apos;s thinking about what to say next. The pause before she says &ldquo;I love you.&rdquo;
+          </p>
+
+          <p style={{
+            fontSize: 18,
+            lineHeight: 1.9,
+            color: "var(--text-2)",
+            marginBottom: 28,
+            maxWidth: 580,
+          }}>
+            Uncle Mike doing his terrible impression. Dad reading a bedtime story at midnight, half-asleep, making up the ending. Your neighbor telling the story of the day you moved in.
           </p>
 
           <p style={{
@@ -172,7 +185,7 @@ export function VideoMomentSection() {
             marginBottom: 48,
             maxWidth: 580,
           }}>
-            Your child could have that. From you. From their grandparents. From everyone who loves them right now. That&apos;s the magic of a vault that collects voices, not just words.
+            These aren&apos;t just memories. They&apos;re people — being exactly who they are, preserved exactly as they were.
           </p>
 
           <div style={{
@@ -187,7 +200,7 @@ export function VideoMomentSection() {
               color: "var(--text)",
               marginBottom: 12,
             }}>
-              &ldquo;Every person in your child&apos;s circle can record a video message directly into the Vault. No app. No login. Just a link in their email and a button that says record.&rdquo;
+              &ldquo;No app. No login. Just a link in their email and a button that says record. Anyone in the circle can leave a video message for the vault.&rdquo;
             </p>
             <p style={{
               fontSize: 13,
@@ -204,4 +217,3 @@ export function VideoMomentSection() {
     </section>
   );
 }
-
