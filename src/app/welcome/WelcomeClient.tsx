@@ -8,7 +8,7 @@ import Link from "next/link";
 
 interface SampleEntry {
   id: number;
-  timeLabel: string;
+  monthOffset: number; // months after DOB
   author: string;
   initials: string;
   type: "letter" | "voice" | "photo" | "video";
@@ -16,21 +16,51 @@ interface SampleEntry {
   duration?: string;
 }
 
-// ─── Sample Data (child name injected dynamically) ──────────────────────────
+// ─── Sample Data ────────────────────────────────────────────────────────────
 
 function getSampleEntries(childName: string): SampleEntry[] {
+  const c = childName;
   return [
-    { id: 1, timeLabel: "Month 1", author: "Grandma Ruth", initials: "GR", type: "letter", preview: `The day you were born, I held you and whispered: you are the best thing that ever happened to us.` },
-    { id: 2, timeLabel: "Month 3", author: "Uncle James", initials: "UJ", type: "voice", preview: "Voice Recording", duration: "0:42" },
-    { id: 3, timeLabel: "Month 6", author: "Aunt Maria", initials: "AM", type: "photo", preview: `This is from the first time I held you.` },
-    { id: 4, timeLabel: "Month 9", author: "Grandpa Joe", initials: "GJ", type: "letter", preview: `There's something I never told anyone about the night you were born...` },
-    { id: 5, timeLabel: "Month 12", author: "Mom & Dad", initials: "M&D", type: "video", preview: "Video Message", duration: "1:23" },
-    { id: 6, timeLabel: "Month 18", author: "Family Friend Sarah", initials: "FS", type: "letter", preview: `Your parents are the best people I know. Here's why...` },
-    { id: 7, timeLabel: "Year 2", author: "Grandma Ruth", initials: "GR", type: "voice", preview: "Voice Recording", duration: "3:17" },
-    { id: 8, timeLabel: "Year 3", author: "Uncle James", initials: "UJ", type: "photo", preview: `You won't believe how small you were` },
-    { id: 9, timeLabel: "Year 5", author: "Aunt Maria", initials: "AM", type: "letter", preview: `I hope you grow up knowing how fiercely you are loved` },
-    { id: 10, timeLabel: "Year 10", author: "Grandpa Joe", initials: "GJ", type: "video", preview: "Video Message", duration: "2:45" },
+    { id: 1, monthOffset: 0, author: "Mom", initials: "M", type: "letter", preview: `You're here. I've been waiting my whole life to meet you and I didn't even know it.` },
+    { id: 2, monthOffset: 1, author: "Grandma Ruth", initials: "GR", type: "letter", preview: `I sang you 'You Are My Sunshine' today and you grabbed my finger. I don't ever want to forget that.` },
+    { id: 3, monthOffset: 2, author: "Uncle James", initials: "UJ", type: "voice", preview: "Voice Recording", duration: "1:12" },
+    { id: 4, monthOffset: 4, author: "Dad", initials: "D", type: "letter", preview: `You said 'dada' today. Your mom pretended she wasn't jealous. She was.` },
+    { id: 5, monthOffset: 5, author: "Aunt Maria", initials: "AM", type: "photo", preview: `You have your mama's eyes. Don't tell her I said that.` },
+    { id: 6, monthOffset: 7, author: "Grandpa Joe", initials: "GJ", type: "letter", preview: `When your dad was your age, he used to fall asleep on my chest just like you do now.` },
+    { id: 7, monthOffset: 9, author: "Family Friend Sarah", initials: "FS", type: "letter", preview: `Your parents don't know this yet but they're the best parents I've ever seen.` },
+    { id: 8, monthOffset: 12, author: "Mom & Dad", initials: "M&D", type: "video", preview: "Video Message", duration: "2:14" },
+    { id: 9, monthOffset: 14, author: "Grandma Ruth", initials: "GR", type: "voice", preview: "Voice Recording", duration: "3:17" },
+    { id: 10, monthOffset: 18, author: "Uncle James", initials: "UJ", type: "photo", preview: `You won't believe how small you were.` },
+    { id: 11, monthOffset: 24, author: "Aunt Maria", initials: "AM", type: "letter", preview: `I hope you grow up knowing how fiercely you are loved.` },
+    { id: 12, monthOffset: 30, author: "Grandpa Joe", initials: "GJ", type: "letter", preview: `Took you fishing today. You threw the rod in the lake. Best day of my life.` },
+    { id: 13, monthOffset: 36, author: "Dad", initials: "D", type: "voice", preview: "Voice Recording", duration: "0:48" },
+    { id: 14, monthOffset: 48, author: "Mom", initials: "M", type: "letter", preview: `You asked me where people go when they die. I didn't have a good answer. I'm still thinking about it.` },
+    { id: 15, monthOffset: 60, author: "Grandma Ruth", initials: "GR", type: "letter", preview: `Five already. Slow down, baby.` },
+    { id: 16, monthOffset: 72, author: "Family Friend Sarah", initials: "FS", type: "photo", preview: `Your birthday party. Pure chaos. Pure joy.` },
+    { id: 17, monthOffset: 84, author: "Uncle James", initials: "UJ", type: "letter", preview: `You beat me at chess today. I wasn't going easy on you.` },
+    { id: 18, monthOffset: 96, author: "Aunt Maria", initials: "AM", type: "voice", preview: "Voice Recording", duration: "1:34" },
+    { id: 19, monthOffset: 120, author: "Grandpa Joe", initials: "GJ", type: "video", preview: "Video Message", duration: "2:45" },
+    { id: 20, monthOffset: 144, author: "Mom & Dad", initials: "M&D", type: "letter", preview: `We're so proud of the person you're becoming, ${c}. Every single day.` },
+    { id: 21, monthOffset: 156, author: "Grandma Ruth", initials: "GR", type: "letter", preview: `Thirteen years of letters. You'll understand someday.` },
+    { id: 22, monthOffset: 168, author: "Dad", initials: "D", type: "letter", preview: `I still remember the weight of you in my arms. Fourteen years.` },
+    { id: 23, monthOffset: 180, author: "Mom", initials: "M", type: "letter", preview: `Almost time. I hope you feel what I feel reading these back.` },
   ];
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatMonthOffset(dob: string, monthOffset: number): string {
+  if (!dob) {
+    if (monthOffset < 12) return `Month ${monthOffset || 1}`;
+    return `Year ${Math.floor(monthOffset / 12)}`;
+  }
+  const d = new Date(dob + "T00:00:00");
+  d.setMonth(d.getMonth() + monthOffset);
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function countUniquePeople(entries: SampleEntry[]): number {
+  return new Set(entries.map(e => e.author)).size;
 }
 
 const TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string }> = {
@@ -42,7 +72,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string }> = {
 
 // ─── Vault Entry Card ───────────────────────────────────────────────────────
 
-function VaultEntryCard({ entry, visible }: { entry: SampleEntry; visible: boolean }) {
+function VaultEntryCard({ entry, visible, dob }: { entry: SampleEntry; visible: boolean; dob: string }) {
   const typeInfo = TYPE_CONFIG[entry.type];
 
   return (
@@ -60,7 +90,7 @@ function VaultEntryCard({ entry, visible }: { entry: SampleEntry; visible: boole
         color: "rgba(200,168,122,0.6)", marginBottom: 10,
         fontFamily: "var(--font-body)",
       }}>
-        {entry.timeLabel}
+        {formatMonthOffset(dob, entry.monthOffset)}
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
@@ -97,9 +127,7 @@ function VaultEntryCard({ entry, visible }: { entry: SampleEntry; visible: boole
           )}
 
           {entry.type === "voice" && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
-            }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: "50%",
                 background: "rgba(200,168,122,0.15)", border: "1px solid rgba(200,168,122,0.3)",
@@ -131,9 +159,7 @@ function VaultEntryCard({ entry, visible }: { entry: SampleEntry; visible: boole
           )}
 
           {entry.type === "video" && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
-            }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: "50%",
                 background: "rgba(200,168,122,0.15)", border: "1px solid rgba(200,168,122,0.3)",
@@ -197,23 +223,21 @@ export default function WelcomeClient() {
   const [childDob, setChildDob] = useState(dobParam || "");
   const [familyId, setFamilyId] = useState(directFamilyId || "");
   const [visibleCount, setVisibleCount] = useState(0);
-  const [memoryCounter, setMemoryCounter] = useState(0);
-  const [showOverlay1, setShowOverlay1] = useState(false);
-  const [showOverlay2, setShowOverlay2] = useState(false);
-  const [showFinalCounter, setShowFinalCounter] = useState(false);
+  const [voiceCounter, setVoiceCounter] = useState(0);
+  const [showFinalText, setShowFinalText] = useState(false);
   const [skipped, setSkipped] = useState(false);
   const vaultRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<{ timers: ReturnType<typeof setTimeout>[] }>({ timers: [] });
 
   const childFirst = (childName || "your child").split(" ")[0];
   const entries = getSampleEntries(childFirst);
+  const uniquePeopleCount = countUniquePeople(entries);
 
-  // Calculate years until vault opens (age 18)
-  const getYearsUntilOpen = useCallback(() => {
-    if (!childDob) return 18;
+  // Calculate vault open year
+  const getVaultOpenYear = useCallback(() => {
+    if (!childDob) return new Date().getFullYear() + 18;
     const dob = new Date(childDob + "T00:00:00");
-    const now = new Date();
-    const ageYears = (now.getTime() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-    return Math.max(1, Math.round(18 - ageYears));
+    return dob.getFullYear() + 18;
   }, [childDob]);
 
   // Load data from Stripe session or params
@@ -221,19 +245,18 @@ export default function WelcomeClient() {
     async function load() {
       if (bypass) {
         setChildName(childParam || "Oliver");
+        setChildDob(dobParam || "2025-06-15");
         setFamilyId("demo");
         setPhase("reveal");
         return;
       }
 
       if (childParam) {
-        // Came from signup with query params
         setPhase("reveal");
         return;
       }
 
       if (directFamilyId && !childParam) {
-        // Old flow: redirect to onboarding (no child name in params)
         router.replace(`/${directFamilyId}/onboarding`);
         return;
       }
@@ -248,6 +271,7 @@ export default function WelcomeClient() {
         if (res.ok) {
           const d = await res.json();
           setChildName(d.childName || "your child");
+          setChildDob(d.childDob || "");
           setFamilyId(d.familyId || "");
           setPhase("reveal");
         } else {
@@ -258,69 +282,73 @@ export default function WelcomeClient() {
       }
     }
     load();
-  }, [sessionId, bypass, childParam, directFamilyId, router]);
+  }, [sessionId, bypass, childParam, directFamilyId, dobParam, router]);
 
-  // Phase: reveal → vault (after name animation)
+  // Phase: reveal → vault
   useEffect(() => {
     if (phase !== "reveal") return;
     const timer = setTimeout(() => setPhase("vault"), 2800);
     return () => clearTimeout(timer);
   }, [phase]);
 
-  // Phase: vault — animate entries appearing + auto-scroll
+  // Phase: vault — accelerating entry reveals + auto-scroll
   useEffect(() => {
     if (phase !== "vault" || skipped) return;
 
-    // Stagger entry reveals
-    let count = 0;
-    const revealInterval = setInterval(() => {
-      count++;
-      setVisibleCount(count);
-      setMemoryCounter(count);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    animationRef.current.timers = timers;
+    const total = entries.length;
 
-      // Scroll down smoothly
-      if (vaultRef.current) {
-        vaultRef.current.scrollTo({
-          top: vaultRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-      }
+    // Calculate accelerating delays
+    // First 4: 800ms, then ramp down to 100ms
+    function getDelay(index: number): number {
+      if (index < 4) return 800;
+      if (index < 8) return 500;
+      if (index < 12) return 300;
+      if (index < 16) return 200;
+      return 100;
+    }
 
-      if (count >= entries.length) {
-        clearInterval(revealInterval);
-      }
-    }, 600);
+    let cumulativeDelay = 0;
+    for (let i = 0; i < total; i++) {
+      cumulativeDelay += getDelay(i);
+      const idx = i + 1;
+      const t = setTimeout(() => {
+        setVisibleCount(idx);
+        setVoiceCounter(idx);
 
-    // Show overlay text mid-scroll
-    const overlay1Timer = setTimeout(() => setShowOverlay1(true), 2500);
-    const overlay2Timer = setTimeout(() => setShowOverlay2(true), 4200);
+        // Auto-scroll
+        if (vaultRef.current) {
+          vaultRef.current.scrollTo({
+            top: vaultRef.current.scrollHeight,
+            behavior: idx <= 4 ? "smooth" : "auto",
+          });
+        }
+      }, cumulativeDelay);
+      timers.push(t);
+    }
 
-    // Show final counter and transition to CTA
-    const finalTimer = setTimeout(() => {
-      setShowFinalCounter(true);
-    }, entries.length * 600 + 400);
+    // Show final text after all entries
+    const finalDelay = cumulativeDelay + 800;
+    timers.push(setTimeout(() => setShowFinalText(true), finalDelay));
 
-    const ctaTimer = setTimeout(() => {
-      setPhase("cta");
-    }, entries.length * 600 + 2500);
+    // Transition to CTA
+    timers.push(setTimeout(() => setPhase("cta"), finalDelay + 3000));
 
-    return () => {
-      clearInterval(revealInterval);
-      clearTimeout(overlay1Timer);
-      clearTimeout(overlay2Timer);
-      clearTimeout(finalTimer);
-      clearTimeout(ctaTimer);
-    };
+    return () => timers.forEach(clearTimeout);
   }, [phase, skipped, entries.length]);
 
   // Skip handler
   const handleSkip = useCallback(() => {
+    animationRef.current.timers.forEach(clearTimeout);
     setSkipped(true);
     setPhase("cta");
   }, []);
 
-  const dashboardPath = familyId ? `/${familyId}` : "/login";
-  const circlePath = familyId ? `/${familyId}/circle` : "/login";
+  const dashboardPath = familyId && familyId !== "demo" ? `/${familyId}` : "/login";
+  const circlePath = familyId && familyId !== "demo" ? `/${familyId}/circle` : "/login";
+
+  const BG = "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)";
 
   // ─── Loading ──────────────────────────────────────────────────────────────
 
@@ -328,9 +356,11 @@ export default function WelcomeClient() {
     return (
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: "#1b4332",
+        background: BG,
       }}>
-        <p style={{ fontSize: 13, color: "rgba(253,251,247,0.4)" }}>Preparing your vault…</p>
+        <p style={{ fontSize: 13, color: "rgba(253,251,247,0.4)", fontFamily: "var(--font-body)" }}>
+          Preparing your vault…
+        </p>
       </div>
     );
   }
@@ -342,7 +372,7 @@ export default function WelcomeClient() {
       <div style={{
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
-        background: "#1b4332", padding: "40px 24px",
+        background: BG, padding: "40px 24px",
         position: "relative", overflow: "hidden",
       }}>
         {/* Skip */}
@@ -350,7 +380,7 @@ export default function WelcomeClient() {
           position: "absolute", top: 20, right: 20,
           background: "none", border: "none", color: "rgba(253,251,247,0.3)",
           fontSize: 13, cursor: "pointer", padding: "8px 12px",
-          zIndex: 10,
+          fontFamily: "var(--font-body)", zIndex: 10,
         }}>
           Skip
         </button>
@@ -396,14 +426,14 @@ export default function WelcomeClient() {
     return (
       <div style={{
         minHeight: "100vh", display: "flex", flexDirection: "column",
-        background: "#1b4332", position: "relative", overflow: "hidden",
+        background: BG, position: "relative", overflow: "hidden",
       }}>
         {/* Skip */}
         <button onClick={handleSkip} style={{
           position: "absolute", top: 20, right: 20,
           background: "none", border: "none", color: "rgba(253,251,247,0.3)",
           fontSize: 13, cursor: "pointer", padding: "8px 12px",
-          zIndex: 20,
+          fontFamily: "var(--font-body)", zIndex: 20,
         }}>
           Skip
         </button>
@@ -415,11 +445,11 @@ export default function WelcomeClient() {
           zIndex: 0,
         }} />
 
-        {/* Memory counter */}
+        {/* Voice counter */}
         <div style={{
           position: "sticky", top: 0, zIndex: 10,
           padding: "20px 24px 16px",
-          background: "linear-gradient(180deg, #1b4332 60%, transparent)",
+          background: "linear-gradient(180deg, #1C2B1E 60%, transparent)",
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <p style={{
@@ -433,7 +463,7 @@ export default function WelcomeClient() {
               fontFamily: "var(--font-body)", fontSize: 12,
               color: "rgba(200,168,122,0.7)",
             }}>
-              {memoryCounter} {memoryCounter === 1 ? "memory" : "memories"} sealed
+              {voiceCounter} {voiceCounter === 1 ? "voice" : "voices"}. Waiting for {childFirst}.
             </p>
           </div>
         </div>
@@ -449,68 +479,35 @@ export default function WelcomeClient() {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
             {entries.map((entry, i) => (
-              <VaultEntryCard key={entry.id} entry={entry} visible={i < visibleCount} />
+              <VaultEntryCard key={entry.id} entry={entry} visible={i < visibleCount} dob={childDob} />
             ))}
           </div>
 
-          {/* Final counter */}
-          {showFinalCounter && (
-            <div className="final-counter" style={{
+          {/* Final glowing text */}
+          {showFinalText && (
+            <div className="final-glow" style={{
               textAlign: "center", padding: "40px 20px", marginTop: 20,
             }}>
               <p style={{
                 fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 300,
                 fontStyle: "italic", color: "#FDFBF7", lineHeight: 1.4,
               }}>
-                🔒 10 of ∞ memories sealed
+                🔒 {entries.length} memories from {uniquePeopleCount} people who love {childFirst}.
               </p>
               <p style={{
-                fontSize: 13, color: "rgba(200,168,122,0.7)", marginTop: 8,
+                fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 300,
+                fontStyle: "italic", color: "rgba(200,168,122,0.7)", marginTop: 8,
               }}>
-                {childFirst}&apos;s vault opens in {getYearsUntilOpen()} years
+                Sealed until they&apos;re ready. Opening {getVaultOpenYear()}.
               </p>
             </div>
           )}
         </div>
 
-        {/* Emotional copy overlays */}
-        {showOverlay1 && (
-          <div className="emotional-overlay" style={{
-            position: "fixed", bottom: 100, left: 0, right: 0,
-            textAlign: "center", padding: "0 30px",
-            pointerEvents: "none", zIndex: 15,
-          }}>
-            <p style={{
-              fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 300,
-              fontStyle: "italic", color: "rgba(253,251,247,0.6)",
-              textShadow: "0 2px 20px rgba(27,67,50,0.8)",
-              lineHeight: 1.5,
-            }}>
-              This is what {childFirst}&apos;s vault will look like.
-            </p>
-          </div>
-        )}
-        {showOverlay2 && !showOverlay1 && (
-          <div className="emotional-overlay" style={{
-            position: "fixed", bottom: 100, left: 0, right: 0,
-            textAlign: "center", padding: "0 30px",
-            pointerEvents: "none", zIndex: 15,
-          }}>
-            <p style={{
-              fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 300,
-              fontStyle: "italic", color: "rgba(253,251,247,0.6)",
-              textShadow: "0 2px 20px rgba(27,67,50,0.8)",
-              lineHeight: 1.5,
-            }}>
-              Every month, the people who love them will add to it.
-            </p>
-          </div>
-        )}
-
         {/* Bottom gradient */}
         <div style={{
           position: "fixed", bottom: 0, left: 0, right: 0, height: 80,
-          background: "linear-gradient(transparent, #1b4332)",
+          background: "linear-gradient(transparent, #142016)",
           pointerEvents: "none", zIndex: 5,
         }} />
 
@@ -525,7 +522,7 @@ export default function WelcomeClient() {
     <div style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      background: "#1b4332", padding: "40px 24px",
+      background: BG, padding: "40px 24px",
       position: "relative", overflow: "hidden",
     }}>
       {/* Ambient glow */}
@@ -560,15 +557,13 @@ export default function WelcomeClient() {
           fontWeight: 300, fontStyle: "italic",
           color: "#FDFBF7", lineHeight: 1.3, marginBottom: 12,
         }}>
-          Your vault is empty right now.
-          <br />Let&apos;s change that.
+          {childFirst}&apos;s vault is empty — for now.
         </h1>
 
         <p style={{
           fontSize: 13, color: "rgba(253,251,247,0.4)", lineHeight: 1.7,
-          marginBottom: 40,
+          marginBottom: 40, fontFamily: "var(--font-body)",
         }}>
-          Everything you just saw is what {childFirst}&apos;s vault could look like.
           It starts with one letter.
         </p>
 
@@ -578,9 +573,9 @@ export default function WelcomeClient() {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
             width: "100%", padding: "16px 24px", borderRadius: 12,
-            background: "rgba(200,168,122,0.9)", color: "#1b4332",
+            background: "rgba(200,168,122,0.9)", color: "#1C2B1E",
             fontSize: 15, fontWeight: 600, textDecoration: "none",
-            letterSpacing: "0.02em",
+            letterSpacing: "0.02em", fontFamily: "var(--font-body)",
             transition: "all 200ms",
           }}
         >
@@ -588,29 +583,25 @@ export default function WelcomeClient() {
           Write your first letter to {childFirst}
         </a>
 
-        {/* Secondary CTA */}
-        <a
+        {/* Secondary text link */}
+        <Link
           href={circlePath}
           style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            width: "100%", padding: "14px 24px", borderRadius: 12, marginTop: 12,
-            background: "transparent",
-            border: "1px solid rgba(200,168,122,0.3)",
-            color: "rgba(200,168,122,0.85)",
-            fontSize: 14, fontWeight: 500, textDecoration: "none",
-            transition: "all 200ms",
+            display: "block", marginTop: 20,
+            fontSize: 13, color: "rgba(200,168,122,0.6)",
+            textDecoration: "none", fontFamily: "var(--font-body)",
           }}
         >
-          Invite your first circle member
-        </a>
+          or invite your circle →
+        </Link>
 
-        {/* Skip to dashboard */}
+        {/* Dashboard link */}
         <Link
           href={dashboardPath}
           style={{
-            display: "block", marginTop: 24,
+            display: "block", marginTop: 16,
             fontSize: 12, color: "rgba(253,251,247,0.3)",
-            textDecoration: "none",
+            textDecoration: "none", fontFamily: "var(--font-body)",
           }}
         >
           Go to dashboard →
@@ -648,24 +639,13 @@ const vaultStyles = `
     transition: all 300ms ease;
   }
 
-  .final-counter {
+  .final-glow {
     animation: glowPulse 2s ease-in-out infinite alternate;
   }
 
   @keyframes glowPulse {
-    0% { opacity: 0.8; }
+    0% { opacity: 0.7; }
     100% { opacity: 1; }
-  }
-
-  .emotional-overlay {
-    animation: overlayFade 1.5s ease forwards;
-  }
-
-  @keyframes overlayFade {
-    0% { opacity: 0; transform: translateY(10px); }
-    20% { opacity: 1; transform: translateY(0); }
-    80% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-5px); }
   }
 
   /* Hide scrollbar */
