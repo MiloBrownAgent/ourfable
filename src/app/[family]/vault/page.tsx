@@ -976,7 +976,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         unlockAge: (e.unlocksAtAge as number) ?? (e.unlockAge as number),
         createdAt: (e.submittedAt as number) ?? (e.createdAt as number),
         sourceTable: "contributions" as const,
-        sourceType: e.promptId ? "prompt_reply" : undefined,
+        sourceType: e.promptId || e.prompt ? "prompt_reply" : e.subject ? "letter" : "prompt_reply",
       };
     });
 
@@ -1022,18 +1022,32 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   useEffect(() => { load(); }, [familyId, childId]);
 
   const handleUnlock = async (entryId: string) => {
-    if (!confirm("Unlock this entry early? The contributor will be notified.")) return;
-    // Determine which table this entry belongs to
-    const entry = entries.find(e => e._id === entryId);
-    const path = entry?.sourceTable === "vault_entries"
-      ? "ourfable:unlockOurFableVaultEntry"
-      : "ourfable:unlockEntry";
-    await fetch(`/api/ourfable/data`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path, args: { entryId }, type: "mutation" }),
-    });
-    await load();
+    if (!confirm("Unlock this entry early? This will open the entry for reading.")) return;
+    try {
+      // Determine which table this entry belongs to
+      const entry = entries.find(e => e._id === entryId);
+      const isVaultEntry = entry?.sourceTable === "vault_entries";
+      const path = isVaultEntry
+        ? "ourfable:unlockOurFableVaultEntry"
+        : "ourfable:unlockEntry";
+      const args = isVaultEntry
+        ? { entryId }
+        : { entryId, byParent: true };
+      const res = await fetch(`/api/ourfable/data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, args, type: "mutation" }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        alert(`Failed to unlock: ${err.error ?? "Unknown error"}`);
+        return;
+      }
+      await load();
+    } catch (err) {
+      alert("Failed to unlock entry. Please try again.");
+      console.error("[vault] unlock error:", err);
+    }
   };
 
   const childFirst = family?.childName.split(" ")[0] ?? "them";

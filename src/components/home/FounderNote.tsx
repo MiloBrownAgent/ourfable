@@ -5,53 +5,60 @@ export function FounderNote() {
   return (
     <section style={{
       padding: "100px 40px",
-      background: "linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%)",
+      background: "var(--bg)",
       position: "relative",
-      overflow: "hidden",
     }}>
-      {/* Subtle background texture */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: "radial-gradient(ellipse at 50% 0%, rgba(200,168,122,0.06) 0%, transparent 60%)",
-      }} />
       <Reveal>
-        <div style={{ maxWidth: 680, margin: "0 auto", position: "relative" }}>
-          {/* Gold divider */}
+        <div style={{
+          maxWidth: 640,
+          margin: "0 auto",
+          padding: "56px 48px",
+          background: "#FDFBF5",
+          border: "1px solid #E8E2D4",
+          borderRadius: 2,
+          position: "relative",
+        }}>
+          {/* Subtle corner ornament feel */}
           <div style={{
-            width: 60, height: 1,
-            background: "linear-gradient(90deg, transparent, var(--gold), transparent)",
-            margin: "0 auto 48px",
-          }} />
-
-          {/* Pull quote — large Playfair italic */}
-          <p style={{
-            fontFamily: "var(--font-playfair)",
-            fontStyle: "italic",
-            fontSize: "clamp(1.25rem, 2.5vw, 1.65rem)",
-            lineHeight: 1.85,
-            color: "var(--text)",
+            position: "absolute",
+            top: 20,
+            left: 0,
+            right: 0,
             textAlign: "center",
-            marginBottom: 40,
-            letterSpacing: "-0.01em",
+            fontSize: 10,
+            letterSpacing: "0.5em",
+            color: "#C8A87A",
+            opacity: 0.5,
           }}>
-            &ldquo;We built Our Fable as a gift for our son — and to fix something that&apos;s been broken about parenting for a long time. The people who love your child most are getting older. Their stories, their voices, their memories of who you were before you were a parent — none of that gets preserved automatically. We decided to build something that would.&rdquo;
+            ✦
+          </div>
+
+          {/* Letter body */}
+          <p style={{
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontStyle: "italic",
+            fontSize: "clamp(1.1rem, 2vw, 1.35rem)",
+            lineHeight: 2.1,
+            color: "#2A2A28",
+            textAlign: "left",
+            marginBottom: 0,
+            letterSpacing: "0.005em",
+          }}>
+            We built Our Fable as a gift for our son — and to fix something that&apos;s been broken about parenting for a long time. The people who love your child most are getting older. Their stories, their voices, their memories of who you were before you were a parent — none of that gets preserved automatically. We decided to build something that would.
           </p>
 
-          {/* Bottom divider */}
+          {/* Signature */}
           <div style={{
-            width: 40, height: "0.5px",
-            background: "rgba(200,168,122,0.4)",
-            margin: "0 auto 28px",
-          }} />
-
-          {/* Signature block */}
-          <div style={{ textAlign: "center" }}>
+            marginTop: 40,
+            paddingTop: 24,
+            borderTop: "1px solid #E8E2D4",
+          }}>
             <p style={{
-              fontFamily: "var(--font-playfair)",
+              fontFamily: "Georgia, 'Times New Roman', serif",
               fontStyle: "italic",
-              fontSize: "clamp(1.1rem, 2vw, 1.35rem)",
-              fontWeight: 500,
-              color: "var(--text)",
+              fontSize: "clamp(1rem, 1.8vw, 1.2rem)",
+              fontWeight: 400,
+              color: "#2A2A28",
               letterSpacing: "0.01em",
               marginBottom: 6,
             }}>
@@ -59,8 +66,8 @@ export function FounderNote() {
             </p>
             <p style={{
               fontFamily: "var(--font-body)",
-              fontSize: 12,
-              color: "var(--text-3)",
+              fontSize: 11,
+              color: "#9A9590",
               letterSpacing: "0.12em",
               textTransform: "uppercase",
             }}>

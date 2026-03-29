@@ -75,7 +75,7 @@ const organizationSchema = {
     "@type": "Place",
     address: {
       "@type": "PostalAddress",
-      addressLocality: "New York",
+      addressLocality: "Minneapolis",
       addressRegion: "MN",
       addressCountry: "US",
     },

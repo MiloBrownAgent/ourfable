@@ -261,3 +261,24 @@ export const deleteSnapshotById = mutation({
     return { deleted: true };
   },
 });
+
+// Fix March 2026 snapshot for all families — correct the song
+export const fixMarch2026Snapshot = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db
+      .query("ourfable_vault_snapshots")
+      .collect();
+    const march2026 = all.filter(s => s.year === 2026 && s.month === 3);
+    let fixed = 0;
+    for (const snap of march2026) {
+      if (snap.topSong && (snap.topSong.toLowerCase().includes("flowers") || snap.topSong.toLowerCase().includes("miley"))) {
+        await ctx.db.patch(snap._id, {
+          topSong: "Not Like Us — Kendrick Lamar",
+        });
+        fixed++;
+      }
+    }
+    return { checked: march2026.length, fixed };
+  },
+});

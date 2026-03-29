@@ -106,7 +106,7 @@ export function SnapshotMockup() {
           <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9A9590", marginBottom: 4 }}>The World</p>
           <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 400, color: "#1A1A18", lineHeight: 1.25, marginBottom: 10 }}>March 2026</h3>
           <p style={{ fontSize: 11, color: "#6A6A65", lineHeight: 1.75, marginBottom: 6 }}>Spring is arriving early — cherry blossoms ahead of schedule, everyone stepping outside again.</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 11, color: "#9A9590", fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}><Music size={10} strokeWidth={1.5} /> Choosin&apos; Texas — Ella Langley</p>
+          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 11, color: "#9A9590", fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}><Music size={10} strokeWidth={1.5} /> Not Like Us — Kendrick Lamar</p>
         </div>
         {/* Ornament */}
         <p style={{ fontSize: 7, letterSpacing: "0.5em", color: "#C8A87A", textAlign: "center", marginBottom: 20 }}>✦ ✦ ✦</p>
@@ -116,7 +116,7 @@ export function SnapshotMockup() {
             month: "February 2026", age: "8m 1d",
             items: [
               { icon: "globe", label: "In the world", text: "Valentine's month — love songs everywhere, the Super Bowl bringing everyone together." },
-              { icon: "music", label: "Everyone was singing", text: "Choosin' Texas — Ella Langley" },
+              { icon: "music", label: "Everyone was singing", text: "Not Like Us — Kendrick Lamar" },
               { icon: "cloud", label: "The weather", text: "18°F · Heavy snow, but the days are getting longer" },
             ]
           },

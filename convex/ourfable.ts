@@ -489,6 +489,19 @@ export const submitContribution = mutation({
         acceptedAt: member.acceptedAt ?? Date.now(),
       });
 
+      // Also write to ourfable_vault_entries so it appears in the vault
+      await ctx.db.insert("ourfable_vault_entries", {
+        familyId: args.familyId,
+        type: args.type === "letter" ? "text" : args.type,
+        content: args.body,
+        mediaUrl: args.photoUrl ?? args.audioUrl,
+        authorEmail: member.email ?? "circle@ourfable.ai",
+        authorName: member.name,
+        isSealed: !isOpen,
+        createdAt: Date.now(),
+        sourceType: "letter",
+      });
+
       // Reset consecutiveMissed for the matching ourfable_circle_member (if any)
       if (member.email) {
         const ourfableMember = await ctx.db
@@ -624,23 +637,36 @@ export const listVaultEntries = query({
     let filtered = includeSealed ? all : all.filter((e) => e.isOpen);
     if (childId) filtered = filtered.filter((e) => !e.childId || e.childId === childId);
 
-    // Resolve Convex storage IDs into renderable URLs
+    // Resolve Convex storage IDs into renderable URLs + resolve member names
     const resolved = await Promise.all(
       filtered.map(async (entry) => {
+        let enriched = { ...entry } as Record<string, unknown>;
+
+        // Resolve member name from memberId
+        if (entry.memberId) {
+          try {
+            const member = await ctx.db.get(entry.memberId);
+            if (member) {
+              enriched.memberName = member.name;
+              enriched.memberRelationship = member.relationship ?? member.relationshipKey;
+            }
+          } catch { /* member may have been deleted */ }
+        }
+
         if (entry.mediaStorageId && !entry.audioUrl && !entry.photoUrl && !entry.videoUrl) {
           const url = await ctx.storage.getUrl(entry.mediaStorageId as string);
           if (url) {
             const mime = entry.mediaMimeType ?? "";
-            if (mime.startsWith("audio")) return { ...entry, audioUrl: url };
-            if (mime.startsWith("video")) return { ...entry, videoUrl: url };
-            if (mime.startsWith("image")) return { ...entry, photoUrl: url };
+            if (mime.startsWith("audio")) return { ...enriched, audioUrl: url };
+            if (mime.startsWith("video")) return { ...enriched, videoUrl: url };
+            if (mime.startsWith("image")) return { ...enriched, photoUrl: url };
             // Fallback: use type field
-            if (entry.type === "voice") return { ...entry, audioUrl: url };
-            if (entry.type === "video") return { ...entry, videoUrl: url };
-            if (entry.type === "photo") return { ...entry, photoUrl: url };
+            if (entry.type === "voice") return { ...enriched, audioUrl: url };
+            if (entry.type === "video") return { ...enriched, videoUrl: url };
+            if (entry.type === "photo") return { ...enriched, photoUrl: url };
           }
         }
-        return entry;
+        return enriched;
       })
     );
 
