@@ -98,34 +98,43 @@ export default function TermsPage() {
           </Section>
 
           <Section>
-            <SectionTitle>8. Disclaimer of Warranties</SectionTitle>
+            <SectionTitle>8. Vault Encryption and Recovery Codes</SectionTitle>
+            <p>Our Fable encrypts vault content using a unique encryption key generated for each family. This key is protected by your account password and can only be recovered using recovery codes or vault guardians that you configure during account setup.</p>
+            <p><strong>Recovery codes are your responsibility.</strong> During account setup, you will receive a set of one-time recovery codes. These codes are the only way to restore access to your encrypted vault content if you forget your password and have no vault guardian configured. Our Fable does not store these codes in readable form and cannot recover them for you.</p>
+            <p><strong>If you lose your recovery codes and have no vault guardian, your encrypted vault content will be permanently and irreversibly inaccessible.</strong> Our Fable is not liable for any loss of data resulting from lost, misplaced, or forgotten recovery codes. You agree that the security of your recovery codes and vault guardian configuration is solely your responsibility.</p>
+            <p>By using Our Fable&apos;s encryption features, you acknowledge and accept this risk. You agree to indemnify and hold harmless Our Fable from any claims, damages, or losses arising from your inability to access encrypted vault content due to lost recovery codes or the absence of a configured vault guardian.</p>
+            <p>We strongly recommend printing your recovery codes and storing them in a safe physical location, and assigning at least one vault guardian.</p>
+          </Section>
+
+          <Section>
+            <SectionTitle>9. Disclaimer of Warranties</SectionTitle>
             <p>Our Fable is provided "as is" and "as available" without warranties of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. We do not warrant that Our Fable will be error-free, secure, or continuously available.</p>
           </Section>
 
           <Section>
-            <SectionTitle>9. Limitation of Liability</SectionTitle>
+            <SectionTitle>10. Limitation of Liability</SectionTitle>
             <p>To the fullest extent permitted by applicable law, Our Fable's total liability to you for any claim arising out of or relating to these Terms or your use of the service shall not exceed the amount you paid to Our Fable in the 12 months preceding the claim.</p>
             <p>In no event shall Our Fable be liable for indirect, incidental, special, consequential, or punitive damages, including loss of data, loss of profits, or loss of goodwill, even if advised of the possibility of such damages.</p>
             <p>Some jurisdictions do not allow the exclusion or limitation of certain damages, so some of the above limitations may not apply to you.</p>
           </Section>
 
           <Section>
-            <SectionTitle>10. Indemnification</SectionTitle>
+            <SectionTitle>11. Indemnification</SectionTitle>
             <p>You agree to indemnify, defend, and hold harmless Our Fable and its officers, directors, employees, and agents from any claims, damages, liabilities, and expenses (including reasonable attorneys' fees) arising out of your use of the service, your content, or your violation of these Terms.</p>
           </Section>
 
           <Section>
-            <SectionTitle>11. Governing Law and Disputes</SectionTitle>
+            <SectionTitle>12. Governing Law and Disputes</SectionTitle>
             <p>These Terms are governed by the laws of the State of Minnesota, without regard to conflict of law principles. Any dispute arising out of or relating to these Terms or the service shall be resolved in the state or federal courts located in Hennepin County, Minnesota, and you consent to personal jurisdiction in those courts.</p>
           </Section>
 
           <Section>
-            <SectionTitle>12. Changes to These Terms</SectionTitle>
+            <SectionTitle>13. Changes to These Terms</SectionTitle>
             <p>We will notify you by email at least 30 days before any material changes to these Terms take effect. For non-material changes (such as clarifications or corrections), we may update the Terms without notice. The current version of these Terms is always available at ourfable.ai/terms. Continued use of Our Fable after the effective date of any changes constitutes acceptance of the updated Terms.</p>
           </Section>
 
           <Section>
-            <SectionTitle>13. Miscellaneous</SectionTitle>
+            <SectionTitle>14. Miscellaneous</SectionTitle>
             <p><strong>Entire Agreement:</strong> These Terms and our Privacy Policy constitute the entire agreement between you and Our Fable regarding the service.</p>
             <p><strong>Severability:</strong> If any provision of these Terms is found unenforceable, the remaining provisions will continue in full force and effect.</p>
             <p><strong>No Waiver:</strong> Our failure to enforce any right or provision of these Terms does not constitute a waiver of that right or provision.</p>

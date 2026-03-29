@@ -448,6 +448,11 @@ export default defineSchema({
     encryptedFamilyKey: v.optional(v.string()), // JSON-encoded WrappedKey { wrappedKey, iv }
     keySalt: v.optional(v.string()),            // PBKDF2 salt for key derivation (base64)
     keyVersion: v.optional(v.number()),         // encryption key version (for future rotation)
+    // Recovery code system
+    recoveryCodeHashes: v.optional(v.array(v.string())),      // SHA-256 hashes of recovery codes
+    recoveryCodesUsed: v.optional(v.array(v.string())),        // hashes of used codes (can't reuse)
+    recoverySetupComplete: v.optional(v.boolean()),            // true when user saved codes OR assigned guardian
+    recoveryWrappedKeys: v.optional(v.array(v.string())),      // family key wrapped per recovery code (JSON strings)
     notifyFacilitatorOnLapse: v.optional(v.boolean()),
     consecutivePaymentFailures: v.optional(v.number()),
     lastFacilitatorBillingNotification: v.optional(v.number()),
@@ -666,6 +671,7 @@ export default defineSchema({
     familyId: v.string(),
     guardianEmail: v.string(),
     encryptedFamilyKey: v.string(), // family key encrypted with guardian's derived key
+    guardianName: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_familyId", ["familyId"])
