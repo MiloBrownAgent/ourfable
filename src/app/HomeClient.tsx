@@ -18,6 +18,7 @@ import {
   DispatchSection,
 
   MidPageCapture,
+  MultiChildSection,
 } from "../components/home";
 
 export default function HomeClient() {
@@ -110,6 +111,7 @@ export default function HomeClient() {
       <CircleSection />
       <HowItWorksSection />
       <FeaturesSection />
+      <MultiChildSection />
       <StatsSection />
       <FounderNote />
       <MidPageCapture />
