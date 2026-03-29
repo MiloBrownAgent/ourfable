@@ -4112,6 +4112,7 @@ export const getRecoveryInfo = query({
 
 /**
  * Update the encrypted family key (after re-wrapping with new password).
+ * SECURITY: familyId is enforced by the data proxy (C1 fix).
  */
 export const updateEncryptedFamilyKey = mutation({
   args: {
@@ -4129,5 +4130,149 @@ export const updateEncryptedFamilyKey = mutation({
     if (args.keySalt) patch.keySalt = args.keySalt;
     await ctx.db.patch(family._id, patch);
     return family._id;
+  },
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Signup Tokens — temporary password hash store for Stripe checkout (C4 fix)
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const createSignupToken = mutation({
+  args: {
+    token: v.string(),
+    passwordHash: v.string(),
+    email: v.string(),
+    expiresAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("ourfable_signup_tokens", {
+      ...args,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const getSignupToken = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    return await ctx.db
+      .query("ourfable_signup_tokens")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .first();
+  },
+});
+
+export const consumeSignupToken = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const row = await ctx.db
+      .query("ourfable_signup_tokens")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .first();
+    if (row) {
+      await ctx.db.patch(row._id, { consumed: true });
+      // Delete after a short delay for cleanup
+      await ctx.db.delete(row._id);
+    }
+    return row;
+  },
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 2FA Rate Limiting — Convex-backed (H1 fix)
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const check2FARateLimit = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const record = await ctx.db
+      .query("ourfable_2fa_attempts")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!record) return { allowed: true, remaining: 5 };
+
+    const now = Date.now();
+    // If locked and lock hasn't expired
+    if (record.lockedUntil && now < record.lockedUntil) {
+      return { allowed: false, remaining: 0, lockedUntil: record.lockedUntil };
+    }
+
+    // If last failure was >15min ago, reset
+    if (now - record.lastFailedAt > 15 * 60 * 1000) {
+      return { allowed: true, remaining: 5 };
+    }
+
+    const remaining = Math.max(0, 5 - record.failedCount);
+    return { allowed: remaining > 0, remaining };
+  },
+});
+
+export const record2FAFailure = mutation({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const now = Date.now();
+    const record = await ctx.db
+      .query("ourfable_2fa_attempts")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+
+    if (!record) {
+      await ctx.db.insert("ourfable_2fa_attempts", {
+        familyId,
+        failedCount: 1,
+        lastFailedAt: now,
+      });
+      return;
+    }
+
+    // Reset if last failure was >15min ago
+    if (now - record.lastFailedAt > 15 * 60 * 1000) {
+      await ctx.db.patch(record._id, { failedCount: 1, lastFailedAt: now, lockedUntil: undefined });
+      return;
+    }
+
+    const newCount = record.failedCount + 1;
+    const patch: Record<string, unknown> = { failedCount: newCount, lastFailedAt: now };
+    // Lock out after 5 failed attempts for 15 minutes
+    if (newCount >= 5) {
+      patch.lockedUntil = now + 15 * 60 * 1000;
+    }
+    await ctx.db.patch(record._id, patch);
+  },
+});
+
+export const reset2FAAttempts = mutation({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const record = await ctx.db
+      .query("ourfable_2fa_attempts")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (record) {
+      await ctx.db.delete(record._id);
+    }
+  },
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Password Reset — Atomic Token Consumption (H5 TOCTOU fix)
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const consumePasswordResetToken = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const row = await ctx.db
+      .query("ourfable_password_resets")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .first();
+    if (!row) return null;
+    if (row.consumed) return null; // Already consumed by concurrent request
+    if (Date.now() > row.expiresAt) {
+      await ctx.db.delete(row._id);
+      return null;
+    }
+    // Mark as consumed BEFORE returning — prevents TOCTOU race
+    await ctx.db.patch(row._id, { consumed: true });
+    return { email: row.email, token: row.token };
   },
 });

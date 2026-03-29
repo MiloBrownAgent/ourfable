@@ -625,9 +625,35 @@ export default defineSchema({
     email: v.string(),
     token: v.string(),
     expiresAt: v.number(),
+    consumed: v.optional(v.boolean()), // H5: mark consumed before password update (TOCTOU fix)
   })
     .index("by_email", ["email"])
     .index("by_token", ["token"]),
+
+  // ---------------------------------------------------------------------------
+  // Signup Tokens — temporary store for password hashes during Stripe checkout
+  // Replaces storing password_hash in Stripe metadata (C4 fix)
+  // ---------------------------------------------------------------------------
+  ourfable_signup_tokens: defineTable({
+    token: v.string(),
+    passwordHash: v.string(),
+    email: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    consumed: v.optional(v.boolean()),
+  })
+    .index("by_token", ["token"]),
+
+  // ---------------------------------------------------------------------------
+  // 2FA Rate Limiting — tracks failed attempts per family (H1 fix)
+  // ---------------------------------------------------------------------------
+  ourfable_2fa_attempts: defineTable({
+    familyId: v.string(),
+    failedCount: v.number(),
+    lastFailedAt: v.number(),
+    lockedUntil: v.optional(v.number()),
+  })
+    .index("by_familyId", ["familyId"]),
 
   // ---------------------------------------------------------------------------
   // OurFable — Prompt Skip Tracking

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { generateTOTPSecret, generateTOTPUri } from "@/lib/totp";
+import { encryptTOTPSecret } from "@/lib/totp-encryption";
 import { CONVEX_URL } from "@/lib/convex";
 
 
@@ -38,13 +39,17 @@ export async function POST(req: NextRequest) {
   const secret = generateTOTPSecret();
   const otpauthUri = generateTOTPUri(secret, email, "Our Fable");
 
-  // Store secret (not yet enabled — will be enabled after confirmation)
+  // C3 SECURITY: Encrypt TOTP secret at rest before storing in database
+  const encryptedSecret = encryptTOTPSecret(secret);
+
+  // Store encrypted secret (not yet enabled — will be enabled after confirmation)
   await convexMutation("ourfable:updateOurFable2FA", {
     familyId: session.familyId,
-    totpSecret: secret,
+    totpSecret: encryptedSecret,
     totpEnabled: false,
   });
 
+  // Return plaintext secret to client for QR code display (one-time)
   return NextResponse.json({
     otpauthUri,
     secret,

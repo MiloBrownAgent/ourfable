@@ -531,8 +531,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.warn("[webhook] seedFirstLetter failed (non-fatal):", err);
   });
 
-  // 3. Register account — password hash from Stripe metadata (bcrypt, not plaintext)
-  const passwordHash = meta.password_hash ?? "";
+  // 3. Register account — retrieve password hash from Convex signup token (C4 security fix)
+  let passwordHash = "";
+  if (meta.signup_token) {
+    const signupData = await convexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
+      passwordHash: string;
+      consumed?: boolean;
+      expiresAt: number;
+    } | null;
+    if (signupData && !signupData.consumed && Date.now() < signupData.expiresAt) {
+      passwordHash = signupData.passwordHash;
+      // Consume and delete the token
+      await convexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
+    }
+  }
+  // Legacy fallback: password_hash in metadata (for in-flight checkouts during migration)
+  if (!passwordHash && meta.password_hash) {
+    passwordHash = meta.password_hash;
+  }
   await addAccount({
     email: email.toLowerCase(),
     passwordHash,

@@ -36,22 +36,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
 
-    // Look up the reset token
-    const resetRecord = await convexQuery("ourfable:getPasswordReset", { token }) as {
-      email: string;
-      token: string;
-      expiresAt: number;
+    // H5 SECURITY: Atomically consume the token BEFORE updating password (TOCTOU fix).
+    // This prevents a race condition where parallel requests could use the same token.
+    const consumed = await convexMutation("ourfable:consumePasswordResetToken", { token }) as {
+      value?: { email: string; token: string } | null;
     } | null;
 
+    const resetRecord = consumed?.value ?? null;
     if (!resetRecord) {
       return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
-    }
-
-    // Check expiry
-    if (Date.now() > resetRecord.expiresAt) {
-      // Clean up expired token
-      await convexMutation("ourfable:deletePasswordReset", { token }).catch(() => {});
-      return NextResponse.json({ error: "This reset link has expired. Please request a new one." }, { status: 400 });
     }
 
     // Hash new password
@@ -63,7 +56,7 @@ export async function POST(req: NextRequest) {
       passwordHash,
     });
 
-    // Delete the used reset token
+    // Clean up the consumed token
     await convexMutation("ourfable:deletePasswordReset", { token }).catch(() => {});
 
     return NextResponse.json({ success: true });

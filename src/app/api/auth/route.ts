@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { createSession, COOKIE, SESSION_MAX_AGE, checkRateLimit, clearRateLimit } from "@/lib/auth";
 import { getAccount, verifyPassword, needsHashUpgrade, hashPassword } from "@/lib/accounts";
 import { CONVEX_URL } from "@/lib/convex";
+
+const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -47,13 +50,20 @@ export async function POST(req: NextRequest) {
   }).then(r => r.json()).then(d => d.value).catch(() => null) as { totpEnabled: boolean } | null;
 
   if (twoFAStatus?.totpEnabled) {
-    // Check for remembered device
+    // H2: Check for HMAC-signed remembered device token (prevents forgery)
     const deviceCookie = req.cookies.get("ourfable_2fa_device")?.value;
     const isRemembered = deviceCookie && (() => {
       try {
-        const decoded = Buffer.from(deviceCookie, "base64url").toString();
-        const [devFamilyId, ts] = decoded.split(":");
-        return devFamilyId === account.familyId && (Date.now() - parseInt(ts)) < 30 * 24 * 60 * 60 * 1000;
+        const [payloadB64, sig] = deviceCookie.split(".");
+        if (!payloadB64 || !sig) return false;
+        const payload = Buffer.from(payloadB64, "base64url").toString();
+        const [devFamilyId, tsStr] = payload.split(":");
+        if (devFamilyId !== account.familyId) return false;
+        const ts = parseInt(tsStr);
+        if (isNaN(ts) || Date.now() - ts > 30 * 24 * 60 * 60 * 1000) return false;
+        const expectedHmac = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
+        if (expectedHmac.length !== sig.length) return false;
+        return crypto.timingSafeEqual(Buffer.from(expectedHmac), Buffer.from(sig));
       } catch { return false; }
     })();
 

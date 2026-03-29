@@ -113,7 +113,8 @@ export default function RecoveryCodesPage({ params }: { params: Promise<{ family
 
       if (!keys?.encryptedFamilyKey || !keys?.keySalt) {
         // No encryption set up yet — just store the hashes without wrapped keys
-        const hashes = await hashAllRecoveryCodes(codes);
+        // H3: Pass keySalt for PBKDF2 hashing if available
+        const hashes = await hashAllRecoveryCodes(codes, keys?.keySalt);
         await convexMutate("ourfable:storeRecoveryCodeHashes", {
           familyId,
           hashes,
@@ -134,7 +135,8 @@ export default function RecoveryCodesPage({ params }: { params: Promise<{ family
         const familyKey = await unwrapFamilyKey(wrappedData, kek);
 
         // Hash all codes and wrap family key with each code
-        const hashes = await hashAllRecoveryCodes(codes);
+        // H3: Pass keySalt for PBKDF2 hashing
+        const hashes = await hashAllRecoveryCodes(codes, keys.keySalt);
         const wrappedKeys: string[] = [];
         for (const code of codes) {
           const wrapped = await wrapFamilyKeyWithRecoveryCode(familyKey, code, keys.keySalt);

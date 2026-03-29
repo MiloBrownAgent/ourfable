@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { verifyTOTP } from "@/lib/totp";
+import { decryptTOTPSecret } from "@/lib/totp-encryption";
 import { CONVEX_URL } from "@/lib/convex";
 
 
@@ -45,8 +46,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "2FA not set up" }, { status: 400 });
   }
 
+  // C3: Decrypt TOTP secret before verification
+  const plaintextSecret = decryptTOTPSecret(twoFA.totpSecret);
   // Verify the code using our custom implementation (no external libraries)
-  const isValid = await verifyTOTP(code, twoFA.totpSecret);
+  const isValid = await verifyTOTP(code, plaintextSecret);
   if (!isValid) {
     return NextResponse.json({ error: "Invalid code. Try again." }, { status: 400 });
   }

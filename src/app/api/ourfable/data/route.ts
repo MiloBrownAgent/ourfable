@@ -1,9 +1,12 @@
 /**
  * Authenticated Convex proxy — all client ourfable reads go through here.
  * Session cookie validated before any data is returned.
+ *
+ * SECURITY: familyId enforcement — authenticated requests have their familyId
+ * overridden with session.familyId to prevent IDOR attacks.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession, COOKIE } from "@/lib/auth";
+import { verifySession, COOKIE, type SessionPayload } from "@/lib/auth";
 import { CONVEX_URL } from "@/lib/convex";
 
 
@@ -87,23 +90,28 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:storeGuardianKeyShare",
   "ourfable:getGuardianKeyShares",
   "ourfable:getFamilyEncryptionKeys",
+  "ourfable:setupFamilyEncryption",
 ]);
 
 // Public — no session required (join/share flows)
+// SECURITY: These queries do NOT use familyId from the session.
+// Only token-based lookups and read-only public data belong here.
 const PUBLIC_QUERIES = new Set([
   "ourfable:getShareData",
   "ourfable:getMemberByInviteToken",
   "ourfable:getMemberByShareToken",
-  "ourfable:getFamily",
-  "ourfable:submitContribution",
   "ourfable:getGift",
   "ourfable:getPromptByToken",
-  "ourfable:generateUploadUrl",
-  "ourfable:submitVaultEntry",
   "ourfable:getReferralByCode",
   "ourfable:getRecoveryInfo",
-  "ourfable:verifyAndConsumeRecoveryCode",
-  "ourfable:updateEncryptedFamilyKey",
+]);
+
+// Queries that use token-based auth instead of familyId (circle member submissions)
+// These require a valid submission/invite token — not session-based familyId
+const TOKEN_AUTH_QUERIES = new Set([
+  "ourfable:submitContribution",
+  "ourfable:submitVaultEntry",
+  "ourfable:generateUploadUrl",
 ]);
 
 export async function POST(req: NextRequest) {
@@ -115,11 +123,18 @@ export async function POST(req: NextRequest) {
   if (!path || typeof path !== "string") return NextResponse.json({ error: "Missing path" }, { status: 400 });
   if (!ALLOWED_QUERIES.has(path)) return NextResponse.json({ error: "Not permitted" }, { status: 403 });
 
-  // Auth check
-  if (!PUBLIC_QUERIES.has(path)) {
+  // Auth check + IDOR prevention
+  let session: SessionPayload | null = null;
+  if (!PUBLIC_QUERIES.has(path) && !TOKEN_AUTH_QUERIES.has(path)) {
     const token = req.cookies.get(COOKIE)?.value;
-    const session = token ? await verifySession(token) : null;
+    session = token ? await verifySession(token) : null;
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // SECURITY: Override familyId in args with session.familyId to prevent IDOR.
+    // This ensures authenticated users can ONLY access their own family's data.
+    if (args.familyId !== undefined) {
+      args.familyId = session.familyId;
+    }
   }
 
   const endpoint = type === "mutation" ? "mutation" : "query";

@@ -61,43 +61,78 @@ export function normalizeCode(code: string): string {
 // ── Hashing ──────────────────────────────────────────────────────────────────
 
 /**
- * SHA-256 hash a recovery code for storage. We store hashes, never plaintext.
+ * PBKDF2 hash a recovery code for storage with per-family salt.
+ * H3 SECURITY: Uses PBKDF2 with 10,000 iterations instead of unsalted SHA-256.
+ * This prevents rainbow table / GPU brute-force attacks on the small code space.
  *
  * @param code Recovery code (with or without dash)
- * @returns Hex-encoded SHA-256 hash
+ * @param salt Base64-encoded salt (family's keySalt)
+ * @returns Hex-encoded PBKDF2 hash
  */
-export async function hashRecoveryCode(code: string): Promise<string> {
+export async function hashRecoveryCode(code: string, salt?: string): Promise<string> {
   const normalized = normalizeCode(code);
+  const subtle = getSubtleCrypto();
+
+  // If salt provided, use PBKDF2 (new secure path)
+  if (salt) {
+    const keyMaterial = await subtle.importKey(
+      "raw",
+      new TextEncoder().encode(normalized),
+      "PBKDF2",
+      false,
+      ["deriveBits"]
+    );
+    const saltBytes = Uint8Array.from(atob(salt), (c) => c.charCodeAt(0));
+    const derived = await subtle.deriveBits(
+      { name: "PBKDF2", salt: saltBytes, iterations: 10_000, hash: "SHA-256" },
+      keyMaterial,
+      256
+    );
+    return toHex(derived);
+  }
+
+  // Legacy fallback: plain SHA-256 (for verifying old codes)
   const encoded = new TextEncoder().encode(normalized);
-  const hashBuffer = await getSubtleCrypto().digest("SHA-256", encoded);
+  const hashBuffer = await subtle.digest("SHA-256", encoded);
   return toHex(hashBuffer);
 }
 
 /**
  * Verify a recovery code against a stored hash.
+ * Uses constant-time comparison to prevent timing attacks.
  *
  * @param code Recovery code to verify
- * @param hash Stored SHA-256 hex hash
+ * @param hash Stored hex hash
+ * @param salt Base64-encoded salt (family's keySalt)
  * @returns true if the code matches the hash
  */
 export async function verifyRecoveryCode(
   code: string,
-  hash: string
+  hash: string,
+  salt?: string
 ): Promise<boolean> {
-  const codeHash = await hashRecoveryCode(code);
-  return codeHash === hash;
+  const codeHash = await hashRecoveryCode(code, salt);
+  // Constant-time comparison
+  if (codeHash.length !== hash.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < codeHash.length; i++) {
+    mismatch |= codeHash.charCodeAt(i) ^ hash.charCodeAt(i);
+  }
+  return mismatch === 0;
 }
 
 /**
  * Hash all recovery codes in batch.
  *
  * @param codes Array of recovery codes
- * @returns Array of hex-encoded SHA-256 hashes (same order)
+ * @param salt Base64-encoded salt (family's keySalt)
+ * @returns Array of hex-encoded hashes (same order)
  */
 export async function hashAllRecoveryCodes(
-  codes: string[]
+  codes: string[],
+  salt?: string
 ): Promise<string[]> {
-  return Promise.all(codes.map(hashRecoveryCode));
+  return Promise.all(codes.map((code) => hashRecoveryCode(code, salt)));
 }
 
 // ── Key Wrapping with Recovery Code ──────────────────────────────────────────

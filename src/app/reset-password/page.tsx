@@ -154,7 +154,8 @@ function ResetPasswordForm() {
     setError("");
 
     try {
-      const codeHash = await hashRecoveryCode(recoveryCode.trim());
+      // H3: Pass keySalt for PBKDF2 hashing
+      const codeHash = await hashRecoveryCode(recoveryCode.trim(), recoveryInfo.keySalt ?? undefined);
 
       // Verify and consume the code
       const result = await convexMutation("ourfable:verifyAndConsumeRecoveryCode", {

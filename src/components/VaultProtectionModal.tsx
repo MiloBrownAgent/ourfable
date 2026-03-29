@@ -100,7 +100,7 @@ export default function VaultProtectionModal({ familyId, onComplete }: Props) {
       const keys = await convexFetch("ourfable:getFamilyEncryptionKeys", { familyId });
 
       if (!keys?.encryptedFamilyKey || !keys?.keySalt) {
-        const hashes = await hashAllRecoveryCodes(codes);
+        const hashes = await hashAllRecoveryCodes(codes, keys?.keySalt);
         await convexMutate("ourfable:storeRecoveryCodeHashes", {
           familyId,
           hashes,
@@ -111,7 +111,7 @@ export default function VaultProtectionModal({ familyId, onComplete }: Props) {
         if (!sessionPassword) {
           // If no session password, store hashes without wrapped keys
           // They can regenerate later when they have the password in session
-          const hashes = await hashAllRecoveryCodes(codes);
+          const hashes = await hashAllRecoveryCodes(codes, keys.keySalt);
           await convexMutate("ourfable:storeRecoveryCodeHashes", {
             familyId,
             hashes,
@@ -122,7 +122,7 @@ export default function VaultProtectionModal({ familyId, onComplete }: Props) {
           const wrappedData = JSON.parse(keys.encryptedFamilyKey);
           const familyKey = await unwrapFamilyKey(wrappedData, kek);
 
-          const hashes = await hashAllRecoveryCodes(codes);
+          const hashes = await hashAllRecoveryCodes(codes, keys.keySalt);
           const wrappedKeys: string[] = [];
           for (const code of codes) {
             const wrapped = await wrapFamilyKeyWithRecoveryCode(familyKey, code, keys.keySalt);

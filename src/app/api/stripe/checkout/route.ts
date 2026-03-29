@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import crypto from "node:crypto";
 import { hashPassword } from "@/lib/accounts";
+import { CONVEX_URL } from "@/lib/convex";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -23,6 +25,16 @@ const PRICE_MAP: Record<PlanType, Record<BillingPeriod, string>> = {
     annual: process.env.STRIPE_PRICE_PLUS_ANNUAL ?? "price_1TEs5uPhcoXpcvebKqvMBSjk",
   },
 };
+
+async function convexMutation(path: string, args: Record<string, unknown>) {
+  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
+    body: JSON.stringify({ path, args, format: "json" }),
+  });
+  if (!res.ok) throw new Error(`Convex mutation ${path} failed: ${await res.text()}`);
+  return res.json();
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,9 +67,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Hash password and store in Stripe metadata (bcrypt hash — not plaintext)
-    // This is the only reliable way to pass data from checkout to webhook on serverless
+    // SECURITY (C4): Hash password and store in Convex temp table, NOT in Stripe metadata.
+    // Only pass a random token in Stripe metadata. Webhook retrieves hash via token.
     const passwordHash = hashPassword(password);
+    const signupToken = crypto.randomBytes(32).toString("hex");
+    await convexMutation("ourfable:createSignupToken", {
+      token: signupToken,
+      passwordHash,
+      email: email.toLowerCase().trim(),
+      expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
+    });
 
     // Resolve plan type and billing period (support both new and legacy params)
     const resolvedPlanType: PlanType = planType ?? "standard";
@@ -80,7 +99,7 @@ export async function POST(req: NextRequest) {
         planType: resolvedPlanType,
         billingPeriod: resolvedBilling,
         plan: resolvedBilling, // legacy compat
-        password_hash: passwordHash,
+        signup_token: signupToken, // C4: reference token instead of password hash
         notifyFacilitatorOnLapse: notifyFacilitatorOnLapse !== false ? "true" : "false",
         ...(facilitator1Name ? { facilitator1Name } : {}),
         ...(facilitator1Email ? { facilitator1Email } : {}),
