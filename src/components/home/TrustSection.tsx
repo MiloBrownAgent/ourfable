@@ -5,7 +5,7 @@ import { Reveal } from "./Reveal";
 const PILLARS = [
   {
     icon: Shield,
-    title: "Encrypted & private",
+    title: "Encrypted with your key",
     body: "Vault content is encrypted with your family\u2019s unique key \u2014 we can\u2019t read it even if we wanted to. No ads. No data sharing. No one sees your vault but you.",
   },
   {
