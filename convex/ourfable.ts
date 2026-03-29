@@ -1986,7 +1986,7 @@ export const createOurFableFamily = mutation({
   },
 });
 
-export const getOurFableFamilyByEmail = query({
+export const getOurFableFamilyByEmail = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
     return await ctx.db
@@ -2064,7 +2064,7 @@ export const updateOurFableEmail = mutation({
   },
 });
 
-export const updateOurFablePasswordHash = mutation({
+export const updateOurFablePasswordHash = internalMutation({
   args: {
     email: v.string(),
     passwordHash: v.string(),
@@ -3824,7 +3824,7 @@ export const createFFGiftCode = mutation({
  * Set up encryption for a family — stores the wrapped family key and salt.
  * Called from the client AFTER generating and wrapping the key client-side.
  */
-export const setupFamilyEncryption = mutation({
+export const setupFamilyEncryption = internalMutation({
   args: {
     familyId: v.string(),
     encryptedFamilyKey: v.string(), // JSON-encoded WrappedKey
@@ -3968,7 +3968,7 @@ export const migrateContributionToEncrypted = mutation({
 /**
  * Store hashed recovery codes and their wrapped family keys.
  */
-export const storeRecoveryCodeHashes = mutation({
+export const storeRecoveryCodeHashes = internalMutation({
   args: {
     familyId: v.string(),
     hashes: v.array(v.string()),
@@ -3993,7 +3993,7 @@ export const storeRecoveryCodeHashes = mutation({
  * Verify and consume a recovery code. Returns the wrapped family key for that code
  * so the client can unwrap with the recovery code and re-wrap with a new password.
  */
-export const verifyAndConsumeRecoveryCode = mutation({
+export const verifyAndConsumeRecoveryCode = internalMutation({
   args: {
     familyId: v.string(),
     codeHash: v.string(),
@@ -4029,7 +4029,7 @@ export const verifyAndConsumeRecoveryCode = mutation({
 /**
  * Mark recovery setup as complete.
  */
-export const markRecoverySetupComplete = mutation({
+export const markRecoverySetupComplete = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -4114,7 +4114,7 @@ export const getRecoveryInfo = query({
  * Update the encrypted family key (after re-wrapping with new password).
  * SECURITY: familyId is enforced by the data proxy (C1 fix).
  */
-export const updateEncryptedFamilyKey = mutation({
+export const updateEncryptedFamilyKey = internalMutation({
   args: {
     familyId: v.string(),
     encryptedFamilyKey: v.string(),

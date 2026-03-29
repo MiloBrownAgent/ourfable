@@ -180,14 +180,13 @@ function OnboardingChecklist({
           const isClickable = !s.done && i > 0;
           const handleClick = () => {
             if (i === 2) onScrollToWriting();
-            // steps 1 (recovery), 3 and 4 link via Link wrapper
           };
 
           const content = (
             <div
               key={i}
-              onClick={i === 1 && isClickable ? handleClick : undefined}
-              role={isClickable ? "button" : undefined}
+              onClick={i === 2 && isClickable ? handleClick : undefined}
+              role={isClickable && i === 2 ? "button" : undefined}
               tabIndex={isClickable && i === 2 ? 0 : undefined}
               style={{
                 display: "flex", alignItems: "center", gap: 12,
