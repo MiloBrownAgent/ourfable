@@ -545,10 +545,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       await convexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
     }
   }
-  // Legacy fallback: password_hash in metadata (for in-flight checkouts during migration)
-  if (!passwordHash && meta.password_hash) {
-    passwordHash = meta.password_hash;
-  }
+  // Legacy password_hash fallback removed for security (C4 fix).
+  // All new checkouts use signup_token flow.
   await addAccount({
     email: email.toLowerCase(),
     passwordHash,

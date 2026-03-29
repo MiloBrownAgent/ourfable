@@ -130,11 +130,11 @@ export async function POST(req: NextRequest) {
     session = token ? await verifySession(token) : null;
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // SECURITY: Override familyId in args with session.familyId to prevent IDOR.
+    // SECURITY: Always inject familyId from session for authenticated requests.
     // This ensures authenticated users can ONLY access their own family's data.
-    if (args.familyId !== undefined) {
-      args.familyId = session.familyId;
-    }
+    // Even if the client didn't send familyId, we inject it so mutations/queries
+    // that use it are always scoped to the authenticated user's family.
+    args.familyId = session.familyId;
   }
 
   const endpoint = type === "mutation" ? "mutation" : "query";
