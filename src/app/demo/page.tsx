@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
   Bell, Settings, BookOpen, LogOut,
   Mail, PackageOpen, Lock, FileText, Mic, Video, Music,
-  Image as ImageIcon, MapPin, Check, GraduationCap,
+  Image as ImageIcon, MapPin, Check, GraduationCap, Pen,
 } from "lucide-react";
 
 // ─── Demo constants ───────────────────────────────────────────────────────────
@@ -165,7 +165,7 @@ function NavItem({
 }
 
 // ─── Sidebar content ──────────────────────────────────────────────────────────
-type SectionKey = "home" | "vault" | "dispatches" | "letters" | "world" | "before-born" | "circle" | "delivery";
+type SectionKey = "home" | "vault" | "dispatches" | "letters" | "before-born" | "circle" | "delivery";
 
 function DemoSidebarContent({
   activeSection, onSectionChange, onClose,
@@ -579,10 +579,10 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
         </div>
       </div>
 
-      {/* 7. WORLD SNAPSHOT — small link, not featured */}
-      <div onClick={() => onNavigate?.("world")} style={{
+      {/* 7. WORLD SNAPSHOT — small text link (non-interactive in demo) */}
+      <div style={{
         display: "flex", alignItems: "center", gap: 8,
-        padding: "14px 0", cursor: "pointer",
+        padding: "14px 0",
         fontSize: 12, color: "var(--text-3)",
         fontFamily: "var(--font-body)",
         animation: "fadeUp 0.6s var(--spring) 0.7s both",
@@ -1139,7 +1139,6 @@ export default function DemoPage() {
     switch (activeSection) {
       case "home": return <HomeSection onNavigate={s => { setActiveSection(s); window.scrollTo(0, 0); }} />;
       case "vault": return <VaultSection />;
-      case "world": return <WorldSection />;
       case "before-born": return <BeforeBornSection />;
       case "letters": return <LettersSection />;
       case "dispatches": return <DispatchesSection />;
@@ -1242,6 +1241,42 @@ export default function DemoPage() {
           {renderSection()}
         </div>
       </main>
+
+      {/* ── FAB — Quick capture button (matches live dashboard) ── */}
+      {activeSection === "home" && (
+        <button
+          onClick={() => window.location.href = "/reserve"}
+          aria-label="Write a memory"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "var(--green)",
+            border: "none",
+            boxShadow: "0 4px 20px rgba(26,26,24,0.25), 0 2px 6px rgba(26,26,24,0.15)",
+            color: "#fff",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 50,
+            transition: "transform 150ms ease, box-shadow 150ms ease",
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.08)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(26,26,24,0.3), 0 3px 8px rgba(26,26,24,0.2)";
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(26,26,24,0.25), 0 2px 6px rgba(26,26,24,0.15)";
+          }}
+        >
+          <Pen size={22} strokeWidth={2} />
+        </button>
+      )}
 
       <style>{`
         /* Banner text responsive */
