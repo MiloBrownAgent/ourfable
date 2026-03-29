@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, internalAction, internalQuery } from "./_generated/server";
+import { query, mutation, action, internalMutation, internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 // ── Token generator ────────────────────────────────────────────────────────────
@@ -4385,5 +4385,13 @@ export const consumePasswordResetToken = internalMutation({
     // Mark as consumed BEFORE returning — prevents TOCTOU race
     await ctx.db.patch(row._id, { consumed: true });
     return { email: row.email, token: row.token };
+  },
+});
+
+// Internal query to expose CONVEX_SERVER_SECRET to httpAction (which can't read process.env directly)
+export const getServerSecret = internalQuery({
+  args: {},
+  handler: async () => {
+    return process.env.CONVEX_SERVER_SECRET ?? null;
   },
 });

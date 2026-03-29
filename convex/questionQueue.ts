@@ -13,7 +13,7 @@
  *   - getPendingQueue()   — all pending items (used by the future email cron)
  */
 
-import { internalMutation, internalQuery } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 // ---------------------------------------------------------------------------
