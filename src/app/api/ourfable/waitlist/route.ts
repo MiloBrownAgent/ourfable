@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { waitlistWelcomeEmail } from "../../../../lib/email-templates/waitlist-welcome";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexMutation } from "@/lib/convex";
 import { appendWaitlistRow, ensureSheetHeaders } from "@/lib/google-sheets";
 import crypto from "crypto";
 
@@ -95,18 +95,10 @@ export async function POST(req: NextRequest) {
     if (utm_content) convexBody.utm_content = String(utm_content);
     if (utm_term) convexBody.utm_term = String(utm_term);
 
-    const convexRes = await fetch(`${CONVEX_URL}/api/mutation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-      body: JSON.stringify({
-        path: "ourfable:addWaitlistEntry",
-        args: convexBody,
-        format: "json",
-      }),
-    });
-
-    if (!convexRes.ok) {
-      console.error("Convex error:", await convexRes.text());
+    try {
+      await convexMutation("ourfable:addWaitlistEntry", convexBody);
+    } catch (err) {
+      console.error("Convex error:", err);
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 

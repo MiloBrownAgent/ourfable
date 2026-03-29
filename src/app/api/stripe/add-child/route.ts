@@ -19,41 +19,12 @@ import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-intern
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { CONVEX_URL } from "@/lib/convex";
 
 function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY required");
   return new Stripe(key, { apiVersion: "2026-02-25.clover" });
 }
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Convex mutation ${path} failed: ${text}`);
-  }
-  return res.json();
-}
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

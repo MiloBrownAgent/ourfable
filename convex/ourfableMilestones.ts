@@ -9,7 +9,7 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
-const CONVEX_URL = process.env.CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
+
 
 async function sendEmail(to: string, subject: string, html: string) {
   const key = process.env.RESEND_FULL_API_KEY;
@@ -202,19 +202,9 @@ export const checkMilestonePrompts = internalAction({
       // Get active children for this family
       let children: ChildRecord[] = [];
       try {
-        const childrenRes = await fetch(`${CONVEX_URL}/api/query`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            path: "ourfable:listActiveChildrenForFamily",
-            args: { familyId: family.familyId },
-            format: "json",
-          }),
-        });
-        if (childrenRes.ok) {
-          const childData = await childrenRes.json();
-          children = (childData.value ?? []) as ChildRecord[];
-        }
+        children = (await ctx.runQuery(internal.ourfable.listActiveChildrenForFamily, {
+          familyId: family.familyId,
+        })) as ChildRecord[];
       } catch (err) {
         console.error(`[checkMilestonePrompts] Failed to fetch children for ${family.familyId}:`, err);
       }
@@ -245,19 +235,10 @@ export const checkMilestonePrompts = internalAction({
             html
           );
 
-          // Mark as sent via HTTP mutation (avoids generic ID type cast issues)
+          // Mark as sent
           try {
-            await fetch(`${CONVEX_URL}/api/mutation`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Convex-Client": "npm-1.34.0",
-              },
-              body: JSON.stringify({
-                path: "ourfable:markMilestonePromptSent",
-                args: { promptId: prompt._id },
-                format: "json",
-              }),
+            await ctx.runMutation(internal.ourfable.markMilestonePromptSent, {
+              promptId: prompt._id as any,
             });
           } catch (err) {
             console.error(`[checkMilestonePrompts] Failed to mark prompt ${prompt._id} as sent:`, err);

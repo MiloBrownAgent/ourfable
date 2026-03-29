@@ -11,7 +11,7 @@
  */
 
 import { v } from "convex/values";
-import { internalAction, internalMutation, internalQuery, action, mutation } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 const OPENAI_MODEL = "gpt-4o-mini";
@@ -161,7 +161,7 @@ Make every line feel like it belongs in a letter to a child. Something they'd re
 // MANUAL: Backfill all missing months since child's birth for one family
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const backfillSnapshotsForFamily = action({
+export const backfillSnapshotsForFamily = internalAction({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.runQuery(internal.ourfableSnapshots.getFamilyBirthDate, { familyId });
@@ -254,7 +254,7 @@ export const upsertSnapshotFromAI = internalMutation({
 });
 
 // Delete a single snapshot by its ID (admin use)
-export const deleteSnapshotById = mutation({
+export const deleteSnapshotById = internalMutation({
   args: { id: v.id("ourfable_vault_snapshots") },
   handler: async (ctx, { id }) => {
     await ctx.db.delete(id);
@@ -263,7 +263,7 @@ export const deleteSnapshotById = mutation({
 });
 
 // Fix March 2026 snapshot for all families — correct the song
-export const fixMarch2026Snapshot = mutation({
+export const fixMarch2026Snapshot = internalMutation({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db

@@ -1,7 +1,7 @@
 "use client";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { CONVEX_URL } from "@/lib/convex";
+
 
 interface DispatchData {
   subject: string;
@@ -25,13 +25,12 @@ export default function ViewDispatchPage({ params }: { params: Promise<{ token: 
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    fetch(`${CONVEX_URL}/api/query`, {
+    fetch("/api/ourfable/data", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         path: "ourfable:getDispatchByViewToken",
         args: { viewToken: token },
-        format: "json",
       }),
     })
       .then(r => r.json())

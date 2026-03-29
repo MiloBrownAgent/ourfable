@@ -7,21 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { internalConvexQuery as convexQuery } from "@/lib/convex-internal";
 
-const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) throw new Error("RESEND_FULL_API_KEY not configured");
   await fetch("https://api.resend.com/emails", {

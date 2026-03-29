@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery } from "@/lib/convex";
 
 
 interface Gift {
@@ -19,14 +19,7 @@ interface Gift {
 export default async function RedeemPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
 
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: "ourfable:getGift", args: { giftCode: code.toUpperCase() }, format: "json" }),
-    cache: "no-store",
-  });
-  const data = await res.json();
-  const gift: Gift | null = data.value ?? null;
+  const gift = await convexQuery<Gift | null>("ourfable:getGift", { giftCode: code.toUpperCase() }).catch(() => null);
 
   // Resolve fields (new schema uses gifterName/gifterMessage, old uses purchaserName/message)
   const fromName = gift?.gifterName || gift?.purchaserName || "Someone special";

@@ -4,7 +4,7 @@
  * to only send each threshold email once per family.
  */
 
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery, convexMutation } from "@/lib/convex";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -136,23 +136,11 @@ export async function checkStorageWarnings(
 ): Promise<{ blocked: boolean; message?: string }> {
   try {
     // Fetch family data
-    const familyRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
-    });
-    const familyData = await familyRes.json();
-    const family: Family | null = familyData.value;
+    const family = await convexQuery<Family | null>("ourfable:getFamily", { familyId });
     if (!family) return { blocked: false };
 
     // Fetch storage info from the OurFable family record
-    const ofRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:getOurFableFamilyById", args: { familyId }, format: "json" }),
-    });
-    const ofData = await ofRes.json();
-    const ofFamily = ofData.value;
+    const ofFamily = await convexQuery<Record<string, unknown> | null>("ourfable:getOurFableFamilyById", { familyId });
 
     if (!ofFamily) return { blocked: false };
 
@@ -185,15 +173,7 @@ export async function checkStorageWarnings(
         html: warningEmailHtml({ childFirst, percent, isAlmostFull: true }),
       });
       // Mark warned95 in Convex
-      await fetch(`${CONVEX_URL}/api/mutation`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-        body: JSON.stringify({
-          path: "ourfable:patchOurFableFamily",
-          args: { familyId, storageWarned95: true },
-          format: "json",
-        }),
-      });
+      await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned95: true });
     }
     // 80% warning
     else if (percent >= 80 && !warned80) {
@@ -203,15 +183,7 @@ export async function checkStorageWarnings(
         html: warningEmailHtml({ childFirst, percent, isAlmostFull: false }),
       });
       // Mark warned80 in Convex
-      await fetch(`${CONVEX_URL}/api/mutation`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-        body: JSON.stringify({
-          path: "ourfable:patchOurFableFamily",
-          args: { familyId, storageWarned80: true },
-          format: "json",
-        }),
-      });
+      await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned80: true });
     }
 
     return { blocked: false };

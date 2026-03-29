@@ -16,27 +16,6 @@ import {
 } from "@/lib/vault-encryption";
 
 // Route through the data proxy (which handles auth + routes to Convex internal gateway)
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch("/api/ourfable/data", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch("/api/ourfable/data", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, type: "mutation" }),
-  });
-  const data = await res.json();
-  return data.value ?? data;
-}
-
 type ResetStep = "password" | "vault-recovery" | "vault-warning";
 
 interface RecoveryInfo {
@@ -80,7 +59,13 @@ function ResetPasswordForm() {
     try {
       // Check if vault recovery is needed (first submission)
       if (step === "password" && email) {
-        const info = await convexQuery("ourfable:getRecoveryInfo", { email }) as RecoveryInfo | null;
+        const infoRes = await fetch("/api/ourfable/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: "ourfable:getRecoveryInfo", args: { email } }),
+        });
+        const infoData = await infoRes.json();
+        const info = (infoData.value ?? null) as RecoveryInfo | null;
         if (info?.hasEncryption) {
           setRecoveryInfo(info);
           if (info.hasRecoveryCodes && info.recoveryCodesRemaining > 0) {

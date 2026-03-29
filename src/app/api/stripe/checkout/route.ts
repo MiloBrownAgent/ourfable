@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import crypto from "node:crypto";
 import { hashPassword } from "@/lib/accounts";
-import { CONVEX_URL } from "@/lib/convex";
 import { internalConvexMutation } from "@/lib/convex-internal";
 
 function getStripe() {
@@ -26,17 +25,6 @@ const PRICE_MAP: Record<PlanType, Record<BillingPeriod, string>> = {
     annual: process.env.STRIPE_PRICE_PLUS_ANNUAL ?? "price_1TEs5uPhcoXpcvebKqvMBSjk",
   },
 };
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) throw new Error(`Convex mutation ${path} failed: ${await res.text()}`);
-  return res.json();
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

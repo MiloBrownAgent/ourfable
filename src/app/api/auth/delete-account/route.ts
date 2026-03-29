@@ -3,32 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { verifyPassword } from "@/lib/accounts";
 import Stripe from "stripe";
-import { CONVEX_URL } from "@/lib/convex";
 
 // STRIPE_SECRET_KEY checked at request time
 function getStripe() { if (!process.env.STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY required"); return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-02-25.clover" }); }
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) throw new Error(`Convex mutation ${path} failed`);
-  return res.json();
-}
-
 export async function POST(req: NextRequest) {
   const sessionToken = req.cookies.get(COOKIE)?.value;
   if (!sessionToken) {

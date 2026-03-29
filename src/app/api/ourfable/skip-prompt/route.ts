@@ -1,31 +1,5 @@
+import { internalConvexQuery as convexQuery, internalConvexMutation as convexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
-
-const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
-
-async function convexQuery(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
 
 function confirmationPage(error?: string): NextResponse {
   const html = error

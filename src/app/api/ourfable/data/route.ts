@@ -7,7 +7,6 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE, type SessionPayload } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 
@@ -83,6 +82,7 @@ const ALLOWED_QUERIES = new Set([
   // - createOurFableFamily, updateOurFable2FA, getOurFable2FAStatus
   // - getFamilyEncryptionKeys
   // These are called ONLY from server-side API routes via internalConvexQuery/internalConvexMutation.
+  "ourfable:getDispatchByViewToken",
   "ourfable:getReferralByCode",
   "ourfable:listReferralCodes",
   "ourfable:createReferralCodes",
@@ -95,6 +95,7 @@ const ALLOWED_QUERIES = new Set([
   // Recovery codes & vault protection — safe read-only queries (public)
   "ourfable:isRecoverySetupComplete",
   "ourfable:getRecoveryCodeStatus",
+  "ourfable:getRecoveryInfo",
   "ourfable:getGuardianKeyShares",
   // Recovery/encryption operations that are internal — routed via INTERNAL_ALLOWED set
   "ourfable:storeRecoveryCodeHashes",
@@ -123,6 +124,8 @@ const INTERNAL_ALLOWED = new Set([
 // SECURITY: These queries do NOT use familyId from the session.
 // Only token-based lookups and read-only public data belong here.
 const PUBLIC_QUERIES = new Set([
+  "ourfable:getDispatchByViewToken",
+  "ourfable:getRecoveryInfo",
   "ourfable:getShareData",
   "ourfable:getMemberByInviteToken",
   "ourfable:getMemberByShareToken",
@@ -167,20 +170,11 @@ export async function POST(req: NextRequest) {
   try {
     let data: { value?: unknown; [key: string]: unknown };
 
-    // Route internal functions through the authenticated HTTP action gateway
-    if (INTERNAL_ALLOWED.has(path)) {
-      const result = type === "mutation"
-        ? await internalConvexMutation(path, args as Record<string, unknown>)
-        : await internalConvexQuery(path, args as Record<string, unknown>);
-      data = { value: result };
-    } else {
-      const res = await fetch(`${CONVEX_URL}/api/${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-        body: JSON.stringify({ path, args, format: "json" }),
-      });
-      data = await res.json();
-    }
+    // ALL functions are now internal — route through the authenticated HTTP action gateway
+    const result = type === "mutation"
+      ? await internalConvexMutation(path, args as Record<string, unknown>)
+      : await internalConvexQuery(path, args as Record<string, unknown>);
+    data = { value: result };
 
     // Server-side vault sealing enforcement:
     // Never return sealed content to the client if child hasn't reached unlockAge
@@ -197,13 +191,10 @@ export async function POST(req: NextRequest) {
         childBirthDate = ourfableData?.birthDate ?? null;
 
         if (!childBirthDate) {
-          const legacyRes = await fetch(`${CONVEX_URL}/api/query`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
-          });
-          const legacyData = await legacyRes.json();
-          childBirthDate = legacyData.value?.childDob ?? null;
+          const legacyData = await internalConvexQuery<{ childDob?: string } | null>(
+            "ourfable:getFamily", { familyId }
+          );
+          childBirthDate = legacyData?.childDob ?? null;
         }
       } catch { /* non-fatal */ }
 

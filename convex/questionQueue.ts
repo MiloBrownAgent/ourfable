@@ -13,7 +13,7 @@
  *   - getPendingQueue()   — all pending items (used by the future email cron)
  */
 
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 // ---------------------------------------------------------------------------
@@ -24,7 +24,7 @@ import { v } from "convex/values";
  * Returns all pending queue items ordered by scheduledFor (ascending).
  * The email dispatcher will call this to find what needs sending.
  */
-export const getPendingQueue = query({
+export const getPendingQueue = internalQuery({
   args: {
     familyId: v.optional(v.string()),
   },
@@ -50,7 +50,7 @@ export const getPendingQueue = query({
 /**
  * Returns the full queue for a specific contributor (all statuses).
  */
-export const getContributorQueue = query({
+export const getContributorQueue = internalQuery({
   args: { contributorId: v.string() },
   handler: async (ctx, { contributorId }) => {
     return ctx.db
@@ -71,7 +71,7 @@ export const getContributorQueue = query({
  * scheduledFor defaults to now if not provided — useful for immediate dispatch.
  * Skips enqueueing if this contributor + question combo is already pending/sent.
  */
-export const enqueueQuestion = mutation({
+export const enqueueQuestion = internalMutation({
   args: {
     contributorId: v.string(),
     familyId: v.string(),
@@ -111,7 +111,7 @@ export const enqueueQuestion = mutation({
  * Transitions a queue item from pending → sent.
  * Call this after the email provider confirms delivery.
  */
-export const markSent = mutation({
+export const markSent = internalMutation({
   args: { id: v.id("questionQueue") },
   handler: async (ctx, { id }) => {
     const item = await ctx.db.get(id);
@@ -128,7 +128,7 @@ export const markSent = mutation({
  * Transitions a queue item from pending → failed.
  * The email cron should call this on provider error so the item can be retried.
  */
-export const markFailed = mutation({
+export const markFailed = internalMutation({
   args: { id: v.id("questionQueue") },
   handler: async (ctx, { id }) => {
     const item = await ctx.db.get(id);
@@ -141,7 +141,7 @@ export const markFailed = mutation({
 /**
  * Re-queues a failed item — resets status back to pending with a new scheduledFor.
  */
-export const requeueFailed = mutation({
+export const requeueFailed = internalMutation({
   args: {
     id: v.id("questionQueue"),
     scheduledFor: v.optional(v.number()),

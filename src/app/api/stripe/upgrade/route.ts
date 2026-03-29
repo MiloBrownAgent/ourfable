@@ -2,7 +2,6 @@ import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-intern
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { verifySession, COOKIE } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -11,18 +10,6 @@ function getStripe() {
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://ourfable.ai";
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 // Plus plan prices
 const PLUS_PRICE_IDS = {
   monthly: process.env.STRIPE_PRICE_PLUS_MONTHLY ?? "price_1TEs5XPhcoXpcvebExblvzXp",

@@ -22,8 +22,6 @@ import {
   internalMutation,
   internalQuery,
   internalAction,
-  mutation,
-  query,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getPromptsForRelationship } from "./ourfable";
@@ -276,7 +274,7 @@ export const recordPromptSend = internalMutation({
 // Call this instead of inserting into ourfable_vault_circle directly
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const addMemberAndStart = mutation({
+export const addMemberAndStart = internalMutation({
   args: {
     familyId: v.string(),
     name: v.string(),
@@ -329,7 +327,7 @@ export const addMemberAndStart = mutation({
 // PUBLIC QUERY: What prompts has this member received?
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const getMemberHistory = query({
+export const getMemberHistory = internalQuery({
   args: { memberId: v.id("ourfable_vault_circle") },
   handler: async (ctx, { memberId }) => {
     return await ctx.db
@@ -344,7 +342,7 @@ export const getMemberHistory = query({
 // TEST MODE: Speed up prompt interval for testing
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const setTestMode = mutation({
+export const setTestMode = internalMutation({
   args: {
     familyId: v.string(),
     intervalMinutes: v.optional(v.number()), // pass null/undefined to disable test mode
@@ -369,7 +367,7 @@ export const setTestMode = mutation({
 });
 
 // Fire the next prompt for a specific member immediately (for testing)
-export const firePromptNow = mutation({
+export const firePromptNow = internalMutation({
   args: {
     memberId: v.id("ourfable_vault_circle"),
     familyId: v.string(),

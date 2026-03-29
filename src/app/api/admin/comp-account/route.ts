@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { hashPassword, addAccount } from "@/lib/accounts";
-import { CONVEX_URL } from "@/lib/convex";
 import { internalConvexQuery } from "@/lib/convex-internal";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,34 +15,6 @@ import { internalConvexQuery } from "@/lib/convex-internal";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Convex mutation ${path} failed: ${text}`);
-  }
-  return res.json();
-}
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 export async function POST(req: NextRequest) {
   // ── Auth check ──
   if (!ADMIN_SECRET) {

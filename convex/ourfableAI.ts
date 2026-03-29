@@ -25,8 +25,6 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
-  mutation,
-  query,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
@@ -558,7 +556,7 @@ export const recordDetectedMilestones = internalMutation({
 // PUBLIC: Parents can log milestones manually
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const logMilestone = mutation({
+export const logMilestone = internalMutation({
   args: {
     familyId: v.string(),
     name: v.string(),
@@ -593,7 +591,7 @@ export const logMilestone = mutation({
   },
 });
 
-export const getMilestones = query({
+export const getMilestones = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db

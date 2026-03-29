@@ -7,11 +7,11 @@
  * all questions have been asked.
  *
  * Works in two modes:
- *   1. Server-side (API routes): calls Convex HTTP API directly
+ *   1. Server-side (API routes): calls Convex internal gateway
  *   2. Local test: accepts an in-memory history store
  */
 
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery, convexMutation } from "@/lib/convex";
 import {
   type Question,
   type RelationshipType,
@@ -38,57 +38,24 @@ export interface NextQuestionResult {
 }
 
 // ---------------------------------------------------------------------------
-// Convex helpers (server-side)
+// Convex helpers (server-side — routed through internal gateway)
 // ---------------------------------------------------------------------------
 
 async function fetchQuestionHistory(
   contributorId: string
 ): Promise<QuestionHistoryEntry[]> {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      path: "questions:getQuestionHistory",
-      args: { contributorId },
-      format: "json",
-    }),
-    cache: "no-store",
-  });
-  const data = await res.json();
-  return (data.value ?? []) as QuestionHistoryEntry[];
+  return convexQuery<QuestionHistoryEntry[]>("questions:getQuestionHistory", { contributorId }).catch(() => []);
 }
 
 async function convexRecordAsked(
   contributorId: string,
   questionId: string
 ): Promise<void> {
-  await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.33.0",
-    },
-    body: JSON.stringify({
-      path: "questions:recordQuestionAsked",
-      args: { contributorId, questionId },
-      format: "json",
-    }),
-  });
+  await convexMutation("questions:recordQuestionAsked", { contributorId, questionId });
 }
 
 async function convexResetQuestions(contributorId: string): Promise<void> {
-  await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.33.0",
-    },
-    body: JSON.stringify({
-      path: "questions:resetQuestions",
-      args: { contributorId },
-      format: "json",
-    }),
-  });
+  await convexMutation("questions:resetQuestions", { contributorId });
 }
 
 // ---------------------------------------------------------------------------

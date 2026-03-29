@@ -1,8 +1,7 @@
-import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { verifySession, COOKIE } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery, convexMutation } from "@/lib/convex";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -12,45 +11,13 @@ const MAX_DELIVERIES_PER_HOUR = 3;
 async function checkDeliveryRateLimit(familyId: string): Promise<{ allowed: boolean }> {
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
   try {
-    const res = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: "ourfable:countRecentDeliveries",
-        args: { familyId, since: oneHourAgo },
-        format: "json",
-      }),
-    });
-    const data = await res.json();
-    const count = data?.value ?? 0;
-    return { allowed: count < MAX_DELIVERIES_PER_HOUR };
+    const count = await convexQuery<number>("ourfable:countRecentDeliveries", { familyId, since: oneHourAgo });
+    return { allowed: (count ?? 0) < MAX_DELIVERIES_PER_HOUR };
   } catch {
     // If Convex is down, allow delivery (fail open for this critical feature)
     return { allowed: true };
   }
 }
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) throw new Error(`Convex mutation ${path} failed`);
-  return res.json();
-}
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 export async function POST(req: NextRequest) {
   // ── Authentication ──────────────────────────────────────────────────────────
   const sessionToken = req.cookies.get(COOKIE)?.value;
@@ -85,7 +52,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const family = await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId }) as {
+  const family = await convexQuery("ourfable:getOurFableFamilyById", { familyId }) as {
     childName: string;
     parentNames?: string;
   } | null;

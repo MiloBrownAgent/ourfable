@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexMutation as convexMutation } from "@/lib/convex-internal";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -17,20 +17,6 @@ const GIFT_PRICE_MAP: Record<PlanType, string> = {
   standard: process.env.STRIPE_PRICE_STANDARD_ANNUAL ?? "price_1TEs58PhcoXpcvebONIcTyJr",
   plus: process.env.STRIPE_PRICE_PLUS_ANNUAL ?? "price_1TEs5uPhcoXpcvebKqvMBSjk",
 };
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  const data = await res.json();
-  return data.value;
-}
-
 // POST /api/stripe/gift-checkout
 // Body: { recipientEmail, gifterName, gifterEmail, gifterMessage, planType }
 // Returns: { url: stripeCheckoutUrl }

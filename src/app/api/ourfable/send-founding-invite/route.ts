@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { foundingInviteEmail } from "@/lib/email-templates/founding-invite";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery } from "@/lib/convex";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? process.env.RESEND_API_KEY ?? "";
 const ADMIN_SECRET = process.env.ADMIN_SECRET ?? "";
@@ -68,22 +68,7 @@ export async function POST(req: NextRequest) {
 
     if (all) {
       // Fetch all waitlist entries from Convex
-      const convexRes = await fetch(`${CONVEX_URL}/api/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-        body: JSON.stringify({
-          path: "ourfable:listWaitlist",
-          args: {},
-          format: "json",
-        }),
-      });
-
-      if (!convexRes.ok) {
-        return NextResponse.json({ error: "Failed to fetch waitlist" }, { status: 500 });
-      }
-
-      const data = await convexRes.json();
-      const entries: WaitlistEntry[] = data.value ?? [];
+      const entries = await convexQuery<WaitlistEntry[]>("ourfable:listWaitlist", {}).catch(() => [] as WaitlistEntry[]);
 
       if (entries.length === 0) {
         return NextResponse.json({ sent: 0, message: "No waitlist entries found" });

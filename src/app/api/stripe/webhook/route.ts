@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { addAccount } from "@/lib/accounts";
-import { CONVEX_URL } from "@/lib/convex";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 function getStripe() {
@@ -17,34 +16,6 @@ function getWebhookSecret() {
 }
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Convex mutation ${path} failed: ${text}`);
-  }
-  return res.json();
-}
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 async function sendResendEmail(to: string, subject: string, html: string, extraHeaders?: Record<string, string>) {
   if (!RESEND_API_KEY) {
     console.warn("[webhook] No RESEND_FULL_API_KEY — skipping email to", to);

@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, addAccount } from "@/lib/accounts";
-import { CONVEX_URL } from "@/lib/convex";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 // POST /api/auth/create-gifted-account
 // Creates a new OurFable family account using a gift code (no Stripe payment needed)
 export async function POST(req: NextRequest) {

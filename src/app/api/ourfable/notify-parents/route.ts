@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery, convexMutation } from "@/lib/convex";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -120,20 +120,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { familyId, memberName, relationship, contentType } = body;
 
-    const familyRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
-    });
-    const family = (await familyRes.json()).value;
+    const family = await convexQuery("ourfable:getFamily", { familyId }) as Record<string, unknown> | null;
     if (!family) return NextResponse.json({ error: "Family not found" }, { status: 404 });
 
     // Save notification
-    await fetch(`${CONVEX_URL}/api/mutation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-      body: JSON.stringify({ path: "ourfable:createNotification", args: { familyId, type: "contribution_received", memberName, preview: `${contentType} · sealed` }, format: "json" }),
-    });
+    await convexMutation("ourfable:createNotification", { familyId, type: "contribution_received", memberName, preview: `${contentType} · sealed` });
 
     const parentEmail = family.parentEmail;
     if (!parentEmail) {

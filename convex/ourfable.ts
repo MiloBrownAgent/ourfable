@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation, internalMutation, internalAction, internalQuery } from "./_generated/server";
+import { internalMutation, internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 // ── Token generator ────────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ function generateToken(): string {
 
 // ── Families ───────────────────────────────────────────────────────────────────
 
-export const getFamily = query({
+export const getFamily = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -105,7 +105,7 @@ export const createFamily = internalMutation({
   },
 });
 
-export const seedFamily = mutation({
+export const seedFamily = internalMutation({
   args: {},
   handler: async (ctx) => {
     const existing = await ctx.db
@@ -140,7 +140,7 @@ export const seedFamily = mutation({
   },
 });
 
-export const patchFamily = mutation({
+export const patchFamily = internalMutation({
   args: {
     familyId: v.string(),
     parentNames: v.optional(v.string()),
@@ -176,7 +176,7 @@ export const patchFamily = mutation({
 
 // ── Chronicle ──────────────────────────────────────────────────────────────────
 
-export const listChronicle = query({
+export const listChronicle = internalQuery({
   args: { familyId: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { familyId, limit }) => {
     return await ctx.db
@@ -187,7 +187,7 @@ export const listChronicle = query({
   },
 });
 
-export const getChronicleEntry = query({
+export const getChronicleEntry = internalQuery({
   args: { familyId: v.string(), date: v.string() },
   handler: async (ctx, { familyId, date }) => {
     return await ctx.db
@@ -199,7 +199,7 @@ export const getChronicleEntry = query({
   },
 });
 
-export const createOrUpdateChronicle = mutation({
+export const createOrUpdateChronicle = internalMutation({
   args: {
     familyId: v.string(),
     date: v.string(),
@@ -231,7 +231,7 @@ export const createOrUpdateChronicle = mutation({
   },
 });
 
-export const getChronicleStats = query({
+export const getChronicleStats = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const entries = await ctx.db
@@ -244,7 +244,7 @@ export const getChronicleStats = query({
 
 // ── Milestones ─────────────────────────────────────────────────────────────────
 
-export const listMilestones = query({
+export const listMilestones = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -254,7 +254,7 @@ export const listMilestones = query({
   },
 });
 
-export const addMilestone = mutation({
+export const addMilestone = internalMutation({
   args: {
     familyId: v.string(),
     name: v.string(),
@@ -269,7 +269,7 @@ export const addMilestone = mutation({
   },
 });
 
-export const markMilestoneReached = mutation({
+export const markMilestoneReached = internalMutation({
   args: {
     milestoneId: v.id("ourfable_vault_milestones"),
     reachedAt: v.optional(v.number()),
@@ -283,7 +283,7 @@ export const markMilestoneReached = mutation({
   },
 });
 
-export const seedMilestones = mutation({
+export const seedMilestones = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const existing = await ctx.db
@@ -309,7 +309,7 @@ export const seedMilestones = mutation({
 
 // ── Letters ────────────────────────────────────────────────────────────────────
 
-export const listLetters = query({
+export const listLetters = internalQuery({
   args: { familyId: v.string(), childId: v.optional(v.string()) },
   handler: async (ctx, { familyId, childId }) => {
     const all = await ctx.db
@@ -322,7 +322,7 @@ export const listLetters = query({
   },
 });
 
-export const writeLetter = mutation({
+export const writeLetter = internalMutation({
   args: {
     familyId: v.string(),
     author: v.string(),
@@ -354,7 +354,7 @@ export const writeLetter = mutation({
   },
 });
 
-export const seedFirstLetter = mutation({
+export const seedFirstLetter = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const existing = await ctx.db
@@ -394,7 +394,7 @@ You were.
 
 // ── Inner Circle ───────────────────────────────────────────────────────────────
 
-export const listCircle = query({
+export const listCircle = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -404,14 +404,14 @@ export const listCircle = query({
   },
 });
 
-export const getCircleMember = query({
+export const getCircleMember = internalQuery({
   args: { memberId: v.id("ourfable_vault_circle") },
   handler: async (ctx, { memberId }) => {
     return await ctx.db.get(memberId);
   },
 });
 
-export const getMemberByInviteToken = query({
+export const getMemberByInviteToken = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     return await ctx.db
@@ -421,7 +421,7 @@ export const getMemberByInviteToken = query({
   },
 });
 
-export const getMemberByShareToken = query({
+export const getMemberByShareToken = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     return await ctx.db
@@ -431,7 +431,7 @@ export const getMemberByShareToken = query({
   },
 });
 
-export const addCircleMember = mutation({
+export const addCircleMember = internalMutation({
   args: {
     familyId: v.string(),
     name: v.string(),
@@ -452,7 +452,7 @@ export const addCircleMember = mutation({
   },
 });
 
-export const seedCircle = mutation({
+export const seedCircle = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     // New accounts start with an empty circle — users add their own members
@@ -460,7 +460,7 @@ export const seedCircle = mutation({
   },
 });
 
-export const submitContribution = mutation({
+export const submitContribution = internalMutation({
   args: {
     familyId: v.string(),
     memberId: v.id("ourfable_vault_circle"),
@@ -539,7 +539,7 @@ export const submitContribution = mutation({
   },
 });
 
-export const listContributions = query({
+export const listContributions = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -552,7 +552,7 @@ export const listContributions = query({
 
 // ── Recipes ────────────────────────────────────────────────────────────────────
 
-export const listRecipes = query({
+export const listRecipes = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -564,7 +564,7 @@ export const listRecipes = query({
 
 // ── Feed ───────────────────────────────────────────────────────────────────────
 
-export const listFeed = query({
+export const listFeed = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -577,7 +577,7 @@ export const listFeed = query({
 
 // ── Share data (grandparent bookmark) ─────────────────────────────────────────
 
-export const getShareData = query({
+export const getShareData = internalQuery({
   args: { shareToken: v.string() },
   handler: async (ctx, { shareToken }) => {
     const member = await ctx.db
@@ -640,7 +640,7 @@ export const getShareData = query({
 
 // ── Vault (Contributions v2) ──────────────────────────────────────────────────
 
-export const listVaultEntries = query({
+export const listVaultEntries = internalQuery({
   args: {
     familyId: v.string(),
     childId: v.optional(v.string()),
@@ -693,7 +693,7 @@ export const listVaultEntries = query({
   },
 });
 
-export const listSealedEntries = query({
+export const listSealedEntries = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -706,7 +706,7 @@ export const listSealedEntries = query({
   },
 });
 
-export const unlockEntry = mutation({
+export const unlockEntry = internalMutation({
   args: {
     entryId: v.id("ourfable_vault_contributions"),
     byParent: v.optional(v.boolean()),
@@ -720,7 +720,7 @@ export const unlockEntry = mutation({
   },
 });
 
-export const submitVaultEntry = mutation({
+export const submitVaultEntry = internalMutation({
   args: {
     familyId: v.string(),
     memberId: v.id("ourfable_vault_circle"),
@@ -850,7 +850,7 @@ function generateReferralCode(): string {
 }
 
 // ── Parent-authored vault entry (from WritingBlock on dashboard) ──────────────
-export const sealParentLetter = mutation({
+export const sealParentLetter = internalMutation({
   args: {
     familyId: v.string(),
     memberName: v.string(),
@@ -894,7 +894,7 @@ export const sealParentLetter = mutation({
   },
 });
 
-export const createReferralCodes = mutation({
+export const createReferralCodes = internalMutation({
   args: {
     familyId: v.string(),
     referrerName: v.string(),
@@ -940,7 +940,7 @@ export const createReferralCodes = mutation({
   },
 });
 
-export const listReferralCodes = query({
+export const listReferralCodes = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -950,7 +950,7 @@ export const listReferralCodes = query({
   },
 });
 
-export const getReferralByCode = query({
+export const getReferralByCode = internalQuery({
   args: { code: v.string() },
   handler: async (ctx, { code }) => {
     return await ctx.db
@@ -960,7 +960,7 @@ export const getReferralByCode = query({
   },
 });
 
-export const redeemReferral = mutation({
+export const redeemReferral = internalMutation({
   args: {
     code: v.string(),
     redeemedByEmail: v.string(),
@@ -987,14 +987,14 @@ export const redeemReferral = mutation({
 
 // ── Media Upload ───────────────────────────────────────────────────────────
 
-export const generateUploadUrl = mutation({
+export const generateUploadUrl = internalMutation({
   args: {},
   handler: async (ctx) => {
     return await ctx.storage.generateUploadUrl();
   },
 });
 
-export const getMediaUrl = query({
+export const getMediaUrl = internalQuery({
   args: { storageId: v.string() },
   handler: async (ctx, { storageId }) => {
     return await ctx.storage.getUrl(storageId);
@@ -1003,7 +1003,7 @@ export const getMediaUrl = query({
 
 // ── Prompt Queue ──────────────────────────────────────────────────────────────
 
-export const queuePrompt = mutation({
+export const queuePrompt = internalMutation({
   args: {
     familyId: v.string(),
     memberId: v.id("ourfable_vault_circle"),
@@ -1023,7 +1023,7 @@ export const queuePrompt = mutation({
   },
 });
 
-export const listPromptQueue = query({
+export const listPromptQueue = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -1033,7 +1033,7 @@ export const listPromptQueue = query({
   },
 });
 
-export const getPendingPrompts = query({
+export const getPendingPrompts = internalQuery({
   args: { asOfDate: v.string() },
   handler: async (ctx, { asOfDate }) => {
     return await ctx.db
@@ -1046,14 +1046,14 @@ export const getPendingPrompts = query({
   },
 });
 
-export const markPromptSent = mutation({
+export const markPromptSent = internalMutation({
   args: { promptId: v.id("ourfable_vault_prompt_queue") },
   handler: async (ctx, { promptId }) => {
     await ctx.db.patch(promptId, { status: "sent", sentAt: Date.now() });
   },
 });
 
-export const getPromptByToken = query({
+export const getPromptByToken = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const prompt = await ctx.db
@@ -1075,7 +1075,7 @@ export const getPromptByToken = query({
   },
 });
 
-export const seedPromptQueue = mutation({
+export const seedPromptQueue = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const members = await ctx.db
@@ -1363,7 +1363,7 @@ const PROMPT_LIBRARY: Record<string, PromptDef[]> = {
 
 // ── Outgoings ──────────────────────────────────────────────────────────────────
 
-export const createOutgoing = mutation({
+export const createOutgoing = internalMutation({
   args: {
     familyId: v.string(),
     subject: v.string(),
@@ -1413,7 +1413,7 @@ export const createOutgoing = mutation({
   },
 });
 
-export const listOutgoings = query({
+export const listOutgoings = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -1426,7 +1426,7 @@ export const listOutgoings = query({
 
 // ── Snapshots ──────────────────────────────────────────────────────────────────
 
-export const listSnapshots = query({
+export const listSnapshots = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -1436,7 +1436,7 @@ export const listSnapshots = query({
   },
 });
 
-export const upsertSnapshot = mutation({
+export const upsertSnapshot = internalMutation({
   args: {
     familyId: v.string(),
     year: v.number(),
@@ -1463,7 +1463,7 @@ export const upsertSnapshot = mutation({
   },
 });
 
-export const seedSnapshots = mutation({
+export const seedSnapshots = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const snapshots = [
@@ -1493,7 +1493,7 @@ export const seedSnapshots = mutation({
 
 // ── Notifications ──────────────────────────────────────────────────────────────
 
-export const createNotification = mutation({
+export const createNotification = internalMutation({
   args: {
     familyId: v.string(),
     type: v.string(),
@@ -1505,7 +1505,7 @@ export const createNotification = mutation({
   },
 });
 
-export const listNotifications = query({
+export const listNotifications = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const all = await ctx.db
@@ -1517,7 +1517,7 @@ export const listNotifications = query({
   },
 });
 
-export const markNotificationsRead = mutation({
+export const markNotificationsRead = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const unread = await ctx.db
@@ -1547,7 +1547,7 @@ const BEFORE_BORN_PROMPTS = [
   { key: "afraid", prompt: "If you could tell them one thing you're afraid they'll never understand about you — what is it?", display: "What's the one thing you're afraid I'll never fully understand about you?", order: 10 },
 ];
 
-export const seedBeforeBorn = mutation({
+export const seedBeforeBorn = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     for (const p of BEFORE_BORN_PROMPTS) {
@@ -1566,7 +1566,7 @@ export const seedBeforeBorn = mutation({
   },
 });
 
-export const listBeforeBorn = query({
+export const listBeforeBorn = internalQuery({
   args: { familyId: v.string(), childId: v.optional(v.string()) },
   handler: async (ctx, { familyId, childId }) => {
     const all = await ctx.db
@@ -1578,7 +1578,7 @@ export const listBeforeBorn = query({
   },
 });
 
-export const answerBeforeBorn = mutation({
+export const answerBeforeBorn = internalMutation({
   args: { familyId: v.string(), promptKey: v.string(), answer: v.string() },
   handler: async (ctx, { familyId, promptKey, answer }) => {
     const existing = await ctx.db
@@ -1593,7 +1593,7 @@ export const answerBeforeBorn = mutation({
 
 // ── Birthday Letters ───────────────────────────────────────────────────────────
 
-export const generateBirthdayLetter = mutation({
+export const generateBirthdayLetter = internalMutation({
   args: { familyId: v.string(), year: v.number() },
   handler: async (ctx, { familyId, year }) => {
     const family = await ctx.db.query("ourfable_vault_families").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).first();
@@ -1624,7 +1624,7 @@ export const generateBirthdayLetter = mutation({
   },
 });
 
-export const listBirthdayLetters = query({
+export const listBirthdayLetters = internalQuery({
   args: { familyId: v.string(), childId: v.optional(v.string()) },
   handler: async (ctx, { familyId, childId }) => {
     const all = await ctx.db.query("ourfable_vault_birthday_letters").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).order("asc").collect();
@@ -1633,7 +1633,7 @@ export const listBirthdayLetters = query({
   },
 });
 
-export const patchBirthdayLetterParentNote = mutation({
+export const patchBirthdayLetterParentNote = internalMutation({
   args: { familyId: v.string(), year: v.number(), note: v.string() },
   handler: async (ctx, { familyId, year, note }) => {
     const existing = await ctx.db.query("ourfable_vault_birthday_letters").withIndex("by_familyId_year", (q) => q.eq("familyId", familyId).eq("year", year)).first();
@@ -1655,7 +1655,7 @@ function generateGiftCode(): string {
   return code;
 }
 
-export const createGift = mutation({
+export const createGift = internalMutation({
   args: {
     purchaserName: v.string(),
     purchaserEmail: v.string(),
@@ -1724,14 +1724,14 @@ export const updateGiftStatus = internalMutation({
   },
 });
 
-export const getGift = query({
+export const getGift = internalQuery({
   args: { giftCode: v.string() },
   handler: async (ctx, { giftCode }) => {
     return await ctx.db.query("ourfable_gifts").withIndex("by_giftCode", (q) => q.eq("giftCode", giftCode)).first();
   },
 });
 
-export const redeemGift = mutation({
+export const redeemGift = internalMutation({
   args: { giftCode: v.string(), familyId: v.string() },
   handler: async (ctx, { giftCode, familyId }) => {
     const gift = await ctx.db.query("ourfable_gifts").withIndex("by_giftCode", (q) => q.eq("giftCode", giftCode)).first();
@@ -1746,14 +1746,14 @@ export const redeemGift = mutation({
 
 // ── Print Orders ───────────────────────────────────────────────────────────────
 
-export const requestPrintBook = mutation({
+export const requestPrintBook = internalMutation({
   args: { familyId: v.string(), year: v.number(), shippingAddress: v.optional(v.string()) },
   handler: async (ctx, args) => {
     return await ctx.db.insert("ourfable_print_orders", { ...args, status: "pending", requestedAt: Date.now() });
   },
 });
 
-export const listPrintOrders = query({
+export const listPrintOrders = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db.query("ourfable_print_orders").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
@@ -1762,14 +1762,14 @@ export const listPrintOrders = query({
 
 // ── Voice Submissions ──────────────────────────────────────────────────────────
 
-export const createVoiceSubmission = mutation({
+export const createVoiceSubmission = internalMutation({
   args: { familyId: v.string(), callerPhone: v.string(), audioUrl: v.optional(v.string()), durationSeconds: v.optional(v.number()) },
   handler: async (ctx, args) => {
     return await ctx.db.insert("ourfable_voice_submissions", { ...args, status: "received", createdAt: Date.now() });
   },
 });
 
-export const listVoiceSubmissions = query({
+export const listVoiceSubmissions = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db.query("ourfable_voice_submissions").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).order("desc").collect();
@@ -1778,7 +1778,7 @@ export const listVoiceSubmissions = query({
 
 // ── Waitlist ──────────────────────────────────────────────────────────────────
 
-export const addWaitlistEntry = mutation({
+export const addWaitlistEntry = internalMutation({
   args: {
     email: v.string(),
     source: v.optional(v.string()),
@@ -1800,14 +1800,14 @@ export const addWaitlistEntry = mutation({
   },
 });
 
-export const listWaitlist = query({
+export const listWaitlist = internalQuery({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("ourfable_waitlist").withIndex("by_createdAt").order("asc").collect();
   },
 });
 
-export const removeWaitlistEntry = mutation({
+export const removeWaitlistEntry = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
     const entry = await ctx.db.query("ourfable_waitlist").withIndex("by_email", q => q.eq("email", email)).first();
@@ -1827,7 +1827,7 @@ function computeDeliveryDate(childDob: string, milestoneAge: number): string {
   return delivery.toISOString().slice(0, 10);
 }
 
-export const getDeliveryMilestones = query({
+export const getDeliveryMilestones = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const milestones = await ctx.db
@@ -1849,7 +1849,7 @@ export const getDeliveryMilestones = query({
   },
 });
 
-export const setDeliveryMilestone = mutation({
+export const setDeliveryMilestone = internalMutation({
   args: {
     familyId: v.string(),
     contributorId: v.string(),
@@ -1898,14 +1898,14 @@ export const setDeliveryMilestone = mutation({
   },
 });
 
-export const deleteDeliveryMilestone = mutation({
+export const deleteDeliveryMilestone = internalMutation({
   args: { milestoneId: v.id("ourfable_vault_delivery_milestones") },
   handler: async (ctx, { milestoneId }) => {
     await ctx.db.delete(milestoneId);
   },
 });
 
-export const getUpcomingDeliveries = query({
+export const getUpcomingDeliveries = internalQuery({
   args: {},
   handler: async (ctx) => {
     const today = new Date().toISOString().slice(0, 10);
@@ -2007,7 +2007,7 @@ export const getOurFableFamilyById = internalQuery({
 });
 
 // Safe public version — strips passwordHash and other sensitive auth fields
-export const getOurFableFamilyByIdSafe = query({
+export const getOurFableFamilyByIdSafe = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -2107,7 +2107,7 @@ export const listActiveOurFableFamilies = internalQuery({
 
 // ── OurFable Circle Members ─────────────────────────────────────────────────
 
-export const addOurFableCircleMember = mutation({
+export const addOurFableCircleMember = internalMutation({
   args: {
     familyId: v.string(),
     name: v.string(),
@@ -2123,7 +2123,7 @@ export const addOurFableCircleMember = mutation({
   },
 });
 
-export const listOurFableCircleMembers = query({
+export const listOurFableCircleMembers = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -2133,7 +2133,7 @@ export const listOurFableCircleMembers = query({
   },
 });
 
-export const setCircleMemberInnerRing = mutation({
+export const setCircleMemberInnerRing = internalMutation({
   args: {
     memberId: v.id("ourfable_circle_members"),
     isInnerRing: v.boolean(),
@@ -2145,7 +2145,7 @@ export const setCircleMemberInnerRing = mutation({
 
 // ── OurFable Vault Entries ──────────────────────────────────────────────────
 
-export const addOurFableVaultEntry = mutation({
+export const addOurFableVaultEntry = internalMutation({
   args: {
     familyId: v.string(),
     type: v.string(),
@@ -2164,7 +2164,7 @@ export const addOurFableVaultEntry = mutation({
   },
 });
 
-export const listOurFableVaultEntries = query({
+export const listOurFableVaultEntries = internalQuery({
   args: { familyId: v.string(), childId: v.optional(v.string()) },
   handler: async (ctx, { familyId, childId }) => {
     let all = await ctx.db
@@ -2195,7 +2195,7 @@ export const listOurFableVaultEntries = query({
   },
 });
 
-export const unlockOurFableVaultEntry = mutation({
+export const unlockOurFableVaultEntry = internalMutation({
   args: {
     entryId: v.id("ourfable_vault_entries"),
   },
@@ -2208,7 +2208,7 @@ export const unlockOurFableVaultEntry = mutation({
 
 // ── OurFable Letters ────────────────────────────────────────────────────────
 
-export const addOurFableLetter = mutation({
+export const addOurFableLetter = internalMutation({
   args: {
     familyId: v.string(),
     authorEmail: v.string(),
@@ -2225,7 +2225,7 @@ export const addOurFableLetter = mutation({
   },
 });
 
-export const listOurFableLetters = query({
+export const listOurFableLetters = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -2237,7 +2237,7 @@ export const listOurFableLetters = query({
 
 // ── OurFable Snapshots ──────────────────────────────────────────────────────
 
-export const upsertOurFableSnapshot = mutation({
+export const upsertOurFableSnapshot = internalMutation({
   args: {
     familyId: v.string(),
     month: v.number(),
@@ -2261,7 +2261,7 @@ export const upsertOurFableSnapshot = mutation({
   },
 });
 
-export const listOurFableSnapshots = query({
+export const listOurFableSnapshots = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -2273,7 +2273,7 @@ export const listOurFableSnapshots = query({
 
 // ── OurFable Milestones ─────────────────────────────────────────────────────
 
-export const addOurFableMilestone = mutation({
+export const addOurFableMilestone = internalMutation({
   args: {
     familyId: v.string(),
     title: v.string(),
@@ -2286,7 +2286,7 @@ export const addOurFableMilestone = mutation({
   },
 });
 
-export const listOurFableMilestones = query({
+export const listOurFableMilestones = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -2298,7 +2298,7 @@ export const listOurFableMilestones = query({
 
 // ── OurFable Dispatches ─────────────────────────────────────────────────────
 
-export const createOurFableDispatch = mutation({
+export const createOurFableDispatch = internalMutation({
   args: {
     familyId: v.string(),
     type: v.string(),
@@ -2315,7 +2315,7 @@ export const createOurFableDispatch = mutation({
   },
 });
 
-export const getDispatchByViewToken = query({
+export const getDispatchByViewToken = internalQuery({
   args: { viewToken: v.string() },
   handler: async (ctx, { viewToken }) => {
     const dispatch = await ctx.db
@@ -2340,7 +2340,7 @@ export const getDispatchByViewToken = query({
   },
 });
 
-export const listOurFableDispatches = query({
+export const listOurFableDispatches = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -2430,7 +2430,7 @@ export const incrementOurFableStorage = internalMutation({
   },
 });
 
-export const getOurFableStorageUsage = query({
+export const getOurFableStorageUsage = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -2450,7 +2450,7 @@ export const getOurFableStorageUsage = query({
 
 // ── OurFable — Facilitator & Delivery Functions ─────────────────────────────
 
-export const updateOurFableFacilitators = mutation({
+export const updateOurFableFacilitators = internalMutation({
   args: {
     familyId: v.string(),
     facilitator1Name: v.optional(v.string()),
@@ -2478,7 +2478,7 @@ export const updateOurFableFacilitators = mutation({
   },
 });
 
-export const getOurFableFacilitators = query({
+export const getOurFableFacilitators = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -2504,7 +2504,7 @@ export const getOurFableFacilitators = query({
 
 // ── OurFable — Delivery Milestones ──────────────────────────────────────────
 
-export const createOurFableDeliveryMilestones = mutation({
+export const createOurFableDeliveryMilestones = internalMutation({
   args: {
     familyId: v.string(),
     childDob: v.string(),
@@ -2537,7 +2537,7 @@ export const createOurFableDeliveryMilestones = mutation({
   },
 });
 
-export const listOurFableDeliveryMilestones = query({
+export const listOurFableDeliveryMilestones = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -2547,7 +2547,7 @@ export const listOurFableDeliveryMilestones = query({
   },
 });
 
-export const updateOurFableDeliveryMilestoneStatus = mutation({
+export const updateOurFableDeliveryMilestoneStatus = internalMutation({
   args: {
     milestoneId: v.id("ourfable_delivery_milestones"),
     deliveryStatus: v.string(),
@@ -2571,7 +2571,7 @@ export const updateOurFableDeliveryMilestoneStatus = mutation({
 
 // ── OurFable — Custom Delivery Milestones ───────────────────────────────────
 
-export const addCustomDeliveryMilestone = mutation({
+export const addCustomDeliveryMilestone = internalMutation({
   args: {
     familyId: v.string(),
     milestoneName: v.string(),
@@ -2588,14 +2588,14 @@ export const addCustomDeliveryMilestone = mutation({
   },
 });
 
-export const deleteOurFableDeliveryMilestone = mutation({
+export const deleteOurFableDeliveryMilestone = internalMutation({
   args: { id: v.id("ourfable_delivery_milestones") },
   handler: async (ctx, { id }) => {
     await ctx.db.delete(id);
   },
 });
 
-export const listDeliveryMilestones = query({
+export const listDeliveryMilestones = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -2607,7 +2607,7 @@ export const listDeliveryMilestones = query({
 
 // ── OurFable — Delivery Tokens ──────────────────────────────────────────────
 
-export const createOurFableDeliveryToken = mutation({
+export const createOurFableDeliveryToken = internalMutation({
   args: {
     token: v.string(),
     familyId: v.string(),
@@ -2624,7 +2624,7 @@ export const createOurFableDeliveryToken = mutation({
   },
 });
 
-export const getOurFableDeliveryToken = query({
+export const getOurFableDeliveryToken = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     return await ctx.db
@@ -2634,7 +2634,7 @@ export const getOurFableDeliveryToken = query({
   },
 });
 
-export const markOurFableDeliveryTokenUsed = mutation({
+export const markOurFableDeliveryTokenUsed = internalMutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const row = await ctx.db
@@ -2647,7 +2647,7 @@ export const markOurFableDeliveryTokenUsed = mutation({
 
 // ── OurFable — Facilitator Tokens ───────────────────────────────────────────
 
-export const createOurFableFacilitatorToken = mutation({
+export const createOurFableFacilitatorToken = internalMutation({
   args: {
     token: v.string(),
     familyId: v.string(),
@@ -2663,7 +2663,7 @@ export const createOurFableFacilitatorToken = mutation({
   },
 });
 
-export const getOurFableFacilitatorToken = query({
+export const getOurFableFacilitatorToken = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     return await ctx.db
@@ -2673,7 +2673,7 @@ export const getOurFableFacilitatorToken = query({
   },
 });
 
-export const markOurFableFacilitatorTokenUsed = mutation({
+export const markOurFableFacilitatorTokenUsed = internalMutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const row = await ctx.db
@@ -2722,7 +2722,7 @@ export const getOurFable2FAStatus = internalQuery({
 });
 
 // Safe public version — returns only totpEnabled flag, NOT the secret
-export const getOurFable2FAStatusPublic = query({
+export const getOurFable2FAStatusPublic = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -2738,7 +2738,7 @@ export const getOurFable2FAStatusPublic = query({
 
 // ── OurFable — Circle Member Missed Prompts ─────────────────────────────────
 
-export const updateCircleMemberEmail = mutation({
+export const updateCircleMemberEmail = internalMutation({
   args: {
     memberId: v.id("ourfable_vault_circle"),
     email: v.string(),
@@ -2749,7 +2749,7 @@ export const updateCircleMemberEmail = mutation({
   },
 });
 
-export const updateOurFableCircleMemberMissedPrompts = mutation({
+export const updateOurFableCircleMemberMissedPrompts = internalMutation({
   args: {
     memberId: v.id("ourfable_circle_members"),
     missedPrompts: v.number(),
@@ -2762,7 +2762,7 @@ export const updateOurFableCircleMemberMissedPrompts = mutation({
   },
 });
 
-export const updateOurFableCircleMemberInactivity = mutation({
+export const updateOurFableCircleMemberInactivity = internalMutation({
   args: {
     memberId: v.string(),
     consecutiveMissed: v.number(),
@@ -2779,7 +2779,7 @@ export const updateOurFableCircleMemberInactivity = mutation({
 
 // ── OurFable — Reset Circle Member Inactivity (skip endpoint) ───────────────
 
-export const resetCircleMemberInactivity = mutation({
+export const resetCircleMemberInactivity = internalMutation({
   args: { memberId: v.id("ourfable_circle_members") },
   handler: async (ctx, { memberId }) => {
     await ctx.db.patch(memberId, { consecutiveMissed: 0 });
@@ -2788,7 +2788,7 @@ export const resetCircleMemberInactivity = mutation({
 
 // ── OurFable — Prompt Skip Tracking ─────────────────────────────────────────
 
-export const logPromptSkip = mutation({
+export const logPromptSkip = internalMutation({
   args: {
     memberId: v.string(),
     familyId: v.string(),
@@ -2801,7 +2801,7 @@ export const logPromptSkip = mutation({
   },
 });
 
-export const getPromptSkipStats = query({
+export const getPromptSkipStats = internalQuery({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("ourfable_prompt_skips").collect();
@@ -2817,7 +2817,7 @@ export const getPromptSkipStats = query({
 
 // ── OurFable — Get All Pending Delivery Milestones (for cron) ───────────────
 
-export const getAllPendingOurFableDeliveryMilestones = query({
+export const getAllPendingOurFableDeliveryMilestones = internalQuery({
   args: {},
   handler: async (ctx) => {
     return await ctx.db
@@ -3009,7 +3009,7 @@ export const updateOurFableFacilitatorNotification = internalMutation({
   },
 });
 
-export const updateOurFableLapseNotification = mutation({
+export const updateOurFableLapseNotification = internalMutation({
   args: {
     familyId: v.string(),
     notifyFacilitatorOnLapse: v.boolean(),
@@ -3028,7 +3028,7 @@ export const updateOurFableLapseNotification = mutation({
 });
 
 // Count recent delivery tokens for rate limiting
-export const countRecentDeliveries = query({
+export const countRecentDeliveries = internalQuery({
   args: { familyId: v.string(), since: v.number() },
   handler: async (ctx, { familyId, since }) => {
     const tokens = await ctx.db
@@ -3055,7 +3055,7 @@ function generateChildId(childName: string): string {
 
 // ── List Children ─────────────────────────────────────────────────────────────
 
-export const listChildren = query({
+export const listChildren = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -3067,7 +3067,7 @@ export const listChildren = query({
 
 // ── Get Child ─────────────────────────────────────────────────────────────────
 
-export const getChild = query({
+export const getChild = internalQuery({
   args: { childId: v.string() },
   handler: async (ctx, { childId }) => {
     return await ctx.db
@@ -3079,7 +3079,7 @@ export const getChild = query({
 
 // ── Add Child ─────────────────────────────────────────────────────────────────
 
-export const addChild = mutation({
+export const addChild = internalMutation({
   args: {
     familyId: v.string(),
     childName: v.string(),
@@ -3149,7 +3149,7 @@ export const addChild = mutation({
 
 // ── Remove Child (soft delete) ────────────────────────────────────────────────
 
-export const removeChild = mutation({
+export const removeChild = internalMutation({
   args: { childId: v.string() },
   handler: async (ctx, { childId }) => {
     const child = await ctx.db
@@ -3165,7 +3165,7 @@ export const removeChild = mutation({
 // ── Copy Circle to Child ──────────────────────────────────────────────────────
 // Copies selected circle members from a source child to a target child
 
-export const copyCircleToChild = mutation({
+export const copyCircleToChild = internalMutation({
   args: {
     sourceChildId: v.string(),
     targetChildId: v.string(),
@@ -3232,7 +3232,7 @@ export const copyCircleToChild = mutation({
 // For each ourfable_family that has childName + birthDate, create an
 // ourfable_children entry with isFirst: true (idempotent).
 
-export const migrateToMultiChild = mutation({
+export const migrateToMultiChild = internalMutation({
   args: {},
   handler: async (ctx) => {
     const families = await ctx.db.query("ourfable_families").collect();
@@ -3269,7 +3269,7 @@ export const migrateToMultiChild = mutation({
 
 // ── Link child to Stripe subscription item ────────────────────────────────────
 
-export const linkChildToStripeSubscriptionItem = mutation({
+export const linkChildToStripeSubscriptionItem = internalMutation({
   args: {
     childId: v.string(),
     stripeSubscriptionItemId: v.string(),
@@ -3287,7 +3287,7 @@ export const linkChildToStripeSubscriptionItem = mutation({
 
 // ── Get child by Stripe subscription item ────────────────────────────────────
 
-export const getChildByStripeSubscriptionItem = query({
+export const getChildByStripeSubscriptionItem = internalQuery({
   args: { stripeSubscriptionItemId: v.string() },
   handler: async (ctx, { stripeSubscriptionItemId }) => {
     const children = await ctx.db
@@ -3299,7 +3299,7 @@ export const getChildByStripeSubscriptionItem = query({
 
 // ── Deactivate child (on subscription cancel) ────────────────────────────────
 
-export const deactivateChildByStripeSubscriptionItem = mutation({
+export const deactivateChildByStripeSubscriptionItem = internalMutation({
   args: { stripeSubscriptionItemId: v.string() },
   handler: async (ctx, { stripeSubscriptionItemId }) => {
     const children = await ctx.db.query("ourfable_children").collect();
@@ -3313,7 +3313,7 @@ export const deactivateChildByStripeSubscriptionItem = mutation({
 // ── List circle members for a child ──────────────────────────────────────────
 // Returns members for a specific childId, or falls back to family-level members
 
-export const listOurFableCircleMembersForChild = query({
+export const listOurFableCircleMembersForChild = internalQuery({
   args: {
     familyId: v.string(),
     childId: v.optional(v.string()),
@@ -3337,7 +3337,7 @@ export const listOurFableCircleMembersForChild = query({
 
 // ── List vault entries for a child ───────────────────────────────────────────
 
-export const listOurFableVaultEntriesForChild = query({
+export const listOurFableVaultEntriesForChild = internalQuery({
   args: {
     familyId: v.string(),
     childId: v.optional(v.string()),
@@ -3355,7 +3355,7 @@ export const listOurFableVaultEntriesForChild = query({
 
 // ── List dispatches with optional child filter ────────────────────────────────
 
-export const listOurFableDispatchesForChild = query({
+export const listOurFableDispatchesForChild = internalQuery({
   args: {
     familyId: v.string(),
     childId: v.optional(v.string()),
@@ -3372,7 +3372,7 @@ export const listOurFableDispatchesForChild = query({
 
 // ── List active children for monthly prompts ──────────────────────────────────
 
-export const listActiveChildrenForFamily = query({
+export const listActiveChildrenForFamily = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const children = await ctx.db
@@ -3385,7 +3385,7 @@ export const listActiveChildrenForFamily = query({
 
 // ── Create dispatch with optional childId ─────────────────────────────────────
 
-export const createOurFableDispatchForChild = mutation({
+export const createOurFableDispatchForChild = internalMutation({
   args: {
     familyId: v.string(),
     childId: v.optional(v.string()),
@@ -3401,7 +3401,7 @@ export const createOurFableDispatchForChild = mutation({
 // ── Get/Set circle member prompt frequency ────────────────────────────────────
 // Uses ourfable_vault_circle table since that's what the OurFable circle page uses.
 
-export const getCircleMemberFrequency = query({
+export const getCircleMemberFrequency = internalQuery({
   args: {
     familyId: v.string(),
     memberId: v.string(),
@@ -3418,7 +3418,7 @@ export const getCircleMemberFrequency = query({
   },
 });
 
-export const setCircleMemberFrequency = mutation({
+export const setCircleMemberFrequency = internalMutation({
   args: {
     familyId: v.string(),
     memberId: v.string(),
@@ -3449,7 +3449,7 @@ export const setCircleMemberFrequency = mutation({
 // ── Aliases for export/storage-warnings routes ────────────────────────────────
 
 /** Alias for listLetters — used by the data export route */
-export const listLettersByFamily = query({
+export const listLettersByFamily = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -3461,7 +3461,7 @@ export const listLettersByFamily = query({
 });
 
 /** Alias for listContributions — used by the data export route */
-export const listContributionsByFamily = query({
+export const listContributionsByFamily = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -3473,7 +3473,7 @@ export const listContributionsByFamily = query({
 });
 
 /** Alias for listSnapshots — used by the data export route */
-export const listSnapshotsByFamily = query({
+export const listSnapshotsByFamily = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -3518,7 +3518,7 @@ export const patchOurFableFamily = internalMutation({
 
 // ── List milestone prompts ─────────────────────────────────────────────────────
 
-export const listMilestonePrompts = query({
+export const listMilestonePrompts = internalQuery({
   args: { familyId: v.string(), childId: v.optional(v.string()) },
   handler: async (ctx, { familyId, childId }) => {
     const all = await ctx.db
@@ -3532,7 +3532,7 @@ export const listMilestonePrompts = query({
 
 // ── Create milestone prompt ────────────────────────────────────────────────────
 
-export const createMilestonePrompt = mutation({
+export const createMilestonePrompt = internalMutation({
   args: {
     familyId: v.string(),
     childId: v.optional(v.string()),
@@ -3553,7 +3553,7 @@ export const createMilestonePrompt = mutation({
 
 // ── Mark prompt sent ───────────────────────────────────────────────────────────
 
-export const markMilestonePromptSent = mutation({
+export const markMilestonePromptSent = internalMutation({
   args: { promptId: v.id("ourfable_milestone_prompts") },
   handler: async (ctx, { promptId }) => {
     await ctx.db.patch(promptId, { sent: true, sentAt: Date.now() });
@@ -3562,7 +3562,7 @@ export const markMilestonePromptSent = mutation({
 
 // ── Mark prompt responded ─────────────────────────────────────────────────────
 
-export const markMilestonePromptResponded = mutation({
+export const markMilestonePromptResponded = internalMutation({
   args: { promptId: v.id("ourfable_milestone_prompts") },
   handler: async (ctx, { promptId }) => {
     await ctx.db.patch(promptId, { respondedAt: Date.now() });
@@ -3573,7 +3573,7 @@ export const markMilestonePromptResponded = mutation({
 // Returns prompts where triggerAgeMonths <= child's current age (months) OR
 // triggerDate <= today, and sent === false.
 
-export const getDueMilestonePrompts = query({
+export const getDueMilestonePrompts = internalQuery({
   args: { familyId: v.string(), childId: v.optional(v.string()) },
   handler: async (ctx, { familyId, childId }) => {
     const today = new Date().toISOString().slice(0, 10);
@@ -3622,7 +3622,7 @@ export const getDueMilestonePrompts = query({
 
 // ── Seed default milestone prompts for a child ────────────────────────────────
 
-export const seedDefaultMilestonePrompts = mutation({
+export const seedDefaultMilestonePrompts = internalMutation({
   args: {
     familyId: v.string(),
     childId: v.optional(v.string()),
@@ -3744,7 +3744,7 @@ export const markMilestonePromptSentInternal = internalMutation({
 
 // ── Legacy Mode / Guardian Check-In functions ─────────────────────────────────
 
-export const setLegacyMode = mutation({
+export const setLegacyMode = internalMutation({
   args: { familyId: v.string(), enabled: v.boolean() },
   handler: async (ctx, { familyId, enabled }) => {
     const family = await ctx.db
@@ -3757,7 +3757,7 @@ export const setLegacyMode = mutation({
   },
 });
 
-export const setGuardianCheckIn = mutation({
+export const setGuardianCheckIn = internalMutation({
   args: { familyId: v.string(), enabled: v.boolean() },
   handler: async (ctx, { familyId, enabled }) => {
     const family = await ctx.db
@@ -3770,7 +3770,7 @@ export const setGuardianCheckIn = mutation({
   },
 });
 
-export const updateLastActivity = mutation({
+export const updateLastActivity = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -3797,7 +3797,7 @@ export const checkInactiveAccountsInternal = internalQuery({
   },
 });
 
-export const getLegacySettings = query({
+export const getLegacySettings = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -3933,7 +3933,7 @@ export const storeGuardianKeyShare = internalMutation({
 /**
  * Get guardian key shares for a family.
  */
-export const getGuardianKeyShares = query({
+export const getGuardianKeyShares = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -3948,7 +3948,7 @@ export const getGuardianKeyShares = query({
  * Called from the client — client reads plaintext, encrypts, sends back.
  * This mutation updates a single entry with encrypted content.
  */
-export const migrateEntryToEncrypted = mutation({
+export const migrateEntryToEncrypted = internalMutation({
   args: {
     entryId: v.id("ourfable_vault_entries"),
     encryptedBody: v.string(),
@@ -3972,7 +3972,7 @@ export const migrateEntryToEncrypted = mutation({
 /**
  * Migrate a contribution entry to encrypted format.
  */
-export const migrateContributionToEncrypted = mutation({
+export const migrateContributionToEncrypted = internalMutation({
   args: {
     entryId: v.id("ourfable_vault_contributions"),
     encryptedBody: v.string(),
@@ -4075,7 +4075,7 @@ export const markRecoverySetupComplete = internalMutation({
 /**
  * Check if recovery setup is complete.
  */
-export const isRecoverySetupComplete = query({
+export const isRecoverySetupComplete = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -4090,7 +4090,7 @@ export const isRecoverySetupComplete = query({
 /**
  * Get recovery code status (how many remaining).
  */
-export const getRecoveryCodeStatus = query({
+export const getRecoveryCodeStatus = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -4113,7 +4113,7 @@ export const getRecoveryCodeStatus = query({
  * Get family data needed for recovery during password reset.
  * Returns encryption info + recovery status.
  */
-export const getRecoveryInfo = query({
+export const getRecoveryInfo = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
     const family = await ctx.db

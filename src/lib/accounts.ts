@@ -5,7 +5,6 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
-import { CONVEX_URL } from "@/lib/convex";
 
 const SECRET: string = process.env.SESSION_SECRET ?? "";
 if (!SECRET) throw new Error("SESSION_SECRET environment variable is required");
@@ -53,38 +52,6 @@ export function needsHashUpgrade(hash: string): boolean {
 }
 
 // ── Convex-backed account operations ──────────────────────────────────────────
-
-async function convexQuery(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) {
-    console.error(`[accounts] Convex query ${path} failed:`, await res.text());
-    return null;
-  }
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) {
-    console.error(`[accounts] Convex mutation ${path} failed:`, await res.text());
-    return null;
-  }
-  const data = await res.json();
-  return data.value ?? null;
-}
-
 export async function getAccount(email: string): Promise<OurFableAccount | undefined> {
   const normalized = email.toLowerCase().trim();
   const result = await internalConvexQuery<{

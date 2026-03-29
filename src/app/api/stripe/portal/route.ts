@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { verifySession, COOKIE } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery as convexQuery } from "@/lib/convex-internal";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -10,23 +10,6 @@ function getStripe() {
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://ourfable.ai";
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Convex query ${path} failed: ${text}`);
-  }
-  return res.json();
-}
-
 // POST /api/stripe/portal
 // Returns a Stripe Customer Portal session URL for the authenticated family
 export async function POST(req: NextRequest) {

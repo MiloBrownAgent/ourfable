@@ -9,8 +9,7 @@
  */
 
 import { internalAction } from "./_generated/server";
-
-const CONVEX_URL = process.env.CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
+import { internal } from "./_generated/api";
 
 // Rotating general questions (used as fallback / family-level)
 const MONTHLY_QUESTIONS = [
@@ -75,30 +74,7 @@ function pickQuestion(childName: string, childDob: string, seed: number): string
   return question.replace(/\{childName\}/g, childName.split(" ")[0]);
 }
 
-async function convexQuery(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
 
-async function convexMutation(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
 
 async function sendEmail(
   apiKey: string,
@@ -182,7 +158,7 @@ function buildInactivityEmailToParent(memberName: string, relationship: string, 
 
 export const sendMonthlyPrompts = internalAction({
   args: {},
-  handler: async () => {
+  handler: async (ctx) => {
     const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
     if (!RESEND_API_KEY) {
       console.error("[ourfableMonthly] RESEND_FULL_API_KEY not set — skipping");
@@ -190,7 +166,7 @@ export const sendMonthlyPrompts = internalAction({
     }
 
     // Get all active families
-    const families = (await convexQuery("ourfable:listActiveOurFableFamilies", {})) as Array<{
+    const families = (await ctx.runQuery(internal.ourfable.listActiveOurFableFamilies, {})) as Array<{
       familyId: string;
       email: string;
       childName: string;
@@ -211,7 +187,7 @@ export const sendMonthlyPrompts = internalAction({
     for (const family of families) {
       try {
         // Get active children for this family
-        const children = (await convexQuery("ourfable:listActiveChildrenForFamily", {
+        const children = (await ctx.runQuery(internal.ourfable.listActiveChildrenForFamily, {
           familyId: family.familyId,
         })) as Array<{ childId: string; childName: string; childDob: string }> | null;
 
@@ -247,13 +223,13 @@ export const sendMonthlyPrompts = internalAction({
           let members: CircleMember[] | null = null;
 
           if (children && children.length > 0) {
-            members = (await convexQuery("ourfable:listOurFableCircleMembersForChild", {
+            members = (await ctx.runQuery(internal.ourfable.listOurFableCircleMembersForChild, {
               familyId: family.familyId,
               childId: child.childId,
             })) as CircleMember[] | null;
           } else {
             // Backward compat: use family-level circle
-            members = (await convexQuery("ourfable:listOurFableCircleMembers", {
+            members = (await ctx.runQuery(internal.ourfable.listOurFableCircleMembers, {
               familyId: family.familyId,
             })) as CircleMember[] | null;
           }
@@ -284,7 +260,7 @@ export const sendMonthlyPrompts = internalAction({
               if (!respondedRecently) {
                 // Member did NOT respond to last prompt — increment consecutiveMissed
                 const newMissed = (m.consecutiveMissed ?? 0) + 1;
-                await convexMutation("ourfable:updateOurFableCircleMemberInactivity", {
+                await ctx.runMutation(internal.ourfable.updateOurFableCircleMemberInactivity, {
                   memberId: m._id,
                   consecutiveMissed: newMissed,
                 });
@@ -322,7 +298,7 @@ export const sendMonthlyPrompts = internalAction({
               } else {
                 // Member responded — reset consecutiveMissed if it was > 0
                 if ((m.consecutiveMissed ?? 0) > 0) {
-                  await convexMutation("ourfable:updateOurFableCircleMemberInactivity", {
+                  await ctx.runMutation(internal.ourfable.updateOurFableCircleMemberInactivity, {
                     memberId: m._id,
                     consecutiveMissed: 0,
                   });
@@ -363,7 +339,7 @@ export const sendMonthlyPrompts = internalAction({
 
           if (sentToList.length > 0) {
             // Log dispatch
-            await convexMutation("ourfable:createOurFableDispatchForChild", {
+            await ctx.runMutation(internal.ourfable.createOurFableDispatchForChild, {
               familyId: family.familyId,
               childId: child.childId !== family.familyId ? child.childId : undefined,
               type: "monthly_prompt",

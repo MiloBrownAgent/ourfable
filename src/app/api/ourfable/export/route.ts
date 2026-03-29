@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "../../../../lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
-
+import { convexQuery } from "@/lib/convex";
 
 // Export everything in a family's vault as a JSON manifest
 export async function GET(req: NextRequest) {
@@ -17,28 +16,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Fetch all contributions for this family
-    const [contribRes, lettersRes, snapshotsRes] = await Promise.all([
-      fetch(`${CONVEX_URL}/api/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-        body: JSON.stringify({ path: "ourfable:listContributionsByFamily", args: { familyId }, format: "json" }),
-      }),
-      fetch(`${CONVEX_URL}/api/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-        body: JSON.stringify({ path: "ourfable:listLettersByFamily", args: { familyId }, format: "json" }),
-      }),
-      fetch(`${CONVEX_URL}/api/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-        body: JSON.stringify({ path: "ourfable:listSnapshotsByFamily", args: { familyId }, format: "json" }),
-      }),
+    const [contributions, letters, snapshots] = await Promise.all([
+      convexQuery<unknown[]>("ourfable:listContributionsByFamily", { familyId }).catch(() => []),
+      convexQuery<unknown[]>("ourfable:listLettersByFamily", { familyId }).catch(() => []),
+      convexQuery<unknown[]>("ourfable:listSnapshotsByFamily", { familyId }).catch(() => []),
     ]);
-
-    const contributions = contribRes.ok ? (await contribRes.json()).value ?? [] : [];
-    const letters = lettersRes.ok ? (await lettersRes.json()).value ?? [] : [];
-    const snapshots = snapshotsRes.ok ? (await snapshotsRes.json()).value ?? [] : [];
 
     const exportData = {
       exportedAt: new Date().toISOString(),

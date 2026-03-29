@@ -1,31 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery as convexQuery } from "@/lib/convex-internal";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY required");
   return new Stripe(key, { apiVersion: "2026-02-25.clover" });
 }
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Convex-Client": "npm-1.34.0",
-    },
-    body: JSON.stringify({ path, args, format: "json" }),
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Convex query ${path} failed: ${text}`);
-  }
-  return res.json();
-}
-
 // GET /api/stripe/session?session_id=...
 // Called by /welcome after Stripe redirect — verifies payment and issues a session cookie
 export async function GET(req: NextRequest) {

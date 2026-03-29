@@ -1,24 +1,21 @@
 export const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
 
+import { internalConvexQuery, internalConvexMutation } from "./convex-internal";
+
+/**
+ * Server-side Convex query — routes through the authenticated internal HTTP gateway.
+ * Path format: "module:functionName" (e.g. "ourfable:getFamily")
+ */
 export async function convexQuery<T = unknown>(path: string, args: Record<string, unknown>): Promise<T> {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-    cache: "no-store",
-  });
-  const data = await res.json();
-  return data.value as T;
+  return internalConvexQuery<T>(path, args);
 }
 
+/**
+ * Server-side Convex mutation — routes through the authenticated internal HTTP gateway.
+ * Path format: "module:functionName" (e.g. "ourfable:createFamily")
+ */
 export async function convexMutation<T = unknown>(path: string, args: Record<string, unknown>): Promise<T> {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  const data = await res.json();
-  return data.value as T;
+  return internalConvexMutation<T>(path, args);
 }
 
 export function calcAge(dob: string, asOf?: string) {

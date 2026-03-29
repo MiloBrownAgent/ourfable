@@ -8,7 +8,7 @@
  *   - resetQuestions(contributorId)                  — mutation
  */
 
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 // ---------------------------------------------------------------------------
@@ -18,7 +18,7 @@ import { v } from "convex/values";
 /**
  * Returns the full question history for a contributor, newest first.
  */
-export const getQuestionHistory = query({
+export const getQuestionHistory = internalQuery({
   args: { contributorId: v.string() },
   handler: async (ctx, { contributorId }) => {
     return ctx.db
@@ -37,7 +37,7 @@ export const getQuestionHistory = query({
  * Records that a question was surfaced to a contributor.
  * Idempotent — skips if the question is already recorded for this contributor.
  */
-export const recordQuestionAsked = mutation({
+export const recordQuestionAsked = internalMutation({
   args: {
     contributorId: v.string(),
     questionId: v.string(),
@@ -65,7 +65,7 @@ export const recordQuestionAsked = mutation({
 /**
  * Marks a previously-asked question as answered by the contributor.
  */
-export const markAnswered = mutation({
+export const markAnswered = internalMutation({
   args: {
     contributorId: v.string(),
     questionId: v.string(),
@@ -93,7 +93,7 @@ export const markAnswered = mutation({
  * Clears all question history for a contributor.
  * Called by the engine when a full cycle is complete and it wraps around.
  */
-export const resetQuestions = mutation({
+export const resetQuestions = internalMutation({
   args: { contributorId: v.string() },
   handler: async (ctx, { contributorId }) => {
     const entries = await ctx.db

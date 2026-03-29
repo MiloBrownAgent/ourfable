@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexMutation } from "@/lib/convex";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -104,13 +104,7 @@ export async function POST(req: NextRequest) {
     if (!purchaserName || !purchaserEmail) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 
     // Create gift in Convex
-    const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-      body: JSON.stringify({ path: "ourfable:createGift", args: { purchaserName, purchaserEmail, recipientName, recipientEmail, message }, format: "json" }),
-    });
-    const data = await res.json();
-    const giftCode: string = data.value;
+    const giftCode = await convexMutation<string>("ourfable:createGift", { purchaserName, purchaserEmail, recipientName, recipientEmail, message });
     if (!giftCode) return NextResponse.json({ error: "Failed to create gift" }, { status: 500 });
 
     const unsubHeaders = {

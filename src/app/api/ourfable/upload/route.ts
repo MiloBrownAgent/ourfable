@@ -3,28 +3,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { checkStorageWarnings } from "@/lib/storage-warnings";
-import { CONVEX_URL } from "@/lib/convex";
-
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-}
-
+import { internalConvexQuery as convexQuery, internalConvexMutation as convexMutation } from "@/lib/convex-internal";
 // ── R2 client configuration ────────────────────────────────────────────────────
 // All credentials are placeholders — Dave fills these in via Vercel env vars.
 

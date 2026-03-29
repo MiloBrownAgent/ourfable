@@ -1,7 +1,7 @@
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery, convexMutation } from "@/lib/convex";
 import { dispatchEmail } from "@/lib/email-templates/dispatch";
 import crypto from "crypto";
 
@@ -46,13 +46,7 @@ export async function POST(req: NextRequest) {
     if (!subject) return NextResponse.json({ error: "subject is required" }, { status: 400 });
 
     // ── Fetch family ──────────────────────────────────────────────────────────
-    const familyRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
-    });
-    const familyData = await familyRes.json();
-    const family = familyData.value;
+    const family = await convexQuery<Record<string, unknown>>("ourfable:getFamily", { familyId });
     if (!family) return NextResponse.json({ error: "Family not found" }, { status: 404 });
 
     // planType lives on ourfable_families, plan on ourfable_vault_families — check both
@@ -66,15 +60,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Fetch circle ──────────────────────────────────────────────────────────
-    const circleRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId }, format: "json" }),
-    });
-    const circleData = await circleRes.json();
-    const allMembers: Array<{
+    const allMembers = await convexQuery<Array<{
       _id: string; name: string; email?: string; isInnerRing?: boolean;
-    }> = circleData.value ?? [];
+    }>>("ourfable:listCircle", { familyId }).catch(() => []);
 
     // ── Tier gating ───────────────────────────────────────────────────────────
     // Base plan: inner ring members only
@@ -138,24 +126,16 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Record dispatch in Convex ─────────────────────────────────────────────
-    await fetch(`${CONVEX_URL}/api/mutation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: "ourfable:createOurFableDispatch",
-        args: {
-          familyId,
-          type: mediaType || "text",
-          content: subject,
-          body: messageBody ?? "",
-          mediaUrls: mediaUrls ?? [],
-          sentTo: sentToAll ? "all" : "selected",
-          sentByName,
-          recipientCount: results.filter(r => r.success).length,
-          viewToken,
-        },
-        format: "json",
-      }),
+    await convexMutation("ourfable:createOurFableDispatch", {
+      familyId,
+      type: mediaType || "text",
+      content: subject,
+      body: messageBody ?? "",
+      mediaUrls: mediaUrls ?? [],
+      sentTo: sentToAll ? "all" : "selected",
+      sentByName,
+      recipientCount: results.filter(r => r.success).length,
+      viewToken,
     }).catch(() => {}); // non-blocking
 
     return NextResponse.json({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexQuery } from "@/lib/convex";
 
 
 // Resend API for sending emails from hello@ourfable.ai
@@ -203,23 +203,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch family
-    const familyRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
-    });
-    const familyData = await familyRes.json();
-    const family = familyData.value;
+    const family = await convexQuery("ourfable:getFamily", { familyId });
     if (!family) return NextResponse.json({ error: "Family not found" }, { status: 404 });
 
     // Fetch member
-    const membersRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId }, format: "json" }),
-    });
-    const membersData = await membersRes.json();
-    const members = membersData.value ?? [];
+    const members = await convexQuery<Array<{ _id: string; email?: string }>>("ourfable:listCircle", { familyId }).catch(() => []);
     const member = memberId
       ? members.find((m: { _id: string }) => m._id === memberId)
       : members[0];

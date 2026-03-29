@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CONVEX_URL } from "@/lib/convex";
+import { convexMutation } from "@/lib/convex";
 
 const RESEND_FULL_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID ?? "";
@@ -21,15 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Remove from Convex waitlist
-    await fetch(`${CONVEX_URL}/api/mutation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-      body: JSON.stringify({
-        path: "ourfable:removeWaitlistEntry",
-        args: { email: cleanEmail },
-        format: "json",
-      }),
-    });
+    await convexMutation("ourfable:removeWaitlistEntry", { email: cleanEmail });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

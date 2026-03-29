@@ -12,29 +12,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 
-const CONVEX_URL = process.env.CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
 
-async function convexQuery(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
 
 function generateToken(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -96,14 +74,14 @@ function emailWrapper(content: string, footerName?: string): string {
 
 export const checkDeliveryMilestones = internalAction({
   args: {},
-  handler: async () => {
+  handler: async (ctx) => {
     const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
     if (!RESEND_API_KEY) {
       console.error("[ourfableDelivery] RESEND_FULL_API_KEY not set — skipping");
       return;
     }
 
-    const milestones = (await convexQuery("ourfable:getAllPendingOurFableDeliveryMilestones", {})) as Array<{
+    const milestones = (await ctx.runQuery(internal.ourfable.getAllPendingOurFableDeliveryMilestones, {})) as Array<{
       _id: string;
       familyId: string;
       milestoneName: string;
@@ -125,7 +103,7 @@ export const checkDeliveryMilestones = internalAction({
         const daysUntil = Math.floor((milestone.milestoneDate - now) / DAY_MS);
         const daysAfter = -daysUntil;
 
-        const family = (await convexQuery("ourfable:getOurFableFamilyById", { familyId: milestone.familyId })) as {
+        const family = (await ctx.runQuery(internal.ourfable.getOurFableFamilyById, { familyId: milestone.familyId })) as {
           email: string;
           childName: string;
           parentNames?: string;
@@ -153,8 +131,8 @@ export const checkDeliveryMilestones = internalAction({
           `);
 
           await sendResendEmail(RESEND_API_KEY, family.email, `${childFirst}'s ${milestone.milestoneName} is 30 days away`, html);
-          await convexMutation("ourfable:updateOurFableDeliveryMilestoneStatus", {
-            milestoneId: milestone._id,
+          await ctx.runMutation(internal.ourfable.updateOurFableDeliveryMilestoneStatus, {
+            milestoneId: milestone._id as any,
             deliveryStatus: "notified_30d",
             notificationTimestamp: new Date().toISOString(),
           });
@@ -174,8 +152,8 @@ export const checkDeliveryMilestones = internalAction({
           `);
 
           await sendResendEmail(RESEND_API_KEY, family.email, `Today's the day — ${childFirst}'s vault is ready`, html);
-          await convexMutation("ourfable:updateOurFableDeliveryMilestoneStatus", {
-            milestoneId: milestone._id,
+          await ctx.runMutation(internal.ourfable.updateOurFableDeliveryMilestoneStatus, {
+            milestoneId: milestone._id as any,
             deliveryStatus: "notified_day",
             notificationTimestamp: new Date().toISOString(),
           });
@@ -185,10 +163,10 @@ export const checkDeliveryMilestones = internalAction({
         // 60 days after — notify facilitator #1
         else if (daysAfter >= 60 && daysAfter < 61 && milestone.deliveryStatus === "notified_day" && family.facilitator1Email) {
           const facToken = generateToken();
-          await convexMutation("ourfable:createOurFableFacilitatorToken", {
+          await ctx.runMutation(internal.ourfable.createOurFableFacilitatorToken, {
             token: facToken,
             familyId: milestone.familyId,
-            milestoneId: milestone._id,
+            milestoneId: milestone._id as any,
             facilitatorEmail: family.facilitator1Email,
             facilitatorName: family.facilitator1Name ?? "Vault Guardian",
           });
@@ -204,8 +182,8 @@ export const checkDeliveryMilestones = internalAction({
           `);
 
           await sendResendEmail(RESEND_API_KEY, family.facilitator1Email, `You're needed — ${childFirst}'s vault is waiting`, html);
-          await convexMutation("ourfable:updateOurFableDeliveryMilestoneStatus", {
-            milestoneId: milestone._id,
+          await ctx.runMutation(internal.ourfable.updateOurFableDeliveryMilestoneStatus, {
+            milestoneId: milestone._id as any,
             deliveryStatus: "facilitator1_notified",
             notificationTimestamp: new Date().toISOString(),
           });
@@ -215,10 +193,10 @@ export const checkDeliveryMilestones = internalAction({
         // 90 days after — notify facilitator #2
         else if (daysAfter >= 90 && daysAfter < 91 && milestone.deliveryStatus === "facilitator1_notified" && family.facilitator2Email) {
           const facToken = generateToken();
-          await convexMutation("ourfable:createOurFableFacilitatorToken", {
+          await ctx.runMutation(internal.ourfable.createOurFableFacilitatorToken, {
             token: facToken,
             familyId: milestone.familyId,
-            milestoneId: milestone._id,
+            milestoneId: milestone._id as any,
             facilitatorEmail: family.facilitator2Email,
             facilitatorName: family.facilitator2Name ?? "Vault Guardian",
           });
@@ -234,8 +212,8 @@ export const checkDeliveryMilestones = internalAction({
           `);
 
           await sendResendEmail(RESEND_API_KEY, family.facilitator2Email, `You're needed — ${childFirst}'s vault is waiting`, html);
-          await convexMutation("ourfable:updateOurFableDeliveryMilestoneStatus", {
-            milestoneId: milestone._id,
+          await ctx.runMutation(internal.ourfable.updateOurFableDeliveryMilestoneStatus, {
+            milestoneId: milestone._id as any,
             deliveryStatus: "facilitator2_notified",
             notificationTimestamp: new Date().toISOString(),
           });
@@ -252,11 +230,11 @@ export const checkDeliveryMilestones = internalAction({
 
 export const checkCircleReEngagement = internalAction({
   args: {},
-  handler: async () => {
+  handler: async (ctx) => {
     const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
     if (!RESEND_API_KEY) return;
 
-    const families = (await convexQuery("ourfable:listActiveOurFableFamilies", {})) as Array<{
+    const families = (await ctx.runQuery(internal.ourfable.listActiveOurFableFamilies, {})) as Array<{
       familyId: string;
       email: string;
       childName: string;
@@ -264,7 +242,7 @@ export const checkCircleReEngagement = internalAction({
     if (!families) return;
 
     for (const family of families) {
-      const members = (await convexQuery("ourfable:listOurFableCircleMembers", {
+      const members = (await ctx.runQuery(internal.ourfable.listOurFableCircleMembers, {
         familyId: family.familyId,
       })) as Array<{
         _id: string;
@@ -289,8 +267,8 @@ export const checkCircleReEngagement = internalAction({
 
           await sendResendEmail(RESEND_API_KEY, member.email, `${childFirst}'s vault misses your voice`, html);
           // Reset missed count after re-engagement email
-          await convexMutation("ourfable:updateOurFableCircleMemberMissedPrompts", {
-            memberId: member._id,
+          await ctx.runMutation(internal.ourfable.updateOurFableCircleMemberMissedPrompts, {
+            memberId: member._id as any,
             missedPrompts: 0,
           });
           console.log(`[ourfableDelivery] Sent re-engagement to ${member.email} for ${family.familyId}`);
@@ -304,11 +282,11 @@ export const checkCircleReEngagement = internalAction({
 
 export const sendAnnualRecap = internalAction({
   args: {},
-  handler: async () => {
+  handler: async (ctx) => {
     const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
     if (!RESEND_API_KEY) return;
 
-    const families = (await convexQuery("ourfable:listActiveOurFableFamilies", {})) as Array<{
+    const families = (await ctx.runQuery(internal.ourfable.listActiveOurFableFamilies, {})) as Array<{
       familyId: string;
       email: string;
       childName: string;
@@ -328,12 +306,12 @@ export const sendAnnualRecap = internalAction({
       const childFirst = family.childName.split(" ")[0];
 
       // Get vault stats
-      const entries = (await convexQuery("ourfable:listOurFableVaultEntries", { familyId: family.familyId })) as Array<{
+      const entries = (await ctx.runQuery(internal.ourfable.listOurFableVaultEntries, { familyId: family.familyId })) as Array<{
         type: string;
         authorName: string;
       }> | null;
-      const letters = (await convexQuery("ourfable:listOurFableLetters", { familyId: family.familyId })) as Array<unknown> | null;
-      const members = (await convexQuery("ourfable:listOurFableCircleMembers", { familyId: family.familyId })) as Array<unknown> | null;
+      const letters = (await ctx.runQuery(internal.ourfable.listOurFableLetters, { familyId: family.familyId })) as Array<unknown> | null;
+      const members = (await ctx.runQuery(internal.ourfable.listOurFableCircleMembers, { familyId: family.familyId })) as Array<unknown> | null;
 
       const letterCount = (letters?.length ?? 0);
       const photoCount = entries?.filter(e => e.type === "photo").length ?? 0;
@@ -361,7 +339,7 @@ export const sendAnnualRecap = internalAction({
       `);
 
       await sendResendEmail(RESEND_API_KEY, family.email, `One year of ${childFirst}'s vault`, html);
-      await convexMutation("ourfable:createOurFableDispatch", {
+      await ctx.runMutation(internal.ourfable.createOurFableDispatch, {
         familyId: family.familyId,
         type: "annual_recap",
         content: `Annual recap: ${letterCount} letters, ${photoCount} photos, ${voiceCount} voice memos`,
@@ -428,7 +406,7 @@ export const sendBirthdayLetterReminderForFamily = internalAction({
     if (!RESEND_API_KEY) return;
 
     // Verify family still exists and is active
-    const family = (await convexQuery("ourfable:getFamily", { familyId })) as {
+    const family = (await ctx.runQuery(internal.ourfable.getFamily, { familyId })) as {
       childName: string;
       parentEmail?: string;
       deletedAt?: number;
@@ -450,7 +428,7 @@ export const sendBirthdayLetterReminderForFamily = internalAction({
 
     // Generate a one-time token for the "yes, remind them" action
     const token = generateToken();
-    await convexMutation("ourfable:createOurFableDispatch", {
+    await ctx.runMutation(internal.ourfable.createOurFableDispatch, {
       familyId,
       type: "birthday_reminder_token",
       content: token,
