@@ -482,8 +482,8 @@ export default function WelcomeClient() {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
-            {entries.map((entry, i) => (
-              <VaultEntryCard key={entry.id} entry={entry} visible={i < visibleCount} dob={childDob} />
+            {entries.slice(0, visibleCount).map((entry, i) => (
+              <VaultEntryCard key={entry.id} entry={entry} visible={true} dob={childDob} />
             ))}
           </div>
 
