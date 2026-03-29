@@ -125,7 +125,8 @@ export default function SignupClient() {
         });
         const data = await res.json();
         if (res.ok && data.familyId) {
-          window.location.href = `/welcome?familyId=${data.familyId}`;
+          const welcomeParams = new URLSearchParams({ familyId: data.familyId, child: childName.split(" ")[0], dob: childDob });
+          window.location.href = `/welcome?${welcomeParams.toString()}`;
         } else {
           setError(data.error ?? "Something went wrong. Try again.");
           setLoading(false);

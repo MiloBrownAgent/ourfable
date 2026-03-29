@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
-      success_url: `${BASE_URL}/welcome?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${BASE_URL}/welcome?session_id={CHECKOUT_SESSION_ID}&child=${encodeURIComponent(childName.split(" ")[0])}&dob=${encodeURIComponent(childDob)}`,
       cancel_url: `${BASE_URL}/signup`,
       customer_email: email,
       metadata: {
