@@ -15,9 +15,7 @@ const CORE_FEATURES: CoreFeature[] = [
   { num: "04", title: "Dispatches", body: "Send photos, videos, voice memos, or updates to your whole circle — privately. No group chat. No social media. Just the people who matter.", plus: true },
 ];
 
-const SECONDARY_FEATURES = [
-  { num: "✦", title: "Born Day Snapshot", body: "The vault automatically captures the world the day your child arrived — the weather, the #1 song, the headlines. A time capsule, sealed inside." },
-];
+
 
 export function FeaturesSection() {
   return (
@@ -105,65 +103,19 @@ export function FeaturesSection() {
             ))}
           </div>
 
-          {/* Secondary features — smaller, more compact */}
-          <div style={{ marginTop: 48 }}>
-            <Reveal>
-              <p style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "var(--text-4)",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                marginBottom: 20,
-              }}>
-                Also included
-              </p>
-            </Reveal>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 20,
-            }} className="secondary-features-grid">
-              {SECONDARY_FEATURES.map((f, i) => (
-                <Reveal key={f.title} delay={i * 40}>
-                  <div style={{
-                    padding: "24px 20px",
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    height: "100%",
-                  }}>
-                    <p style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: "var(--text-4)",
-                      letterSpacing: "0.1em",
-                      marginBottom: 8,
-                    }}>
-                      {f.num}
-                    </p>
-                    <h3 style={{
-                      fontFamily: "var(--font-playfair)",
-                      fontSize: 17,
-                      fontWeight: 700,
-                      color: "var(--text)",
-                      marginBottom: 8,
-                      lineHeight: 1.3,
-                    }}>
-                      {f.title}
-                    </h3>
-                    <p style={{
-                      fontSize: 13,
-                      lineHeight: 1.7,
-                      color: "var(--text-2)",
-                    }}>
-                      {f.body}
-                    </p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
+          {/* Born day note — inline, not a card */}
+          <Reveal delay={160}>
+            <p style={{
+              marginTop: 32,
+              fontSize: 14,
+              fontStyle: "italic",
+              color: "var(--text-3)",
+              lineHeight: 1.7,
+              paddingLeft: 48,
+            }}>
+              Plus: The vault automatically captures the world the day your child arrived — weather, headlines, the #1 song.
+            </p>
+          </Reveal>
         </div>
       </section>
 
@@ -185,14 +137,6 @@ export function FeaturesSection() {
           .feature-row-inner {
             grid-template-columns: 1fr !important;
             gap: 10px 0 !important;
-          }
-          .secondary-features-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-        @media (min-width: 641px) and (max-width: 860px) {
-          .secondary-features-grid {
-            grid-template-columns: 1fr 1fr !important;
           }
         }
       `}</style>

@@ -7,7 +7,7 @@ import ListenButton from "@/components/ListenButton";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
   Bell, Settings, BookOpen, LogOut,
-  Mail, PackageOpen, Lock, FileText, Mic, Video, Music,
+  Mail, PackageOpen, Lock, FileText, Mic, Video,
   Image as ImageIcon, MapPin, Check, GraduationCap, Pen,
 } from "lucide-react";
 
@@ -579,17 +579,7 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
         </div>
       </div>
 
-      {/* 7. WORLD SNAPSHOT — small text link (non-interactive in demo) */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "14px 0",
-        fontSize: 12, color: "var(--text-3)",
-        fontFamily: "var(--font-body)",
-        animation: "fadeUp 0.6s var(--spring) 0.7s both",
-      }}>
-        <Music size={12} strokeWidth={1.5} />
-        <span>World Snapshot · {(() => { const n = new Date(); return n.toLocaleDateString("en-US", { month: "long", year: "numeric" }); })()}</span>
-      </div>
+
 
       <div style={{ height: 64 }} />
     </div>
@@ -1133,7 +1123,7 @@ export default function DemoPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const BANNER_HEIGHT = 44;
-  const SIDEBAR_WIDTH = 224;
+  const SIDEBAR_WIDTH = 240;
 
   function renderSection() {
     switch (activeSection) {
@@ -1235,8 +1225,8 @@ export default function DemoPage() {
         paddingTop: BANNER_HEIGHT,
       }}>
         <div className="demo-content-inner" style={{
-          padding: "48px 32px 0",
-          maxWidth: 720,
+          padding: "48px 48px 0",
+          maxWidth: 960,
         }}>
           {renderSection()}
         </div>

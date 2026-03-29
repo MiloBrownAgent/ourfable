@@ -714,19 +714,21 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
         <Row label="Email" value={account?.email ?? "—"} muted />
         <Row label="Parent Names">
           {editingName ? (
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flex: 1 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
               <input
                 value={parentNames}
                 onChange={(e) => setParentNames(e.target.value)}
-                style={inputStyle}
+                style={{ ...inputStyle, fontSize: 16, padding: "12px 14px" }}
                 placeholder="e.g. Dave & Amanda"
               />
-              <button onClick={handleSaveName} disabled={savingName} style={btnSmall}>
-                {savingName ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : "Save"}
-              </button>
-              <button onClick={() => setEditingName(false)} style={{ ...btnSmall, background: "transparent", color: "var(--text-3)" }}>
-                Cancel
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={handleSaveName} disabled={savingName} style={btnSmall}>
+                  {savingName ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : "Save"}
+                </button>
+                <button onClick={() => setEditingName(false)} style={{ ...btnSmall, background: "transparent", color: "var(--text-3)" }}>
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
