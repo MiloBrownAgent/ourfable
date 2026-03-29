@@ -27,7 +27,7 @@ export const getFamily = query({
 
 // ── Get Family by Parent Email (for /welcome session after checkout) ─────────
 
-export const getFamilyByEmail = query({
+export const getFamilyByEmail = internalQuery({
   args: { parentEmail: v.string() },
   handler: async (ctx, { parentEmail }) => {
     return await ctx.db
@@ -39,7 +39,7 @@ export const getFamilyByEmail = query({
 
 // ── Create Family (for new signups via Stripe webhook) ────────────────────────
 
-export const createFamily = mutation({
+export const createFamily = internalMutation({
   args: {
     familyId: v.string(),
     childName: v.string(),
@@ -140,7 +140,7 @@ export const seedFamily = mutation({
   },
 });
 
-export const patchFamily = mutation({
+export const patchFamily = internalMutation({
   args: {
     familyId: v.string(),
     parentNames: v.optional(v.string()),
@@ -1706,7 +1706,7 @@ export const createStripeGift = mutation({
 });
 
 // Update gift status (called by webhook after payment)
-export const updateGiftStatus = mutation({
+export const updateGiftStatus = internalMutation({
   args: {
     giftCode: v.string(),
     status: v.string(),
@@ -1952,7 +1952,7 @@ export const getUpcomingDeliveries = query({
 // OurFable — Persistent Family Accounts (replaces in-memory Map)
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const createOurFableFamily = mutation({
+export const createOurFableFamily = internalMutation({
   args: {
     familyId: v.string(),
     email: v.string(),
@@ -2006,7 +2006,7 @@ export const getOurFableFamilyById = query({
   },
 });
 
-export const getOurFableFamilyByStripeCustomer = query({
+export const getOurFableFamilyByStripeCustomer = internalQuery({
   args: { stripeCustomerId: v.string() },
   handler: async (ctx, { stripeCustomerId }) => {
     return await ctx.db
@@ -2016,7 +2016,7 @@ export const getOurFableFamilyByStripeCustomer = query({
   },
 });
 
-export const updateOurFableSubscriptionStatus = mutation({
+export const updateOurFableSubscriptionStatus = internalMutation({
   args: {
     familyId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
@@ -2048,7 +2048,7 @@ export const updateOurFableSubscriptionStatus = mutation({
   },
 });
 
-export const updateOurFableEmail = mutation({
+export const updateOurFableEmail = internalMutation({
   args: {
     oldEmail: v.string(),
     newEmail: v.string(),
@@ -2080,7 +2080,7 @@ export const updateOurFablePasswordHash = internalMutation({
   },
 });
 
-export const listActiveOurFableFamilies = query({
+export const listActiveOurFableFamilies = internalQuery({
   args: {},
   handler: async (ctx) => {
     return await ctx.db
@@ -2337,7 +2337,7 @@ export const listOurFableDispatches = query({
 
 // ── Password Reset ─────────────────────────────────────────────────────────────
 
-export const createPasswordReset = mutation({
+export const createPasswordReset = internalMutation({
   args: {
     email: v.string(),
     token: v.string(),
@@ -2360,7 +2360,7 @@ export const createPasswordReset = mutation({
   },
 });
 
-export const getPasswordReset = query({
+export const getPasswordReset = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     return await ctx.db
@@ -2370,7 +2370,7 @@ export const getPasswordReset = query({
   },
 });
 
-export const deletePasswordReset = mutation({
+export const deletePasswordReset = internalMutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const row = await ctx.db
@@ -2381,7 +2381,7 @@ export const deletePasswordReset = mutation({
   },
 });
 
-export const updateOurFablePassword = mutation({
+export const updateOurFablePassword = internalMutation({
   args: {
     email: v.string(),
     passwordHash: v.string(),
@@ -2671,7 +2671,7 @@ export const markOurFableFacilitatorTokenUsed = mutation({
 
 // ── OurFable — 2FA (TOTP) ──────────────────────────────────────────────────
 
-export const updateOurFable2FA = mutation({
+export const updateOurFable2FA = internalMutation({
   args: {
     familyId: v.string(),
     totpSecret: v.optional(v.string()),
@@ -2691,7 +2691,7 @@ export const updateOurFable2FA = mutation({
   },
 });
 
-export const getOurFable2FAStatus = query({
+export const getOurFable2FAStatus = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -2797,7 +2797,7 @@ export const getAllPendingOurFableDeliveryMilestones = query({
   },
 });
 
-export const softDeleteOurFableFamily = mutation({
+export const softDeleteOurFableFamily = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -2897,7 +2897,7 @@ export const hardDeleteOurFableFamily = internalMutation({
   },
 });
 
-export const listDeletedFamilies = query({
+export const listDeletedFamilies = internalQuery({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("ourfable_families").collect();
@@ -2943,7 +2943,7 @@ export const cleanupDeletedFamilies = internalAction({
 
 // ── Dead Man's Switch mutations ─────────────────────────────────────────────
 
-export const updateOurFablePaymentFailures = mutation({
+export const updateOurFablePaymentFailures = internalMutation({
   args: {
     familyId: v.string(),
     consecutivePaymentFailures: v.number(),
@@ -2961,7 +2961,7 @@ export const updateOurFablePaymentFailures = mutation({
   },
 });
 
-export const updateOurFableFacilitatorNotification = mutation({
+export const updateOurFableFacilitatorNotification = internalMutation({
   args: {
     familyId: v.string(),
     lastFacilitatorBillingNotification: v.number(),
@@ -3455,7 +3455,7 @@ export const listSnapshotsByFamily = query({
 
 // ── Patch OurFable Family (for storage warnings) ──────────────────────────────
 
-export const patchOurFableFamily = mutation({
+export const patchOurFableFamily = internalMutation({
   args: {
     familyId: v.string(),
     storageWarned80: v.optional(v.boolean()),
@@ -3785,7 +3785,7 @@ export const getLegacySettings = query({
 
 
 // ── F&F Gift Code — creates a pre-paid Plus gift for friends & family ────────
-export const createFFGiftCode = mutation({
+export const createFFGiftCode = internalMutation({
   args: {
     giftCode: v.string(),
     recipientName: v.string(),
@@ -3850,7 +3850,7 @@ export const setupFamilyEncryption = internalMutation({
 /**
  * Get the encryption key material for a family (for login flow).
  */
-export const getFamilyEncryptionKeys = query({
+export const getFamilyEncryptionKeys = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const family = await ctx.db
@@ -3869,7 +3869,7 @@ export const getFamilyEncryptionKeys = query({
 /**
  * Store an encrypted copy of the family key for a vault guardian.
  */
-export const storeGuardianKeyShare = mutation({
+export const storeGuardianKeyShare = internalMutation({
   args: {
     familyId: v.string(),
     guardianEmail: v.string(),
@@ -4137,7 +4137,7 @@ export const updateEncryptedFamilyKey = internalMutation({
 // Signup Tokens — temporary password hash store for Stripe checkout (C4 fix)
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const createSignupToken = mutation({
+export const createSignupToken = internalMutation({
   args: {
     token: v.string(),
     passwordHash: v.string(),
@@ -4152,7 +4152,7 @@ export const createSignupToken = mutation({
   },
 });
 
-export const getSignupToken = query({
+export const getSignupToken = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     return await ctx.db
@@ -4162,7 +4162,7 @@ export const getSignupToken = query({
   },
 });
 
-export const consumeSignupToken = mutation({
+export const consumeSignupToken = internalMutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const row = await ctx.db
@@ -4182,7 +4182,7 @@ export const consumeSignupToken = mutation({
 // 2FA Rate Limiting — Convex-backed (H1 fix)
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const check2FARateLimit = query({
+export const check2FARateLimit = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const record = await ctx.db
@@ -4207,7 +4207,7 @@ export const check2FARateLimit = query({
   },
 });
 
-export const record2FAFailure = mutation({
+export const record2FAFailure = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const now = Date.now();
@@ -4241,7 +4241,7 @@ export const record2FAFailure = mutation({
   },
 });
 
-export const reset2FAAttempts = mutation({
+export const reset2FAAttempts = internalMutation({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     const record = await ctx.db
@@ -4258,7 +4258,7 @@ export const reset2FAAttempts = mutation({
 // Password Reset — Atomic Token Consumption (H5 TOCTOU fix)
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const consumePasswordResetToken = mutation({
+export const consumePasswordResetToken = internalMutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const row = await ctx.db

@@ -91,7 +91,7 @@ function OnboardingChecklist({
     { label: "Protect your vault", done: recoverySetupComplete, link: `/${familyId}/settings/recovery` },
     { label: "Write your first letter", done: hasParentEntry },
     { label: "Invite 1 circle member", done: circleCount >= 1 },
-    { label: "Invite 2 more people", done: circleCount >= 3 },
+    { label: "Invite 5 more people", done: circleCount >= 6 },
   ];
   const completedCount = steps.filter((s) => s.done).length;
   const allDone = completedCount === 5;
