@@ -140,7 +140,7 @@ export const seedFamily = mutation({
   },
 });
 
-export const patchFamily = internalMutation({
+export const patchFamily = mutation({
   args: {
     familyId: v.string(),
     parentNames: v.optional(v.string()),
@@ -2717,6 +2717,21 @@ export const getOurFable2FAStatus = internalQuery({
     return {
       totpEnabled: family.totpEnabled ?? false,
       totpSecret: family.totpSecret,
+    };
+  },
+});
+
+// Safe public version — returns only totpEnabled flag, NOT the secret
+export const getOurFable2FAStatusPublic = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family) return null;
+    return {
+      totpEnabled: family.totpEnabled ?? false,
     };
   },
 });

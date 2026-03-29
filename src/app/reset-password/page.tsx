@@ -17,11 +17,12 @@ import {
 
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
 
+// Route through the data proxy (which handles auth + routes to Convex internal gateway)
 async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
+  const res = await fetch("/api/ourfable/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
+    body: JSON.stringify({ path, args }),
   });
   if (!res.ok) return null;
   const data = await res.json();
@@ -29,10 +30,10 @@ async function convexQuery(path: string, args: Record<string, unknown>) {
 }
 
 async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
+  const res = await fetch("/api/ourfable/data", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, args, type: "mutation" }),
   });
   const data = await res.json();
   return data.value ?? data;
@@ -130,10 +131,15 @@ function ResetPasswordForm() {
           const newKek = await deriveKeyEncryptionKey(password, newSalt);
           const newWrapped = await wrapFamilyKey(familyKey, newKek);
 
-          await convexMutation("ourfable:updateEncryptedFamilyKey", {
-            familyId: recoveryInfo.familyId,
-            encryptedFamilyKey: JSON.stringify(newWrapped),
-            keySalt: newSalt,
+          await fetch("/api/auth/vault-recovery", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "updateEncryptedFamilyKey",
+              familyId: recoveryInfo.familyId,
+              encryptedFamilyKey: JSON.stringify(newWrapped),
+              keySalt: newSalt,
+            }),
           });
         } catch (err) {
           console.error("Failed to re-wrap family key:", err);
@@ -158,10 +164,18 @@ function ResetPasswordForm() {
       const codeHash = await hashRecoveryCode(recoveryCode.trim(), recoveryInfo.keySalt ?? undefined);
 
       // Verify and consume the code
-      const result = await convexMutation("ourfable:verifyAndConsumeRecoveryCode", {
-        familyId: recoveryInfo.familyId,
-        codeHash,
-      }) as { wrappedFamilyKey: string | null; encryptedFamilyKey: string | null; keySalt: string | null };
+      const recoveryRes = await fetch("/api/auth/vault-recovery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verifyAndConsumeRecoveryCode",
+          familyId: recoveryInfo.familyId,
+          codeHash,
+        }),
+      });
+      if (!recoveryRes.ok) throw new Error("Invalid recovery code");
+      const recoveryData = await recoveryRes.json();
+      const result = recoveryData.value as { wrappedFamilyKey: string | null; encryptedFamilyKey: string | null; keySalt: string | null };
 
       if (result.wrappedFamilyKey && result.keySalt) {
         // Unwrap family key with recovery code

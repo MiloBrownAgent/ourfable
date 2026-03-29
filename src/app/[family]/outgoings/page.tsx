@@ -236,7 +236,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
       fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId } }) }).then(r => r.json()),
       fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listOutgoings", args: { familyId } }) }).then(r => r.json()),
       fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }) }).then(r => r.json()),
-      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getOurFableFamilyById", args: { familyId } }) }).then(r => r.json()),
+      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getOurFableFamilyByIdSafe", args: { familyId } }) }).then(r => r.json()),
     ]);
     setCircle(circleRes.value ?? []);
     setOutgoings(outgoingsRes.value ?? []);

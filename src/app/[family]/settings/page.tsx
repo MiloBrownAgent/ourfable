@@ -189,10 +189,10 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
     async function load() {
       const [fam, acct, stor, facData, twoFA, ms, me, kids, legacyData] = await Promise.all([
         convexFetch("ourfable:getFamily", { familyId }),
-        convexFetch("ourfable:getOurFableFamilyById", { familyId }),
+        convexFetch("ourfable:getOurFableFamilyByIdSafe", { familyId }),
         convexFetch("ourfable:getOurFableStorageUsage", { familyId }),
         convexFetch("ourfable:getOurFableFacilitators", { familyId }),
-        convexFetch("ourfable:getOurFable2FAStatus", { familyId }),
+        convexFetch("ourfable:getOurFable2FAStatusPublic", { familyId }),
         convexFetch("ourfable:listOurFableDeliveryMilestones", { familyId }),
         fetch("/api/auth/me").then(r => r.ok ? r.json() : null).catch(() => null),
         convexFetch("ourfable:listChildren", { familyId }),

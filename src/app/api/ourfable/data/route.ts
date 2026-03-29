@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE, type SessionPayload } from "@/lib/auth";
 import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 
 const ALLOWED_QUERIES = new Set([
@@ -61,15 +62,27 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:listOurFableLetters",
   "ourfable:listOurFableSnapshots",
   "ourfable:listOurFableMilestones",
-  "ourfable:getOurFableFamilyById",
+  // SECURITY: Use safe version that strips passwordHash, totpSecret, recoveryCodeHashes, etc.
+  "ourfable:getOurFableFamilyByIdSafe",
   "ourfable:getOurFableStorageUsage",
   "ourfable:getOurFableFacilitators",
-  "ourfable:getOurFable2FAStatus",
+  "ourfable:getOurFable2FAStatusPublic",
   "ourfable:listOurFableDeliveryMilestones",
   "ourfable:updateOurFableFacilitators",
   "ourfable:updateOurFableLapseNotification",
-  "ourfable:getOurFableFamilyByEmail",
-  "ourfable:updateOurFablePasswordHash",
+  // SERVER_ONLY — NEVER add these to ALLOWED_QUERIES:
+  // - getOurFableFamilyByEmail (email-based lookup, returns passwordHash — CRIT-1)
+  // - updateOurFablePasswordHash (email-based mutation — CRIT-1)
+  // - getOurFableFamilyById (returns full record including passwordHash)
+  // - setupFamilyEncryption, updateEncryptedFamilyKey, storeRecoveryCodeHashes
+  // - verifyAndConsumeRecoveryCode, markRecoverySetupComplete, storeGuardianKeyShare
+  // - createSignupToken, getSignupToken, consumeSignupToken
+  // - reset2FAAttempts, record2FAFailure, check2FARateLimit
+  // - createPasswordReset, getPasswordReset, deletePasswordReset
+  // - consumePasswordResetToken, updateOurFablePassword
+  // - createOurFableFamily, updateOurFable2FA, getOurFable2FAStatus
+  // - getFamilyEncryptionKeys
+  // These are called ONLY from server-side API routes via internalConvexQuery/internalConvexMutation.
   "ourfable:getReferralByCode",
   "ourfable:listReferralCodes",
   "ourfable:createReferralCodes",
@@ -79,16 +92,29 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:addCustomDeliveryMilestone",
   "ourfable:deleteOurFableDeliveryMilestone",
   "ourfable:listDeliveryMilestones",
-  // Recovery codes & vault protection
+  // Recovery codes & vault protection — safe read-only queries (public)
+  "ourfable:isRecoverySetupComplete",
+  "ourfable:getRecoveryCodeStatus",
+  "ourfable:getGuardianKeyShares",
+  // Recovery/encryption operations that are internal — routed via INTERNAL_ALLOWED set
   "ourfable:storeRecoveryCodeHashes",
   "ourfable:verifyAndConsumeRecoveryCode",
   "ourfable:markRecoverySetupComplete",
-  "ourfable:isRecoverySetupComplete",
-  "ourfable:getRecoveryCodeStatus",
-  "ourfable:getRecoveryInfo",
   "ourfable:updateEncryptedFamilyKey",
   "ourfable:storeGuardianKeyShare",
-  "ourfable:getGuardianKeyShares",
+  "ourfable:getFamilyEncryptionKeys",
+  "ourfable:setupFamilyEncryption",
+]);
+
+// INTERNAL_ALLOWED: Functions that are Convex internalQuery/internalMutation
+// and must be called through the authenticated HTTP action gateway, NOT the public API.
+// These are allowed in ALLOWED_QUERIES above but routed differently.
+const INTERNAL_ALLOWED = new Set([
+  "ourfable:storeRecoveryCodeHashes",
+  "ourfable:verifyAndConsumeRecoveryCode",
+  "ourfable:markRecoverySetupComplete",
+  "ourfable:updateEncryptedFamilyKey",
+  "ourfable:storeGuardianKeyShare",
   "ourfable:getFamilyEncryptionKeys",
   "ourfable:setupFamilyEncryption",
 ]);
@@ -140,12 +166,22 @@ export async function POST(req: NextRequest) {
   const endpoint = type === "mutation" ? "mutation" : "query";
 
   try {
-    const res = await fetch(`${CONVEX_URL}/api/${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
-      body: JSON.stringify({ path, args, format: "json" }),
-    });
-    let data = await res.json();
+    let data: { value?: unknown; [key: string]: unknown };
+
+    // Route internal functions through the authenticated HTTP action gateway
+    if (INTERNAL_ALLOWED.has(path)) {
+      const result = type === "mutation"
+        ? await internalConvexMutation(path, args as Record<string, unknown>)
+        : await internalConvexQuery(path, args as Record<string, unknown>);
+      data = { value: result };
+    } else {
+      const res = await fetch(`${CONVEX_URL}/api/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.33.0" },
+        body: JSON.stringify({ path, args, format: "json" }),
+      });
+      data = await res.json();
+    }
 
     // Server-side vault sealing enforcement:
     // Never return sealed content to the client if child hasn't reached unlockAge
@@ -156,13 +192,10 @@ export async function POST(req: NextRequest) {
 
       // Try to get birth date from ourfable_families first, then ourfable_vault_families
       try {
-        const ourfableRes = await fetch(`${CONVEX_URL}/api/query`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: "ourfable:getOurFableFamilyById", args: { familyId }, format: "json" }),
-        });
-        const ourfableData = await ourfableRes.json();
-        childBirthDate = ourfableData.value?.birthDate ?? null;
+        const ourfableData = await internalConvexQuery<{ birthDate?: string } | null>(
+          "ourfable:getOurFableFamilyById", { familyId }
+        );
+        childBirthDate = ourfableData?.birthDate ?? null;
 
         if (!childBirthDate) {
           const legacyRes = await fetch(`${CONVEX_URL}/api/query`, {

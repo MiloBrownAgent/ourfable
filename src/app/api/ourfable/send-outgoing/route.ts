@@ -59,13 +59,10 @@ export async function POST(req: NextRequest) {
     let isPlus = family.planType === "plus" || family.plan === "plus" || family.plan === "pilot";
     if (!isPlus) {
       // Fall back to ourfable_families for planType
-      const accountRes = await fetch(`${CONVEX_URL}/api/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:getOurFableFamilyById", args: { familyId }, format: "json" }),
-      });
-      const accountData = await accountRes.json();
-      isPlus = accountData.value?.planType === "plus" || accountData.value?.planType === "pilot";
+      const accountData = await internalConvexQuery<{ planType?: string } | null>(
+        "ourfable:getOurFableFamilyById", { familyId }
+      );
+      isPlus = accountData?.planType === "plus" || accountData?.planType === "pilot";
     }
 
     // ── Fetch circle ──────────────────────────────────────────────────────────

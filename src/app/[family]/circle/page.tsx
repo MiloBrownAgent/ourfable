@@ -413,7 +413,7 @@ export default function CirclePage({ params }: { params: Promise<{ family: strin
   const load = () => {
     fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }) })
       .then(r => r.json()).then(d => setChildName((d.value?.childName ?? "").split(" ")[0]));
-    fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getOurFableFamilyById", args: { familyId } }) })
+    fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getOurFableFamilyByIdSafe", args: { familyId } }) })
       .then(r => r.json()).then(d => setPlanType(d.value?.planType ?? "standard")).catch(() => {});
     return fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId }, format: "json" }) })
       .then(r => r.json()).then(d => setMembers(d.value ?? [])).finally(() => setLoading(false));

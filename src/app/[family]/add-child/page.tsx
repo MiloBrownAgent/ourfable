@@ -421,7 +421,7 @@ export default function AddChildPage({ params }: { params: Promise<{ family: str
   useEffect(() => {
     Promise.all([
       convexFetch("ourfable:listChildren", { familyId }),
-      convexFetch("ourfable:getOurFableFamilyById", { familyId }),
+      convexFetch("ourfable:getOurFableFamilyByIdSafe", { familyId }),
     ]).then(([kids, account]) => {
       const list = Array.isArray(kids) ? kids : [];
       setExistingChildrenCount(list.length);

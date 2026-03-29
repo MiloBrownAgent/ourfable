@@ -130,7 +130,14 @@ function OnboardingChecklist({
         textAlign: "center",
         animation: "fadeUp 0.5s var(--spring) both",
       }}>
-        <p style={{ fontSize: 28, marginBottom: 8 }}>🎉</p>
+        <div style={{
+          width: 44, height: 44, borderRadius: "50%",
+          background: "var(--green-light)", border: "1px solid var(--green-border)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 8px",
+        }}>
+          <Check size={20} strokeWidth={2.5} color="var(--green)" />
+        </div>
         <h3 className="font-display" style={{
           fontSize: 20, fontWeight: 600, color: "var(--green)", marginBottom: 6,
         }}>

@@ -71,7 +71,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     fetch('/api/ourfable/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: 'ourfable:getOurFableFamilyById', args: { familyId } }),
+      body: JSON.stringify({ path: 'ourfable:getOurFableFamilyByIdSafe', args: { familyId } }),
     })
       .then(r => r.json())
       .then(d => {
