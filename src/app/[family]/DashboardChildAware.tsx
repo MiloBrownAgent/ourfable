@@ -242,6 +242,15 @@ function OnboardingChecklist({
             );
           }
 
+          // "Write your first letter" — wrap in a button for reliable mobile tap
+          if (isClickable && i === 2) {
+            return (
+              <button key={i} onClick={onScrollToWriting} style={{ background: "none", border: "none", padding: 0, margin: 0, textAlign: "left", width: "100%", cursor: "pointer" }}>
+                {content}
+              </button>
+            );
+          }
+
           return <div key={i}>{content}</div>;
         })}
       </div>

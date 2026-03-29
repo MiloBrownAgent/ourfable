@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import crypto from "node:crypto";
 import { hashPassword } from "@/lib/accounts";
 import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexMutation } from "@/lib/convex-internal";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     // Only pass a random token in Stripe metadata. Webhook retrieves hash via token.
     const passwordHash = hashPassword(password);
     const signupToken = crypto.randomBytes(32).toString("hex");
-    await convexMutation("ourfable:createSignupToken", {
+    await internalConvexMutation("ourfable:createSignupToken", {
       token: signupToken,
       passwordHash,
       email: email.toLowerCase().trim(),

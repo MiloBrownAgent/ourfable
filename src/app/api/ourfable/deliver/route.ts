@@ -1,3 +1,4 @@
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { verifySession, COOKIE } from "@/lib/auth";
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const family = await convexQuery("ourfable:getOurFableFamilyById", { familyId }) as {
+  const family = await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId }) as {
     childName: string;
     parentNames?: string;
   } | null;

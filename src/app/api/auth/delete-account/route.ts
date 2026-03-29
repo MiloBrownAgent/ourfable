@@ -1,3 +1,4 @@
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { verifyPassword } from "@/lib/accounts";
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Get account
-  const family = await convexQuery("ourfable:getOurFableFamilyById", { familyId: session.familyId }) as {
+  const family = await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId: session.familyId }) as {
     email: string;
     passwordHash: string;
     stripeSubscriptionId?: string;
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
   try {
     const RESEND_KEY = process.env.RESEND_FULL_API_KEY;
     if (RESEND_KEY && family.email) {
-      const childName = (await convexQuery("ourfable:getOurFableFamilyById", { familyId: session.familyId }) as { childName?: string } | null)?.childName ?? "your child";
+      const childName = (await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId: session.familyId }) as { childName?: string } | null)?.childName ?? "your child";
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },

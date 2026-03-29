@@ -1,3 +1,4 @@
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { CONVEX_URL } from "@/lib/convex";

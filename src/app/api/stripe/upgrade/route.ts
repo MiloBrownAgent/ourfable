@@ -1,3 +1,4 @@
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { verifySession, COOKIE } from "@/lib/auth";
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Get family data from both tables
     const [legacyFamily, ourfableFamily] = await Promise.all([
       convexQuery("ourfable:getFamily", { familyId }),
-      convexQuery("ourfable:getOurFableFamilyById", { familyId }),
+      internalConvexQuery("ourfable:getOurFableFamilyById", { familyId }),
     ]) as [
       { stripeCustomerId?: string; parentEmail?: string } | null,
       { email: string; planType: string; stripeCustomerId?: string } | null,

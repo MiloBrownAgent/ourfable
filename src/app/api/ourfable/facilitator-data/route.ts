@@ -1,3 +1,4 @@
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import { CONVEX_URL } from "@/lib/convex";
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 404 });
   }
 
-  const family = await convexQuery("ourfable:getOurFableFamilyById", { familyId: tokenData.familyId }) as {
+  const family = await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId: tokenData.familyId }) as {
     childName: string;
   } | null;
 

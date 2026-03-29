@@ -1,3 +1,4 @@
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 /**
  * POST /api/stripe/add-child
  *
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Look up family
-    const family = (await convexQuery("ourfable:getOurFableFamilyById", { familyId })) as {
+    const family = (await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId })) as {
       familyId: string;
       email: string;
       childName: string;
