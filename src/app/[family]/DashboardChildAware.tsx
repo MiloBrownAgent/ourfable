@@ -6,8 +6,9 @@ import WritingBlock from "@/components/WritingBlock";
 import Greeting from "@/components/Greeting";
 import { useChildContext } from "@/components/ChildContext";
 import { calcAge, formatAgeLong } from "@/lib/convex";
-import { Music } from "lucide-react";
+import { Music, Pen } from "lucide-react";
 import ListenButton from "@/components/ListenButton";
+import { useRef } from "react";
 
 interface VaultEntry {
   _id: string;
@@ -135,6 +136,7 @@ export default function DashboardChildAware({
 
   const nextMilestone = getNextMilestone(childDob);
   const milestoneBannerVisible = nextMilestone && nextMilestone.daysAway <= 183;
+  const writingBlockRef = useRef<HTMLDivElement>(null);
 
   return (
     <div style={{ opacity: loadingChild ? 0.7 : 1, transition: "opacity 200ms" }}>
@@ -223,7 +225,7 @@ export default function DashboardChildAware({
       </div>
 
       {/* ── 2. WRITING BLOCK (primary action — hero position) ── */}
-      <div style={{
+      <div ref={writingBlockRef} style={{
         marginBottom: 72,
         animation: "fadeUp 0.7s var(--spring) 0.1s both",
       }}>
@@ -496,6 +498,46 @@ export default function DashboardChildAware({
       <ReferralWidget familyId={familyId} />
 
       <div style={{ height: 64 }} />
+
+      {/* ── FAB — Quick capture button ── */}
+      <button
+        onClick={() => {
+          writingBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => {
+            const textarea = writingBlockRef.current?.querySelector("textarea");
+            if (textarea) textarea.focus();
+          }, 400);
+        }}
+        aria-label="Write a memory"
+        style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          width: 56,
+          height: 56,
+          borderRadius: "50%",
+          background: "var(--green)",
+          border: "none",
+          boxShadow: "0 4px 20px rgba(26,26,24,0.25), 0 2px 6px rgba(26,26,24,0.15)",
+          color: "#fff",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 50,
+          transition: "transform 150ms ease, box-shadow 150ms ease",
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.08)";
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(26,26,24,0.3), 0 3px 8px rgba(26,26,24,0.2)";
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(26,26,24,0.25), 0 2px 6px rgba(26,26,24,0.15)";
+        }}
+      >
+        <Pen size={22} strokeWidth={2} />
+      </button>
     </div>
   );
 }
