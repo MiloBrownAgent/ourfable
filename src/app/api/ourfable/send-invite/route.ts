@@ -234,8 +234,6 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = `https://ourfable.ai`;
     const inviteUrl = `${baseUrl}/join/${member.inviteToken}`;
-    const shareUrl = `${baseUrl}/${familyId}/share/${member.shareToken}`;
-
     // Parent names for footer — pulled from familyName or hardcoded for Sweeney
     const parentNames = family.parentNames ?? "the family";
 
@@ -246,7 +244,6 @@ export async function POST(req: NextRequest) {
       childDob: family.childDob,
       parentNames,
       inviteUrl,
-      shareUrl,
       isTest,
     });
 
