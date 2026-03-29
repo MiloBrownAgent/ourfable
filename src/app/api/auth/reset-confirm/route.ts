@@ -1,29 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexMutation } from "@/lib/convex-internal";
 
 const BCRYPT_ROUNDS = 12;
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) throw new Error(`Convex mutation failed: ${await res.text()}`);
-  return res.json();
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,11 +17,9 @@ export async function POST(req: NextRequest) {
 
     // H5 SECURITY: Atomically consume the token BEFORE updating password (TOCTOU fix).
     // This prevents a race condition where parallel requests could use the same token.
-    const consumed = await convexMutation("ourfable:consumePasswordResetToken", { token }) as {
-      value?: { email: string; token: string } | null;
-    } | null;
-
-    const resetRecord = consumed?.value ?? null;
+    const resetRecord = await internalConvexMutation<{ email: string; token: string } | null>(
+      "ourfable:consumePasswordResetToken", { token }
+    );
     if (!resetRecord) {
       return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
     }
@@ -51,13 +28,13 @@ export async function POST(req: NextRequest) {
     const passwordHash = bcrypt.hashSync(newPassword, BCRYPT_ROUNDS);
 
     // Update password in Convex
-    await convexMutation("ourfable:updateOurFablePassword", {
+    await internalConvexMutation("ourfable:updateOurFablePassword", {
       email: resetRecord.email,
       passwordHash,
     });
 
     // Clean up the consumed token
-    await convexMutation("ourfable:deletePasswordReset", { token }).catch(() => {});
+    await internalConvexMutation("ourfable:deletePasswordReset", { token }).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (e) {

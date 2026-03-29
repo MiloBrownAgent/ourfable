@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, addAccount } from "@/lib/accounts";
 import { CONVEX_URL } from "@/lib/convex";
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  const data = await res.json();
-  return data.value ?? null;
-}
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 async function convexMutation(path: string, args: Record<string, unknown>) {
   const res = await fetch(`${CONVEX_URL}/api/mutation`, {
@@ -89,7 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Check if account already exists
-    const existing = await convexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
+    const existing = await internalConvexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
     if (existing) {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 400 });
     }

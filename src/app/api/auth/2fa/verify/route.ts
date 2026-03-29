@@ -3,28 +3,9 @@ import crypto from "node:crypto";
 import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decryptTOTPSecret } from "@/lib/totp-encryption";
-import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-}
 
 /**
  * HMAC-sign a device token to prevent forgery (H2 fix).
@@ -64,11 +45,11 @@ export async function POST(req: NextRequest) {
   }
 
   // H1: Convex-backed rate limiting for 2FA
-  const rateLimit = await convexQuery("ourfable:check2FARateLimit", { familyId }) as {
+  const rateLimit = await internalConvexQuery<{
     allowed: boolean;
     remaining: number;
     lockedUntil?: number;
-  } | null;
+  } | null>("ourfable:check2FARateLimit", { familyId });
 
   if (rateLimit && !rateLimit.allowed) {
     return NextResponse.json(
@@ -78,10 +59,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Get 2FA secret
-  const twoFA = await convexQuery("ourfable:getOurFable2FAStatus", { familyId }) as {
+  const twoFA = await internalConvexQuery<{
     totpSecret?: string;
     totpEnabled: boolean;
-  } | null;
+  } | null>("ourfable:getOurFable2FAStatus", { familyId });
 
   if (!twoFA?.totpSecret || !twoFA.totpEnabled) {
     return NextResponse.json({ error: "2FA not enabled" }, { status: 400 });
@@ -94,17 +75,20 @@ export async function POST(req: NextRequest) {
   const isValid = await verifyTOTP(code, plaintextSecret);
   if (!isValid) {
     // H1: Record failed attempt
-    await convexMutation("ourfable:record2FAFailure", { familyId });
+    await internalConvexMutation("ourfable:record2FAFailure", { familyId });
     return NextResponse.json({ error: "Invalid code" }, { status: 401 });
   }
 
   // H1: Reset failed attempts on success
-  await convexMutation("ourfable:reset2FAAttempts", { familyId });
+  await internalConvexMutation("ourfable:reset2FAAttempts", { familyId });
 
   // Fetch encryption keys to return alongside session
   let encryptionKeys: { encryptedFamilyKey: string | null; keySalt: string | null } | null = null;
   try {
-    const encData = await convexQuery("ourfable:getFamilyEncryptionKeys", { familyId });
+    const encData = await internalConvexQuery<{
+      encryptedFamilyKey: string | null;
+      keySalt: string | null;
+    } | null>("ourfable:getFamilyEncryptionKeys", { familyId });
     if (encData?.encryptedFamilyKey) {
       encryptionKeys = {
         encryptedFamilyKey: encData.encryptedFamilyKey,

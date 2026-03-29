@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { foundingInviteEmail } from "@/lib/email-templates/founding-invite";
 import { CONVEX_URL } from "@/lib/convex";
 
@@ -40,8 +41,14 @@ async function sendEmail(to: string, subject: string, html: string, text: string
 export async function POST(req: NextRequest) {
   try {
     // Admin auth
-    const secret = req.headers.get("x-admin-secret");
-    if (!ADMIN_SECRET || secret !== ADMIN_SECRET) {
+    // SECURITY: Use constant-time comparison to prevent timing attacks (HIGH-2 fix)
+    const secret = req.headers.get("x-admin-secret") ?? "";
+    if (!ADMIN_SECRET) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const secretBuf = Buffer.from(ADMIN_SECRET);
+    const headerBuf = Buffer.from(secret);
+    if (secretBuf.length !== headerBuf.length || !crypto.timingSafeEqual(secretBuf, headerBuf)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

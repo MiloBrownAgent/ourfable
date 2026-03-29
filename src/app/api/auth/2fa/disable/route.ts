@@ -3,27 +3,7 @@ import { verifySession, COOKIE } from "@/lib/auth";
 import { getAccount, verifyPassword } from "@/lib/accounts";
 import { verifyTOTP } from "@/lib/totp";
 import { decryptTOTPSecret } from "@/lib/totp-encryption";
-import { CONVEX_URL } from "@/lib/convex";
-
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-}
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(COOKIE)?.value;
@@ -38,9 +18,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Get family account to verify password
-  const family = await convexQuery("ourfable:getOurFableFamilyById", { familyId: session.familyId }) as {
-    email: string;
-  } | null;
+  const family = await internalConvexQuery<{ email: string } | null>(
+    "ourfable:getOurFableFamilyById", { familyId: session.familyId }
+  );
   if (!family) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
   const account = await getAccount(family.email);
@@ -49,10 +29,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify TOTP code using our custom implementation (no external libraries)
-  const twoFA = await convexQuery("ourfable:getOurFable2FAStatus", { familyId: session.familyId }) as {
+  const twoFA = await internalConvexQuery<{
     totpSecret?: string;
     totpEnabled: boolean;
-  } | null;
+  } | null>("ourfable:getOurFable2FAStatus", { familyId: session.familyId });
 
   if (!twoFA?.totpSecret) {
     return NextResponse.json({ error: "2FA not enabled" }, { status: 400 });
@@ -66,7 +46,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Disable 2FA
-  await convexMutation("ourfable:updateOurFable2FA", {
+  await internalConvexMutation("ourfable:updateOurFable2FA", {
     familyId: session.familyId,
     totpEnabled: false,
     totpSecret: "",

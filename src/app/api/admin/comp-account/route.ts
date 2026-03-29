@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { hashPassword, addAccount } from "@/lib/accounts";
 import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery } from "@/lib/convex-internal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/admin/comp-account
@@ -47,8 +49,11 @@ export async function POST(req: NextRequest) {
   if (!ADMIN_SECRET) {
     return NextResponse.json({ error: "Admin endpoint not configured" }, { status: 503 });
   }
-  const authHeader = req.headers.get("x-admin-secret");
-  if (!authHeader || authHeader !== ADMIN_SECRET) {
+  const authHeader = req.headers.get("x-admin-secret") ?? "";
+  // SECURITY: Use constant-time comparison to prevent timing attacks (HIGH-2 fix)
+  const secretBuf = Buffer.from(ADMIN_SECRET);
+  const headerBuf = Buffer.from(authHeader);
+  if (secretBuf.length !== headerBuf.length || !crypto.timingSafeEqual(secretBuf, headerBuf)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -77,7 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Idempotency: block duplicates
-    const existing = await convexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
+    const existing = await internalConvexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
     if (existing) {
       return NextResponse.json({ error: "Account already exists for this email" }, { status: 400 });
     }

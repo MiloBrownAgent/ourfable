@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { addAccount } from "@/lib/accounts";
 import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -134,13 +135,13 @@ export async function POST(req: NextRequest) {
 
         if (customerId) {
           // Mark as intentionally cancelled — do NOT trigger dead man's switch
-          await convexMutation("ourfable:updateOurFableSubscriptionStatus", {
+          await internalConvexMutation("ourfable:updateOurFableSubscriptionStatus", {
             stripeCustomerId: customerId,
             subscriptionStatus: "cancelled",
           });
 
           // Send cancellation save email
-          const cancelFamily = await convexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as { email: string; childName: string; familyId: string } | null;
+          const cancelFamily = await internalConvexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as { email: string; childName: string; familyId: string } | null;
           if (cancelFamily?.email) {
             const childFirst = cancelFamily.childName.split(" ")[0];
             await sendResendEmail(
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
           if (item?.price?.recurring?.interval === "month") planType = "monthly";
           else if (item?.price?.recurring?.interval === "year") planType = "annual";
 
-          await convexMutation("ourfable:updateOurFableSubscriptionStatus", {
+          await internalConvexMutation("ourfable:updateOurFableSubscriptionStatus", {
             stripeCustomerId: customerId,
             subscriptionStatus: sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : sub.status,
             planType,
@@ -210,12 +211,12 @@ export async function POST(req: NextRequest) {
 
         if (customerId) {
           // Update status to past_due
-          await convexMutation("ourfable:updateOurFableSubscriptionStatus", {
+          await internalConvexMutation("ourfable:updateOurFableSubscriptionStatus", {
             stripeCustomerId: customerId,
             subscriptionStatus: "past_due",
           });
 
-          const family = await convexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as {
+          const family = await internalConvexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as {
             email: string;
             childName: string;
             familyId: string;
@@ -232,7 +233,7 @@ export async function POST(req: NextRequest) {
           if (family?.email) {
             // ── Dead man's switch: track consecutive failures ──────────────────
             const failures = (family.consecutivePaymentFailures ?? 0) + 1;
-            await convexMutation("ourfable:updateOurFablePaymentFailures", {
+            await internalConvexMutation("ourfable:updateOurFablePaymentFailures", {
               familyId: family.familyId,
               consecutivePaymentFailures: failures,
             });
@@ -347,7 +348,7 @@ export async function POST(req: NextRequest) {
                 });
 
                 // Record notification timestamp
-                await convexMutation("ourfable:updateOurFableFacilitatorNotification", {
+                await internalConvexMutation("ourfable:updateOurFableFacilitatorNotification", {
                   familyId: family.familyId,
                   lastFacilitatorBillingNotification: now,
                 }).catch(() => {});
@@ -367,12 +368,12 @@ export async function POST(req: NextRequest) {
 
         if (customerId) {
           // Reset consecutive payment failures on successful payment
-          const family = await convexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as {
+          const family = await internalConvexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as {
             familyId: string;
           } | null;
 
           if (family) {
-            await convexMutation("ourfable:updateOurFablePaymentFailures", {
+            await internalConvexMutation("ourfable:updateOurFablePaymentFailures", {
               familyId: family.familyId,
               consecutivePaymentFailures: 0,
             }).catch(() => {});
@@ -406,7 +407,7 @@ async function handleUpgradeCompleted(session: Stripe.Checkout.Session) {
   const stripeSubscriptionId =
     typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? undefined;
 
-  await convexMutation("ourfable:updateOurFableSubscriptionStatus", {
+  await internalConvexMutation("ourfable:updateOurFableSubscriptionStatus", {
     familyId,
     stripeCustomerId,
     subscriptionStatus: "active",
@@ -485,7 +486,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Idempotency: check if family already exists by email
-  const existing = await convexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
+  const existing = await internalConvexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
   if (existing) {
     console.log(`[webhook] Family already exists for email=${email} — skipping creation (idempotent)`);
     return;
@@ -509,7 +510,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       : session.subscription?.id ?? undefined;
 
   // 1. Create family in Convex (legacy ourfable_vault_families table)
-  await convexMutation("ourfable:createFamily", {
+  await internalConvexMutation("ourfable:createFamily", {
     familyId,
     childName,
     childDob: childDob ?? "",
@@ -534,7 +535,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // 3. Register account — retrieve password hash from Convex signup token (C4 security fix)
   let passwordHash = "";
   if (meta.signup_token) {
-    const signupData = await convexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
+    const signupData = await internalConvexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
       passwordHash: string;
       consumed?: boolean;
       expiresAt: number;
@@ -542,7 +543,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     if (signupData && !signupData.consumed && Date.now() < signupData.expiresAt) {
       passwordHash = signupData.passwordHash;
       // Consume and delete the token
-      await convexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
+      await internalConvexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
     }
   }
   // Legacy password_hash fallback removed for security (C4 fix).
@@ -655,7 +656,7 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // 1. Mark gift as paid in Convex
-  await convexMutation("ourfable:updateGiftStatus", {
+  await internalConvexMutation("ourfable:updateGiftStatus", {
     giftCode,
     status: "paid",
     stripeSessionId: session.id,
@@ -812,7 +813,7 @@ async function handleChildAddonCompleted(session: Stripe.Checkout.Session) {
   }
 
   const childFirst = (childName ?? "your child").split(" ")[0];
-  const family = await convexQuery("ourfable:getOurFableFamilyById", { familyId }) as { email: string } | null;
+  const family = await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId }) as { email: string } | null;
 
   if (family?.email) {
     await sendResendEmail(

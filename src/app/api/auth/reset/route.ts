@@ -1,29 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) throw new Error(`Convex mutation failed: ${await res.text()}`);
-  return res.json();
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,14 +14,14 @@ export async function POST(req: NextRequest) {
     const normalized = email.toLowerCase().trim();
 
     // Check if account exists (don't reveal if it doesn't — always return success)
-    const account = await convexQuery("ourfable:getOurFableFamilyByEmail", { email: normalized });
+    const account = await internalConvexQuery("ourfable:getOurFableFamilyByEmail", { email: normalized });
 
     if (account) {
       // Generate reset token
       const token = crypto.randomBytes(32).toString("hex");
       const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
 
-      await convexMutation("ourfable:createPasswordReset", {
+      await internalConvexMutation("ourfable:createPasswordReset", {
         email: normalized,
         token,
         expiresAt,

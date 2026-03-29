@@ -4,6 +4,7 @@
 
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { CONVEX_URL } from "@/lib/convex";
 
 const SECRET: string = process.env.SESSION_SECRET ?? "";
@@ -86,13 +87,13 @@ async function convexMutation(path: string, args: Record<string, unknown>): Prom
 
 export async function getAccount(email: string): Promise<OurFableAccount | undefined> {
   const normalized = email.toLowerCase().trim();
-  const result = await convexQuery("ourfable:getOurFableFamilyByEmail", { email: normalized }) as {
+  const result = await internalConvexQuery<{
     email: string;
     passwordHash: string;
     familyId: string;
     childName: string;
     planType: string;
-  } | null;
+  } | null>("ourfable:getOurFableFamilyByEmail", { email: normalized });
 
   if (!result) return undefined;
 
@@ -101,7 +102,7 @@ export async function getAccount(email: string): Promise<OurFableAccount | undef
     passwordHash: result.passwordHash,
     familyId: result.familyId,
     childName: result.childName,
-    parentNames: "", // parentNames not stored in ourfable_families; retrieved from ourfable_vault_families if needed
+    parentNames: "",
   };
 }
 
@@ -111,7 +112,7 @@ export async function addAccount(account: OurFableAccount & {
   stripeSubscriptionId?: string;
   birthDate?: string;
 }): Promise<void> {
-  await convexMutation("ourfable:createOurFableFamily", {
+  await internalConvexMutation("ourfable:createOurFableFamily", {
     familyId: account.familyId,
     email: account.email.toLowerCase().trim(),
     passwordHash: account.passwordHash,

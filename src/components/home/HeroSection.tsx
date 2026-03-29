@@ -131,7 +131,7 @@ export function HeroSection() {
               letterSpacing: "0.08em",
               textTransform: "uppercase",
             }}>
-              Founding families only · Onboarding slowly to support every family well
+              Founding families only · Onboarding slowly to support every family
             </span>
           </div>
           <AnimatedHeadline />

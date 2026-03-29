@@ -2,27 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decryptTOTPSecret } from "@/lib/totp-encryption";
-import { CONVEX_URL } from "@/lib/convex";
-
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-}
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(COOKIE)?.value;
@@ -37,10 +17,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Get the stored secret
-  const twoFA = await convexQuery("ourfable:getOurFable2FAStatus", { familyId: session.familyId }) as {
+  const twoFA = await internalConvexQuery<{
     totpSecret?: string;
     totpEnabled: boolean;
-  } | null;
+  } | null>("ourfable:getOurFable2FAStatus", { familyId: session.familyId });
 
   if (!twoFA?.totpSecret) {
     return NextResponse.json({ error: "2FA not set up" }, { status: 400 });
@@ -55,7 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Enable 2FA
-  await convexMutation("ourfable:updateOurFable2FA", {
+  await internalConvexMutation("ourfable:updateOurFable2FA", {
     familyId: session.familyId,
     totpEnabled: true,
   });

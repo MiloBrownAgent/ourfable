@@ -1671,7 +1671,7 @@ export const createGift = mutation({
 });
 
 // New Stripe-backed gift mutation
-export const createStripeGift = mutation({
+export const createStripeGift = internalMutation({
   args: {
     gifterName: v.string(),
     gifterEmail: v.string(),
@@ -1996,13 +1996,28 @@ export const getOurFableFamilyByEmail = internalQuery({
   },
 });
 
-export const getOurFableFamilyById = query({
+export const getOurFableFamilyById = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
       .query("ourfable_families")
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .first();
+  },
+});
+
+// Safe public version — strips passwordHash and other sensitive auth fields
+export const getOurFableFamilyByIdSafe = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family) return null;
+    // Strip sensitive fields
+    const { passwordHash, totpSecret, recoveryCodeHashes, recoveryCodesUsed, recoveryWrappedKeys, encryptedFamilyKey, keySalt, ...safe } = family;
+    return safe;
   },
 });
 
@@ -2398,7 +2413,7 @@ export const updateOurFablePassword = internalMutation({
 
 // ── Storage Tracking ──────────────────────────────────────────────────────────
 
-export const incrementOurFableStorage = mutation({
+export const incrementOurFableStorage = internalMutation({
   args: {
     familyId: v.string(),
     bytes: v.number(),

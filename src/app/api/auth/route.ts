@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { createSession, COOKIE, SESSION_MAX_AGE, checkRateLimit, clearRateLimit } from "@/lib/auth";
+import { createSession, COOKIE, SESSION_MAX_AGE, checkLoginRateLimit, clearLoginRateLimit } from "@/lib/auth";
 import { getAccount, verifyPassword, needsHashUpgrade, hashPassword } from "@/lib/accounts";
-import { CONVEX_URL } from "@/lib/convex";
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 
-  // Rate limit: 5 attempts per 15 minutes per IP
-  const { allowed } = checkRateLimit(`auth:${ip}`, 5, 15 * 60 * 1000);
-  if (!allowed) {
+  // Rate limit: 5 attempts per 15 minutes per IP (Convex-backed for serverless)
+  const loginRateLimit = await checkLoginRateLimit(ip);
+  if (!loginRateLimit.allowed) {
     return NextResponse.json(
       { error: "Too many attempts. Try again in 15 minutes." },
       { status: 429, headers: { "Retry-After": "900" } }
@@ -40,14 +40,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Auth success — clear rate limit
-  clearRateLimit(`auth:${ip}`);
+  await clearLoginRateLimit(ip);
 
   // Check if 2FA is enabled
-  const twoFAStatus = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: "ourfable:getOurFable2FAStatus", args: { familyId: account.familyId }, format: "json" }),
-  }).then(r => r.json()).then(d => d.value).catch(() => null) as { totpEnabled: boolean } | null;
+  const twoFAStatus = await internalConvexQuery<{ totpEnabled: boolean } | null>(
+    "ourfable:getOurFable2FAStatus", { familyId: account.familyId }
+  ).catch(() => null);
 
   if (twoFAStatus?.totpEnabled) {
     // H2: Check for HMAC-signed remembered device token (prevents forgery)
@@ -76,14 +74,9 @@ export async function POST(req: NextRequest) {
   if (needsHashUpgrade(account.passwordHash)) {
     try {
       const newHash = hashPassword(password);
-      await fetch(`${CONVEX_URL}/api/mutation`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-        body: JSON.stringify({
-          path: "ourfable:updateOurFablePasswordHash",
-          args: { email: email.toLowerCase().trim(), passwordHash: newHash },
-          format: "json",
-        }),
+      await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
+        email: email.toLowerCase().trim(),
+        passwordHash: newHash,
       });
       console.log(`[auth] Migrated password hash to bcrypt for ${email}`);
     } catch (err) {
@@ -95,16 +88,14 @@ export async function POST(req: NextRequest) {
   // Fetch encryption key material for client-side key derivation
   let encryptionKeys: { encryptedFamilyKey: string | null; keySalt: string | null } | null = null;
   try {
-    const encRes = await fetch(`${CONVEX_URL}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:getFamilyEncryptionKeys", args: { familyId: account.familyId }, format: "json" }),
-    });
-    const encData = await encRes.json();
-    if (encData.value?.encryptedFamilyKey) {
+    const encData = await internalConvexQuery<{
+      encryptedFamilyKey: string | null;
+      keySalt: string | null;
+    } | null>("ourfable:getFamilyEncryptionKeys", { familyId: account.familyId });
+    if (encData?.encryptedFamilyKey) {
       encryptionKeys = {
-        encryptedFamilyKey: encData.value.encryptedFamilyKey,
-        keySalt: encData.value.keySalt,
+        encryptedFamilyKey: encData.encryptedFamilyKey,
+        keySalt: encData.keySalt,
       };
     }
   } catch {

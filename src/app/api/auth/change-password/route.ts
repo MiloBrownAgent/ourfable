@@ -1,29 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { verifyPassword, hashPassword } from "@/lib/accounts";
-import { CONVEX_URL } from "@/lib/convex";
-
-
-async function convexQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.value ?? null;
-}
-
-async function convexMutation(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Convex-Client": "npm-1.34.0" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) throw new Error(`Convex mutation ${path} failed`);
-  return res.json();
-}
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 export async function POST(req: NextRequest) {
   const sessionToken = req.cookies.get(COOKIE)?.value;
@@ -48,10 +26,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Get the family account by familyId
-  const family = await convexQuery("ourfable:getOurFableFamilyById", { familyId: session.familyId }) as {
+  const family = await internalConvexQuery<{
     email: string;
     passwordHash: string;
-  } | null;
+  } | null>("ourfable:getOurFableFamilyById", { familyId: session.familyId });
 
   if (!family) {
     return NextResponse.json({ error: "Account not found" }, { status: 404 });
@@ -64,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   // Hash new password and update
   const newHash = hashPassword(newPassword);
-  await convexMutation("ourfable:updateOurFablePasswordHash", {
+  await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
     email: family.email,
     passwordHash: newHash,
   });
