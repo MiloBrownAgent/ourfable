@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
-import * as OTPAuth from "otpauth";
+import { verifyTOTP } from "@/lib/totp";
 import { CONVEX_URL } from "@/lib/convex";
 
 
@@ -32,26 +32,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "2FA not enabled" }, { status: 400 });
   }
 
-  // Verify TOTP code
-  const totp = new OTPAuth.TOTP({
-    issuer: "Our Fable",
-    label: familyId,
-    algorithm: "SHA1",
-    digits: 6,
-    period: 30,
-    secret: OTPAuth.Secret.fromBase32(twoFA.totpSecret),
-  });
-
-  const delta = totp.validate({ token: code, window: 1 });
-  if (delta === null) {
+  // Verify TOTP code using our custom implementation (no external libraries)
+  const isValid = await verifyTOTP(code, twoFA.totpSecret);
+  if (!isValid) {
     return NextResponse.json({ error: "Invalid code" }, { status: 401 });
+  }
+
+  // Fetch encryption keys to return alongside session
+  let encryptionKeys: { encryptedFamilyKey: string | null; keySalt: string | null } | null = null;
+  try {
+    const encData = await convexQuery("ourfable:getFamilyEncryptionKeys", { familyId });
+    if (encData?.encryptedFamilyKey) {
+      encryptionKeys = {
+        encryptedFamilyKey: encData.encryptedFamilyKey,
+        keySalt: encData.keySalt,
+      };
+    }
+  } catch {
+    // Non-fatal
   }
 
   // Issue session
   const sessionToken = await createSession(familyId);
   const redirectPath = `/${familyId}`;
 
-  const res = NextResponse.json({ redirect: redirectPath });
+  const res = NextResponse.json({ redirect: redirectPath, familyId, encryptionKeys });
   res.cookies.set(COOKIE, sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

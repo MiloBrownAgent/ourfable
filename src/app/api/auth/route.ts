@@ -82,10 +82,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Fetch encryption key material for client-side key derivation
+  let encryptionKeys: { encryptedFamilyKey: string | null; keySalt: string | null } | null = null;
+  try {
+    const encRes = await fetch(`${CONVEX_URL}/api/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "ourfable:getFamilyEncryptionKeys", args: { familyId: account.familyId }, format: "json" }),
+    });
+    const encData = await encRes.json();
+    if (encData.value?.encryptedFamilyKey) {
+      encryptionKeys = {
+        encryptedFamilyKey: encData.value.encryptedFamilyKey,
+        keySalt: encData.value.keySalt,
+      };
+    }
+  } catch {
+    // Non-fatal — encryption may not be set up
+  }
+
   const token = await createSession(account.familyId);
   const redirectPath = `/${account.familyId}`;
 
-  const res = NextResponse.json({ redirect: redirectPath });
+  const res = NextResponse.json({
+    redirect: redirectPath,
+    familyId: account.familyId,
+    encryptionKeys,
+  });
   res.cookies.set(COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

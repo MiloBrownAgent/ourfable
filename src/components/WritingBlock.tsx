@@ -1,6 +1,8 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Mic, Image as ImageIcon, Video as VideoIcon } from 'lucide-react'
+import { useVaultKey } from '@/lib/vault-key-context'
+import { encryptText, encryptBlob, hashContent, serializeEncryptedText } from '@/lib/vault-encryption'
 
 interface WritingBlockProps {
   childFirst: string
@@ -296,6 +298,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     }
   }, [previewingVideo, recordingVideo])
 
+  const { familyKey, isEncryptionEnabled } = useVaultKey()
+
   const hasContent = text.trim().length > 0 || photos.length > 0 || video !== null || audioBlob !== null
 
   const getContentType = (): string => {
@@ -382,8 +386,18 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       }
 
       // Include text body for letters (and as caption for media)
+      // If encryption is enabled and we have a family key, encrypt the text
       if (text.trim()) {
-        entryArgs.body = text.trim()
+        if (isEncryptionEnabled && familyKey) {
+          const encrypted = await encryptText(text.trim(), familyKey)
+          const hash = await hashContent(text.trim())
+          entryArgs.encryptedBody = serializeEncryptedText(encrypted)
+          entryArgs.contentHash = hash
+          entryArgs.encryptionVersion = 1
+          // Don't send plaintext body when encrypted
+        } else {
+          entryArgs.body = text.trim()
+        }
       }
 
       // Include media reference

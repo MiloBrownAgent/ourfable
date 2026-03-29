@@ -73,7 +73,7 @@ export const FAQS = [
   },
   {
     q: "How is my family's data protected?",
-    a: "We take security seriously. All data is encrypted in transit and at rest. Parents can enable two-factor authentication for additional account security. Vault guardians can trigger delivery if something happens to you, but they can never see sealed content. We never sell your data or share it with advertisers. You own your content — you can export everything at any time and delete your account whenever you choose.",
+    a: "We take security seriously. All vault content is encrypted with your family\u2019s unique AES-256 key before it ever leaves your browser \u2014 we can\u2019t read it even if we wanted to. All data is also encrypted in transit and at rest. Parents can enable two-factor authentication for additional account security. Vault guardians can trigger delivery if something happens to you, but they can never see sealed content. We never sell your data or share it with advertisers. You own your content \u2014 you can export everything at any time and delete your account whenever you choose.",
   },
   {
     q: "How do I get started?",

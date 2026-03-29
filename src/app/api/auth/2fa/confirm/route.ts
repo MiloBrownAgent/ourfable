@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
-import * as OTPAuth from "otpauth";
+import { verifyTOTP } from "@/lib/totp";
 import { CONVEX_URL } from "@/lib/convex";
 
 
@@ -45,18 +45,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "2FA not set up" }, { status: 400 });
   }
 
-  // Verify the code
-  const totp = new OTPAuth.TOTP({
-    issuer: "Our Fable",
-    label: session.familyId,
-    algorithm: "SHA1",
-    digits: 6,
-    period: 30,
-    secret: OTPAuth.Secret.fromBase32(twoFA.totpSecret),
-  });
-
-  const delta = totp.validate({ token: code, window: 1 });
-  if (delta === null) {
+  // Verify the code using our custom implementation (no external libraries)
+  const isValid = await verifyTOTP(code, twoFA.totpSecret);
+  if (!isValid) {
     return NextResponse.json({ error: "Invalid code. Try again." }, { status: 400 });
   }
 

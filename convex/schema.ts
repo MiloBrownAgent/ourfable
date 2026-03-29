@@ -180,6 +180,10 @@ export default defineSchema({
     prompt: v.optional(v.string()),
     promptId: v.optional(v.string()),
     submittedAt: v.number(),
+    // Vault encryption fields
+    encryptedBody: v.optional(v.string()),   // JSON-encoded EncryptedText { ciphertext, iv, tag }
+    contentHash: v.optional(v.string()),     // SHA-256 hex hash of original plaintext
+    encryptionVersion: v.optional(v.number()), // 1 = AES-256-GCM
   })
     .index("by_familyId", ["familyId"])
     .index("by_memberId", ["memberId"])
@@ -440,6 +444,10 @@ export default defineSchema({
     lastDeliveryNotification: v.optional(v.number()),
     totpSecret: v.optional(v.string()),
     totpEnabled: v.optional(v.boolean()),
+    // Vault encryption — per-family AES-256-GCM key management
+    encryptedFamilyKey: v.optional(v.string()), // JSON-encoded WrappedKey { wrappedKey, iv }
+    keySalt: v.optional(v.string()),            // PBKDF2 salt for key derivation (base64)
+    keyVersion: v.optional(v.number()),         // encryption key version (for future rotation)
     notifyFacilitatorOnLapse: v.optional(v.boolean()),
     consecutivePaymentFailures: v.optional(v.number()),
     lastFacilitatorBillingNotification: v.optional(v.number()),
@@ -508,6 +516,10 @@ export default defineSchema({
     unlockAge: v.optional(v.number()),
     createdAt: v.number(),
     sourceType: v.optional(v.string()), // "letter" | "dispatch" | "prompt_reply"
+    // Vault encryption fields
+    encryptedBody: v.optional(v.string()),   // JSON-encoded EncryptedText { ciphertext, iv, tag }
+    contentHash: v.optional(v.string()),     // SHA-256 hex hash of original plaintext
+    encryptionVersion: v.optional(v.number()), // 1 = AES-256-GCM
   })
     .index("by_familyId", ["familyId"])
     .index("by_childId", ["childId"]),
@@ -646,6 +658,18 @@ export default defineSchema({
     .index("by_familyId", ["familyId"])
     .index("by_childId", ["childId"])
     .index("by_sent", ["sent"]),
+
+  // ---------------------------------------------------------------------------
+  // Vault Encryption — Guardian Key Shares
+  // ---------------------------------------------------------------------------
+  ourfable_guardian_key_shares: defineTable({
+    familyId: v.string(),
+    guardianEmail: v.string(),
+    encryptedFamilyKey: v.string(), // family key encrypted with guardian's derived key
+    createdAt: v.number(),
+  })
+    .index("by_familyId", ["familyId"])
+    .index("by_guardianEmail", ["guardianEmail"]),
 
   // ---------------------------------------------------------------------------
   // Vault Audit Log — enterprise-grade submission tracking

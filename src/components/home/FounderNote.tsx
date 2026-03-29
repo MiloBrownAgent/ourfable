@@ -82,7 +82,7 @@ export function FounderNote() {
               marginBottom: 0,
               letterSpacing: "0.005em",
             }}>
-              We&apos;re not a big company. We&apos;re two parents who wanted this for our own kid and decided to build it for yours too. Every family on Our Fable matters to us personally. And we built it so your memories are always yours — encrypted, exportable, and portable — no matter what happens to us.
+              We&apos;re not a big company. We&apos;re two parents who wanted this for our own kid and decided to build it for yours too. Every family on Our Fable matters to us personally. And we built it so your memories are always yours — encrypted with your family&apos;s unique key, exportable, and portable — no matter what happens to us.
             </p>
 
             {/* Signature */}

@@ -114,7 +114,7 @@ export default function PrivacyPage() {
 
           <Section>
             <SectionTitle>9. Security</SectionTitle>
-            <p>All vault content and personal data is encrypted at rest using AES-256 encryption. All data in transit uses TLS 1.2 or higher. Vault content is programmatically locked until milestone dates. We do not store full payment card numbers. If we experience a breach affecting your information, we will notify you as required by applicable law.</p>
+            <p>All vault content is encrypted client-side with your family&apos;s unique AES-256-GCM key before being transmitted to our servers &mdash; we never have access to your plaintext vault content. All data in transit uses TLS 1.2 or higher. All data at rest is additionally encrypted using AES-256. Vault content is programmatically locked until milestone dates. We do not store full payment card numbers. If we experience a breach affecting your information, we will notify you as required by applicable law.</p>
           </Section>
 
           <Section>

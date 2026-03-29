@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/sidebar";
 import { ChildProvider } from "@/components/ChildContext";
+import { VaultKeyProvider } from "@/lib/vault-key-context";
 import { convexQuery } from "@/lib/convex";
 
 interface Family {
@@ -21,6 +22,7 @@ export default async function FamilyLayout({
   const childFirst = family?.childName.split(" ")[0] ?? undefined;
 
   return (
+    <VaultKeyProvider>
     <ChildProvider familyId={familyId}>
       <Sidebar familyId={familyId} familyDisplayName={familyDisplayName} childFirst={childFirst} />
       <main
@@ -51,5 +53,6 @@ export default async function FamilyLayout({
         }
       `}</style>
     </ChildProvider>
+    </VaultKeyProvider>
   );
 }

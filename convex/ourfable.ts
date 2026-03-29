@@ -474,6 +474,10 @@ export const submitContribution = mutation({
     mediaStorageId: v.optional(v.string()),
     mediaMimeType: v.optional(v.string()),
     contentType: v.optional(v.string()),
+    // Encryption fields (client-side encrypted)
+    encryptedBody: v.optional(v.string()),
+    contentHash: v.optional(v.string()),
+    encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const today = new Date().toISOString().slice(0, 10);
@@ -734,6 +738,10 @@ export const submitVaultEntry = mutation({
     prompt: v.optional(v.string()),
     promptId: v.optional(v.string()),
     submissionToken: v.optional(v.string()),
+    // Encryption fields (client-side encrypted)
+    encryptedBody: v.optional(v.string()),
+    contentHash: v.optional(v.string()),
+    encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Calculate isOpen based on unlock criteria
@@ -851,6 +859,10 @@ export const sealParentLetter = mutation({
     body: v.optional(v.string()),
     mediaStorageId: v.optional(v.string()),
     mediaMimeType: v.optional(v.string()),
+    // Encryption fields (client-side encrypted)
+    encryptedBody: v.optional(v.string()),
+    contentHash: v.optional(v.string()),
+    encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const family = await ctx.db
@@ -869,7 +881,10 @@ export const sealParentLetter = mutation({
     return await ctx.db.insert("ourfable_vault_entries", {
       familyId: args.familyId,
       type: args.contentType === "letter" ? "text" : args.contentType,
-      content: args.body,
+      content: args.encryptedBody ? undefined : args.body, // Don't store plaintext if encrypted
+      encryptedBody: args.encryptedBody,
+      contentHash: args.contentHash,
+      encryptionVersion: args.encryptionVersion,
       mediaUrl,
       authorEmail: family.parentEmail ?? "parent@ourfable.ai",
       authorName: args.memberName || "Parent",
@@ -3798,5 +3813,147 @@ export const createFFGiftCode = mutation({
       status: "paid",
       createdAt: Date.now(),
     });
+  },
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OurFable — Vault Encryption Key Management
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Set up encryption for a family — stores the wrapped family key and salt.
+ * Called from the client AFTER generating and wrapping the key client-side.
+ */
+export const setupFamilyEncryption = mutation({
+  args: {
+    familyId: v.string(),
+    encryptedFamilyKey: v.string(), // JSON-encoded WrappedKey
+    keySalt: v.string(),            // base64-encoded PBKDF2 salt
+    keyVersion: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+    if (!family) throw new Error("Family not found");
+
+    await ctx.db.patch(family._id, {
+      encryptedFamilyKey: args.encryptedFamilyKey,
+      keySalt: args.keySalt,
+      keyVersion: args.keyVersion ?? 1,
+    });
+    return family._id;
+  },
+});
+
+/**
+ * Get the encryption key material for a family (for login flow).
+ */
+export const getFamilyEncryptionKeys = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family) return null;
+    return {
+      encryptedFamilyKey: family.encryptedFamilyKey ?? null,
+      keySalt: family.keySalt ?? null,
+      keyVersion: family.keyVersion ?? null,
+    };
+  },
+});
+
+/**
+ * Store an encrypted copy of the family key for a vault guardian.
+ */
+export const storeGuardianKeyShare = mutation({
+  args: {
+    familyId: v.string(),
+    guardianEmail: v.string(),
+    encryptedFamilyKey: v.string(), // family key encrypted with guardian's derived key
+  },
+  handler: async (ctx, args) => {
+    // Upsert: replace existing share for this guardian
+    const existing = await ctx.db
+      .query("ourfable_guardian_key_shares")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .collect();
+    const existingShare = existing.find((s) => s.guardianEmail === args.guardianEmail);
+    if (existingShare) {
+      await ctx.db.patch(existingShare._id, { encryptedFamilyKey: args.encryptedFamilyKey });
+      return existingShare._id;
+    }
+    return await ctx.db.insert("ourfable_guardian_key_shares", {
+      familyId: args.familyId,
+      guardianEmail: args.guardianEmail,
+      encryptedFamilyKey: args.encryptedFamilyKey,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Get guardian key shares for a family.
+ */
+export const getGuardianKeyShares = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    return await ctx.db
+      .query("ourfable_guardian_key_shares")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+  },
+});
+
+/**
+ * Migrate existing plaintext entries to encrypted format.
+ * Called from the client — client reads plaintext, encrypts, sends back.
+ * This mutation updates a single entry with encrypted content.
+ */
+export const migrateEntryToEncrypted = mutation({
+  args: {
+    entryId: v.id("ourfable_vault_entries"),
+    encryptedBody: v.string(),
+    contentHash: v.string(),
+    encryptionVersion: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const entry = await ctx.db.get(args.entryId);
+    if (!entry) throw new Error("Entry not found");
+
+    await ctx.db.patch(args.entryId, {
+      encryptedBody: args.encryptedBody,
+      contentHash: args.contentHash,
+      encryptionVersion: args.encryptionVersion,
+      content: undefined, // Clear plaintext content
+    });
+    return args.entryId;
+  },
+});
+
+/**
+ * Migrate a contribution entry to encrypted format.
+ */
+export const migrateContributionToEncrypted = mutation({
+  args: {
+    entryId: v.id("ourfable_vault_contributions"),
+    encryptedBody: v.string(),
+    contentHash: v.string(),
+    encryptionVersion: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const entry = await ctx.db.get(args.entryId);
+    if (!entry) throw new Error("Entry not found");
+
+    await ctx.db.patch(args.entryId, {
+      encryptedBody: args.encryptedBody,
+      contentHash: args.contentHash,
+      encryptionVersion: args.encryptionVersion,
+      body: undefined, // Clear plaintext body
+    });
+    return args.entryId;
   },
 });

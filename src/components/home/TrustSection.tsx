@@ -6,7 +6,7 @@ const PILLARS = [
   {
     icon: Shield,
     title: "Encrypted & private",
-    body: "End-to-end encryption at rest and in transit. No ads. No data sharing. No one sees your vault but you.",
+    body: "Vault content is encrypted with your family\u2019s unique key \u2014 we can\u2019t read it even if we wanted to. No ads. No data sharing. No one sees your vault but you.",
   },
   {
     icon: Download,

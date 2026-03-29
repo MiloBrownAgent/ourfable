@@ -7,6 +7,8 @@ import {
   Heart, Calendar, Clock, Sparkles,
 } from "lucide-react";
 import { useChildContext } from "@/components/ChildContext";
+import { useVaultKey } from "@/lib/vault-key-context";
+import { decryptText, deserializeEncryptedText } from "@/lib/vault-encryption";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -25,6 +27,11 @@ interface VaultEntry {
   createdAt?: number;
   sourceTable: "contributions" | "vault_entries"; // which Convex table
   sourceType?: string; // "letter" | "dispatch" | "prompt_reply"
+  // Encryption
+  encryptedBody?: string;
+  contentHash?: string;
+  encryptionVersion?: number;
+  isEncrypted?: boolean;
 }
 
 interface Family {
@@ -931,6 +938,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const { family: familyId } = use(params);
   const { selectedChild } = useChildContext();
   const childId = selectedChild?.childId || selectedChild?._id;
+  const { familyKey } = useVaultKey();
   const [entries, setEntries] = useState<VaultEntry[]>([]);
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
@@ -963,6 +971,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
     // SECURITY: Strip content from sealed entries — parents see metadata only
     const legacyEntries: VaultEntry[] = (entriesRes.value ?? []).map((e: Record<string, unknown>) => {
       const sealed = e.isOpen === false || e.isSealed === true;
+      const hasEncryptedBody = !!e.encryptedBody;
       return {
         _id: e._id as string,
         memberId: e.memberId as string ?? "",
@@ -970,15 +979,34 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         memberRelationship: e.memberRelationship as string | undefined,
         promptText: sealed ? undefined : (e.prompt as string | undefined),
         contentType: (e.type as string ?? e.contentType as string ?? "text") as VaultEntry["contentType"],
-        textContent: sealed ? undefined : ((e.body as string) ?? (e.content as string) ?? (e.textContent as string)),
+        textContent: sealed ? undefined : (hasEncryptedBody ? undefined : ((e.body as string) ?? (e.content as string) ?? (e.textContent as string))),
         mediaUrl: sealed ? undefined : ((e.photoUrl as string) ?? (e.audioUrl as string) ?? (e.videoUrl as string) ?? (e.mediaUrl as string)),
         isSealed: sealed,
         unlockAge: (e.unlocksAtAge as number) ?? (e.unlockAge as number),
         createdAt: (e.submittedAt as number) ?? (e.createdAt as number),
         sourceTable: "contributions" as const,
         sourceType: e.promptId || e.prompt ? "prompt_reply" : e.subject ? "letter" : "prompt_reply",
+        encryptedBody: sealed ? undefined : (e.encryptedBody as string | undefined),
+        contentHash: e.contentHash as string | undefined,
+        encryptionVersion: e.encryptionVersion as number | undefined,
+        isEncrypted: hasEncryptedBody,
       };
     });
+
+    // Decrypt encrypted contribution entries if family key is available
+    if (familyKey) {
+      for (const entry of legacyEntries) {
+        if (entry.encryptedBody && !entry.textContent && !entry.isSealed) {
+          try {
+            const encrypted = deserializeEncryptedText(entry.encryptedBody);
+            entry.textContent = await decryptText(encrypted, familyKey);
+          } catch (err) {
+            console.error("[vault] Failed to decrypt contribution:", entry._id, err);
+            entry.textContent = "[Encrypted — unable to decrypt]";
+          }
+        }
+      }
+    }
 
     // Resolve parent name from family data
     const familyData = familyRes.value;
@@ -991,6 +1019,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       // Use stored authorName; fall back to parentNames if it's still "Parent"
       const rawName = (e.authorName as string) ?? "Parent";
       const displayName = (rawName === "Parent" && parentNames) ? parentNames : rawName;
+      const hasEncryptedBody = !!e.encryptedBody;
       return {
         _id: e._id as string,
         memberId: "",
@@ -998,7 +1027,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         memberRelationship: undefined,
         promptText: undefined,
         contentType: (e.type as string ?? "text") as VaultEntry["contentType"],
-        textContent: sealed ? undefined : (e.content as string | undefined),
+        textContent: sealed ? undefined : (hasEncryptedBody ? undefined : (e.content as string | undefined)),
         mediaUrl: sealed ? undefined : (e.mediaUrl as string | undefined),
         mediaUrls: sealed ? undefined : (e.mediaUrls as string[] | undefined),
         isSealed: sealed,
@@ -1006,8 +1035,27 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         createdAt: e.createdAt as number | undefined,
         sourceTable: "vault_entries" as const,
         sourceType: (e.sourceType as string | undefined),
+        encryptedBody: sealed ? undefined : (e.encryptedBody as string | undefined),
+        contentHash: e.contentHash as string | undefined,
+        encryptionVersion: e.encryptionVersion as number | undefined,
+        isEncrypted: hasEncryptedBody,
       };
     });
+
+    // Decrypt encrypted entries if family key is available
+    if (familyKey) {
+      for (const entry of ourfableEntries) {
+        if (entry.encryptedBody && !entry.textContent && !entry.isSealed) {
+          try {
+            const encrypted = deserializeEncryptedText(entry.encryptedBody);
+            entry.textContent = await decryptText(encrypted, familyKey);
+          } catch (err) {
+            console.error("[vault] Failed to decrypt entry:", entry._id, err);
+            entry.textContent = "[Encrypted — unable to decrypt]";
+          }
+        }
+      }
+    }
 
     // Merge and sort by createdAt descending
     const merged = [...legacyEntries, ...ourfableEntries].sort(
