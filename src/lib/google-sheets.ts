@@ -1,21 +1,19 @@
 /**
- * Google Sheets integration via OAuth2 refresh token.
+ * Google Sheets integration via Drive API (CSV upload).
  *
- * Uses milobrownagent@gmail.com OAuth credentials to write to the sheet.
- * 
- * Env vars needed in Vercel:
- *   - GOOGLE_SHEET_ID = spreadsheet ID
+ * Uses Drive API to update a Google Sheet with waitlist data.
+ * Drive API is enabled on the project; Sheets API is not.
+ *
+ * Env vars:
+ *   - GOOGLE_SHEET_ID = spreadsheet file ID
  *   - GOOGLE_OAUTH_CLIENT_ID = OAuth client ID
  *   - GOOGLE_OAUTH_CLIENT_SECRET = OAuth client secret
- *   - GOOGLE_OAUTH_REFRESH_TOKEN = refresh token with sheets scope
+ *   - GOOGLE_OAUTH_REFRESH_TOKEN = refresh token with drive scope
  *
- * Current sheet: https://docs.google.com/spreadsheets/d/1TJpx60N0TAIq2_jwPn-JjuklmOkcGUo0TWH9xcgSgCQ/edit
+ * Sheet: https://docs.google.com/spreadsheets/d/1_dahUkpFnJkKDYKbUAePN3jRJbAx4_SEKNavH72Zkss/edit
  * Shared with: davesweeney2.8@gmail.com (writer)
  */
 
-/**
- * Get an access token using OAuth2 refresh token flow.
- */
 async function getAccessToken(): Promise<string> {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
@@ -59,113 +57,90 @@ export interface WaitlistSheetRow {
   foundingMember?: string;
 }
 
+function escapeCSV(val: string): string {
+  if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+    return '"' + val.replace(/"/g, '""') + '"';
+  }
+  return val;
+}
+
+function rowToCSV(row: WaitlistSheetRow): string {
+  return [
+    row.timestamp,
+    row.email,
+    row.childName ?? "",
+    row.childBirthday ?? "",
+    row.source ?? "",
+    row.utm_source ?? "",
+    row.utm_medium ?? "",
+    row.utm_campaign ?? "",
+    row.utm_content ?? "",
+    row.utm_term ?? "",
+    row.foundingMember ?? "",
+  ].map(escapeCSV).join(",");
+}
+
+const HEADERS = "Timestamp,Email,Child Name,Child Birthday,Source,UTM Source,UTM Medium,UTM Campaign,UTM Content,UTM Term,Founding Member";
+
 /**
  * Append a waitlist signup row to the Google Sheet.
+ * Uses Drive API: downloads existing CSV, appends row, re-uploads.
  * Silently no-ops if env vars are not configured.
  */
 export async function appendWaitlistRow(row: WaitlistSheetRow): Promise<void> {
   const sheetId = process.env.GOOGLE_SHEET_ID;
 
   if (!sheetId || !process.env.GOOGLE_OAUTH_REFRESH_TOKEN) {
-    // Not configured — skip silently
     return;
   }
 
   try {
     const token = await getAccessToken();
 
-    const values = [
-      [
-        row.timestamp,
-        row.email,
-        row.childName ?? "",
-        row.childBirthday ?? "",
-        row.source ?? "",
-        row.utm_source ?? "",
-        row.utm_medium ?? "",
-        row.utm_campaign ?? "",
-        row.utm_content ?? "",
-        row.utm_term ?? "",
-        row.foundingMember ?? "",
-      ],
-    ];
+    // Download existing content as CSV
+    const exportRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${sheetId}/export?mimeType=text/csv`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-    const res = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Signups!A:K:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    let existingCSV = "";
+    if (exportRes.ok) {
+      existingCSV = await exportRes.text();
+    }
+
+    // If empty or no headers, start fresh
+    if (!existingCSV || !existingCSV.includes("Timestamp")) {
+      existingCSV = HEADERS;
+    }
+
+    // Append new row
+    const newCSV = existingCSV.trimEnd() + "\n" + rowToCSV(row);
+
+    // Upload updated CSV back to the sheet
+    const updateRes = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${sheetId}?uploadType=media`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Content-Type": "text/csv",
         },
-        body: JSON.stringify({ values }),
+        body: newCSV,
       }
     );
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Google Sheets append error:", text);
+    if (!updateRes.ok) {
+      const text = await updateRes.text();
+      console.error("Google Sheets update error:", text);
     }
   } catch (err) {
-    // Non-fatal — don't break the signup flow
     console.error("Google Sheets integration error:", err);
   }
 }
 
 /**
- * Initialize the sheet with headers if it's empty.
- * Call this once during setup or let it run on first append.
+ * No-op for backwards compatibility. Headers are included in CSV automatically.
  */
 export async function ensureSheetHeaders(): Promise<void> {
-  const sheetId = process.env.GOOGLE_SHEET_ID;
-
-  if (!sheetId || !process.env.GOOGLE_OAUTH_REFRESH_TOKEN) return;
-
-  try {
-    const token = await getAccessToken();
-
-    // Check if headers already exist
-    const checkRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Signups!A1:K1`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    if (checkRes.ok) {
-      const data = await checkRes.json() as { values?: string[][] };
-      if (data.values && data.values[0]?.[0] === "Timestamp") {
-        return; // Headers already set
-      }
-    }
-
-    // Set headers
-    await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Signups!A1:K1?valueInputOption=USER_ENTERED`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          values: [
-            [
-              "Timestamp",
-              "Email",
-              "Child Name",
-              "Child Birthday",
-              "Source",
-              "UTM Source",
-              "UTM Medium",
-              "UTM Campaign",
-              "UTM Content",
-              "UTM Term",
-              "Founding Member",
-            ],
-          ],
-        }),
-      }
-    );
-  } catch (err) {
-    console.error("ensureSheetHeaders error:", err);
-  }
+  // Headers are part of the CSV — no separate setup needed
 }
