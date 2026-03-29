@@ -3874,6 +3874,7 @@ export const storeGuardianKeyShare = mutation({
     familyId: v.string(),
     guardianEmail: v.string(),
     encryptedFamilyKey: v.string(), // family key encrypted with guardian's derived key
+    guardianName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Upsert: replace existing share for this guardian
@@ -3883,13 +3884,17 @@ export const storeGuardianKeyShare = mutation({
       .collect();
     const existingShare = existing.find((s) => s.guardianEmail === args.guardianEmail);
     if (existingShare) {
-      await ctx.db.patch(existingShare._id, { encryptedFamilyKey: args.encryptedFamilyKey });
+      await ctx.db.patch(existingShare._id, {
+        encryptedFamilyKey: args.encryptedFamilyKey,
+        ...(args.guardianName ? { guardianName: args.guardianName } : {}),
+      });
       return existingShare._id;
     }
     return await ctx.db.insert("ourfable_guardian_key_shares", {
       familyId: args.familyId,
       guardianEmail: args.guardianEmail,
       encryptedFamilyKey: args.encryptedFamilyKey,
+      guardianName: args.guardianName,
       createdAt: Date.now(),
     });
   },
@@ -3955,5 +3960,174 @@ export const migrateContributionToEncrypted = mutation({
       body: undefined, // Clear plaintext body
     });
     return args.entryId;
+  },
+});
+
+// ── Recovery Codes ───────────────────────────────────────────────────────────
+
+/**
+ * Store hashed recovery codes and their wrapped family keys.
+ */
+export const storeRecoveryCodeHashes = mutation({
+  args: {
+    familyId: v.string(),
+    hashes: v.array(v.string()),
+    wrappedKeys: v.array(v.string()), // each code's wrapped family key (JSON)
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+    if (!family) throw new Error("Family not found");
+    await ctx.db.patch(family._id, {
+      recoveryCodeHashes: args.hashes,
+      recoveryCodesUsed: [],
+      recoveryWrappedKeys: args.wrappedKeys,
+    });
+    return family._id;
+  },
+});
+
+/**
+ * Verify and consume a recovery code. Returns the wrapped family key for that code
+ * so the client can unwrap with the recovery code and re-wrap with a new password.
+ */
+export const verifyAndConsumeRecoveryCode = mutation({
+  args: {
+    familyId: v.string(),
+    codeHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+    if (!family) throw new Error("Family not found");
+
+    const hashes = family.recoveryCodeHashes ?? [];
+    const used = family.recoveryCodesUsed ?? [];
+    const wrappedKeys = family.recoveryWrappedKeys ?? [];
+
+    const idx = hashes.indexOf(args.codeHash);
+    if (idx === -1) throw new Error("Invalid recovery code");
+    if (used.includes(args.codeHash)) throw new Error("Recovery code already used");
+
+    // Mark as used
+    await ctx.db.patch(family._id, {
+      recoveryCodesUsed: [...used, args.codeHash],
+    });
+
+    return {
+      wrappedFamilyKey: wrappedKeys[idx] ?? null,
+      encryptedFamilyKey: family.encryptedFamilyKey ?? null,
+      keySalt: family.keySalt ?? null,
+    };
+  },
+});
+
+/**
+ * Mark recovery setup as complete.
+ */
+export const markRecoverySetupComplete = mutation({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family) throw new Error("Family not found");
+    await ctx.db.patch(family._id, { recoverySetupComplete: true });
+    return family._id;
+  },
+});
+
+/**
+ * Check if recovery setup is complete.
+ */
+export const isRecoverySetupComplete = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family) return false;
+    return family.recoverySetupComplete ?? false;
+  },
+});
+
+/**
+ * Get recovery code status (how many remaining).
+ */
+export const getRecoveryCodeStatus = query({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family) return null;
+    const total = (family.recoveryCodeHashes ?? []).length;
+    const used = (family.recoveryCodesUsed ?? []).length;
+    return {
+      total,
+      used,
+      remaining: total - used,
+      recoverySetupComplete: family.recoverySetupComplete ?? false,
+    };
+  },
+});
+
+/**
+ * Get family data needed for recovery during password reset.
+ * Returns encryption info + recovery status.
+ */
+export const getRecoveryInfo = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+      .first();
+    if (!family) return null;
+
+    const guardians = await ctx.db
+      .query("ourfable_guardian_key_shares")
+      .withIndex("by_familyId", (q) => q.eq("familyId", family.familyId))
+      .collect();
+
+    return {
+      familyId: family.familyId,
+      hasEncryption: !!family.encryptedFamilyKey,
+      encryptedFamilyKey: family.encryptedFamilyKey ?? null,
+      keySalt: family.keySalt ?? null,
+      hasRecoveryCodes: (family.recoveryCodeHashes ?? []).length > 0,
+      recoveryCodesRemaining: (family.recoveryCodeHashes ?? []).length - (family.recoveryCodesUsed ?? []).length,
+      hasGuardian: guardians.length > 0,
+      guardianEmails: guardians.map((g) => g.guardianEmail),
+    };
+  },
+});
+
+/**
+ * Update the encrypted family key (after re-wrapping with new password).
+ */
+export const updateEncryptedFamilyKey = mutation({
+  args: {
+    familyId: v.string(),
+    encryptedFamilyKey: v.string(),
+    keySalt: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+    if (!family) throw new Error("Family not found");
+    const patch: Record<string, unknown> = { encryptedFamilyKey: args.encryptedFamilyKey };
+    if (args.keySalt) patch.keySalt = args.keySalt;
+    await ctx.db.patch(family._id, patch);
+    return family._id;
   },
 });

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Send reset email
-      const resetUrl = `https://ourfable.ai/reset-password?token=${token}`;
+      const resetUrl = `https://ourfable.ai/reset-password?token=${token}&email=${encodeURIComponent(normalized)}`;
 
       if (RESEND_API_KEY) {
         await fetch("https://api.resend.com/emails", {

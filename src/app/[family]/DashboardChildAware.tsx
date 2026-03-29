@@ -4,9 +4,10 @@ import Link from "next/link";
 import CountUpNumber from "@/components/CountUpNumber";
 import WritingBlock from "@/components/WritingBlock";
 import Greeting from "@/components/Greeting";
+import VaultProtectionModal from "@/components/VaultProtectionModal";
 import { useChildContext } from "@/components/ChildContext";
 import { calcAge, formatAgeLong } from "@/lib/convex";
-import { Music, Pen, Check, Circle, ArrowRight } from "lucide-react";
+import { Music, Pen, Check, Circle, ArrowRight, Shield } from "lucide-react";
 // ListenButton removed — world snapshot demoted
 import { useRef } from "react";
 
@@ -71,12 +72,14 @@ function OnboardingChecklist({
   childFirst,
   hasParentEntry,
   circleCount,
+  recoverySetupComplete,
   onScrollToWriting,
 }: {
   familyId: string;
   childFirst: string;
   hasParentEntry: boolean;
   circleCount: number;
+  recoverySetupComplete: boolean;
   onScrollToWriting: () => void;
 }) {
   const storageKey = `ourfable-onboarding-dismissed-${familyId}`;
@@ -85,13 +88,14 @@ function OnboardingChecklist({
 
   const steps = [
     { label: `Created ${childFirst}'s Fable`, done: true },
+    { label: "Protect your vault", done: recoverySetupComplete, link: `/${familyId}/settings/recovery` },
     { label: "Write your first letter", done: hasParentEntry },
     { label: "Invite 1 circle member", done: circleCount >= 1 },
     { label: "Invite 2 more people", done: circleCount >= 3 },
   ];
   const completedCount = steps.filter((s) => s.done).length;
-  const allDone = completedCount === 4;
-  const progress = (completedCount / 4) * 100;
+  const allDone = completedCount === 5;
+  const progress = (completedCount / 5) * 100;
 
   useEffect(() => {
     const stored = localStorage.getItem(storageKey);
@@ -175,8 +179,8 @@ function OnboardingChecklist({
         {steps.map((s, i) => {
           const isClickable = !s.done && i > 0;
           const handleClick = () => {
-            if (i === 1) onScrollToWriting();
-            // steps 2 and 3 link to circle page — handled via Link wrapper
+            if (i === 2) onScrollToWriting();
+            // steps 1 (recovery), 3 and 4 link via Link wrapper
           };
 
           const content = (
@@ -184,7 +188,7 @@ function OnboardingChecklist({
               key={i}
               onClick={i === 1 && isClickable ? handleClick : undefined}
               role={isClickable ? "button" : undefined}
-              tabIndex={isClickable && i === 1 ? 0 : undefined}
+              tabIndex={isClickable && i === 2 ? 0 : undefined}
               style={{
                 display: "flex", alignItems: "center", gap: 12,
                 cursor: isClickable ? "pointer" : "default",
@@ -223,8 +227,15 @@ function OnboardingChecklist({
             </div>
           );
 
-          // For circle invite steps, wrap in Link
-          if (isClickable && (i === 2 || i === 3)) {
+          // Link-wrapped steps
+          if (isClickable && i === 1 && s.link) {
+            return (
+              <Link key={i} href={s.link} style={{ textDecoration: "none", color: "inherit" }}>
+                {content}
+              </Link>
+            );
+          }
+          if (isClickable && (i === 3 || i === 4)) {
             return (
               <Link key={i} href={`/${familyId}/circle`} style={{ textDecoration: "none", color: "inherit" }}>
                 {content}
@@ -249,6 +260,7 @@ interface Props {
   unreadNotifs: Notification[];
   circleCount?: number;
   lastDispatchAt?: number;
+  recoverySetupComplete?: boolean;
 }
 
 export default function DashboardChildAware({
@@ -261,6 +273,7 @@ export default function DashboardChildAware({
   unreadNotifs: defaultUnread,
   circleCount,
   lastDispatchAt,
+  recoverySetupComplete: initialRecoveryComplete,
 }: Props) {
   const { selectedChild, children } = useChildContext();
 
@@ -316,6 +329,24 @@ export default function DashboardChildAware({
   const hasParentEntry = vaultEntries.some((e) => !e.memberRelationship);
   const safeCircleCount = circleCount ?? 0;
 
+  // Vault protection modal state
+  const [recoveryComplete, setRecoveryComplete] = useState(initialRecoveryComplete ?? false);
+  const [showVaultModal, setShowVaultModal] = useState(false);
+
+  useEffect(() => {
+    // Show vault protection modal if recovery setup not complete
+    if (initialRecoveryComplete === false) {
+      // Check if user has dismissed the modal before (allow re-show after 7 days)
+      const dismissedAt = localStorage.getItem(`ourfable-vault-modal-dismissed-${familyId}`);
+      if (!dismissedAt) {
+        setShowVaultModal(true);
+      } else {
+        const daysSince = (Date.now() - parseInt(dismissedAt)) / 86400000;
+        if (daysSince > 7) setShowVaultModal(true);
+      }
+    }
+  }, [initialRecoveryComplete, familyId]);
+
   const scrollToWriting = useCallback(() => {
     writingBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     setTimeout(() => {
@@ -327,12 +358,24 @@ export default function DashboardChildAware({
   return (
     <div style={{ opacity: loadingChild ? 0.7 : 1, transition: "opacity 200ms" }}>
 
+      {/* ── VAULT PROTECTION MODAL ── */}
+      {showVaultModal && !recoveryComplete && (
+        <VaultProtectionModal
+          familyId={familyId}
+          onComplete={() => {
+            setShowVaultModal(false);
+            setRecoveryComplete(true);
+          }}
+        />
+      )}
+
       {/* ── 0. ONBOARDING CHECKLIST ── */}
       <OnboardingChecklist
         familyId={familyId}
         childFirst={childFirst}
         hasParentEntry={hasParentEntry}
         circleCount={safeCircleCount}
+        recoverySetupComplete={recoveryComplete}
         onScrollToWriting={scrollToWriting}
       />
 

@@ -62,7 +62,7 @@ function contentTypeLabel(type: string): string {
 export default async function FamilyHub({ params }: { params: Promise<{ family: string }> }) {
   const { family: familyId } = await params;
 
-  const [family, vaultEntries, snapshots, notifications, beforeBorn, circleMembers, outgoings, parentEntries] = await Promise.all([
+  const [family, vaultEntries, snapshots, notifications, beforeBorn, circleMembers, outgoings, parentEntries, recoverySetupComplete] = await Promise.all([
     convexQuery<Family>("ourfable:getFamily", { familyId }).catch(() => null),
     convexQuery<VaultEntry[]>("ourfable:listVaultEntries", { familyId, includeSealed: true }).catch(() => [] as VaultEntry[]),
     convexQuery<Snapshot[]>("ourfable:listSnapshots", { familyId }).catch(() => [] as Snapshot[]),
@@ -71,6 +71,7 @@ export default async function FamilyHub({ params }: { params: Promise<{ family: 
     convexQuery<Array<{ _id: string }>>( "ourfable:listCircle", { familyId }).catch(() => []),
     convexQuery<Array<{ sentAt: number }>>( "ourfable:listOutgoings", { familyId }).catch(() => []),
     convexQuery<Array<{ _id: string; authorName?: string; type?: string; isSealed?: boolean; createdAt?: number }>>( "ourfable:listOurFableVaultEntries", { familyId }).catch(() => []),
+    convexQuery<boolean>("ourfable:isRecoverySetupComplete", { familyId }).catch(() => false),
   ]);
 
   // beforeBorn used only for dedicated page; suppress unused warning
@@ -123,6 +124,7 @@ export default async function FamilyHub({ params }: { params: Promise<{ family: 
         unreadNotifs={unreadNotifs}
         circleCount={circleCount}
         lastDispatchAt={lastDispatchAt}
+        recoverySetupComplete={recoverySetupComplete ?? false}
       />
     </>
   );

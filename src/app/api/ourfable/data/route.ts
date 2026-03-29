@@ -76,6 +76,17 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:addCustomDeliveryMilestone",
   "ourfable:deleteOurFableDeliveryMilestone",
   "ourfable:listDeliveryMilestones",
+  // Recovery codes & vault protection
+  "ourfable:storeRecoveryCodeHashes",
+  "ourfable:verifyAndConsumeRecoveryCode",
+  "ourfable:markRecoverySetupComplete",
+  "ourfable:isRecoverySetupComplete",
+  "ourfable:getRecoveryCodeStatus",
+  "ourfable:getRecoveryInfo",
+  "ourfable:updateEncryptedFamilyKey",
+  "ourfable:storeGuardianKeyShare",
+  "ourfable:getGuardianKeyShares",
+  "ourfable:getFamilyEncryptionKeys",
 ]);
 
 // Public — no session required (join/share flows)
@@ -90,6 +101,9 @@ const PUBLIC_QUERIES = new Set([
   "ourfable:generateUploadUrl",
   "ourfable:submitVaultEntry",
   "ourfable:getReferralByCode",
+  "ourfable:getRecoveryInfo",
+  "ourfable:verifyAndConsumeRecoveryCode",
+  "ourfable:updateEncryptedFamilyKey",
 ]);
 
 export async function POST(req: NextRequest) {
