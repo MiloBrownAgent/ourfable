@@ -18,3 +18,5 @@ export { StickyBottomCTA } from "./StickyBottomCTA";
 export { DispatchSection } from "./DispatchSection";
 export { MidPageCapture } from "./MidPageCapture";
 export { MultiChildSection } from "./MultiChildSection";
+export { TrustSection } from "./TrustSection";
+export { VaultOpeningSection } from "./VaultOpeningSection";

@@ -1,12 +1,16 @@
 "use client";
 import { Reveal } from "./Reveal";
 
-const FEATURES = [
-  { num: "01", title: "The Vault", body: "Every letter, photo, voice memo, and video — sealed until the milestone age you choose. Each child gets their own vault, managed from one dashboard. They open it at 13. At 18. At their wedding. They'll hear voices that might otherwise be lost forever." },
-  { num: "02", title: "Monthly Prompts", body: "On the 1st of every month, Our Fable sends a personalized prompt to every person in your circle. Grandma gets a different question than the family friend. They respond with text, a photo, or a voice memo. No app required." },
-  { num: "03", title: "Dispatches", body: "Send photos, videos, voice memos, or updates to your whole circle — privately. No group chat. No social media. Just the people who matter. Our Fable+ only." },
-  { num: "04", title: "World Snapshot", body: "One page per month of your child's life — the top headlines, the #1 song, the weather. By the time they turn 18, they'll have 216 of them." },
-  { num: "05", title: "The Day They Were Born", body: "A permanent front page capturing everything happening in the world the day your child arrived — weather, headlines, music. Theirs forever." },
+const CORE_FEATURES = [
+  { num: "01", title: "The Vault", body: "Every letter, photo, voice memo, and video — sealed until the milestone age you choose. Each child gets their own vault, managed from one dashboard. They open it at 13. At 18. At their wedding." },
+  { num: "02", title: "Monthly Prompts", body: "On the 1st of every month, Our Fable sends a personalized prompt to every person in your circle. Grandma gets a different question than the family friend. They respond with text, a photo, a voice memo, or a video. No app required." },
+  { num: "03", title: "The Circle", body: "Grandparents, aunts, uncles, godparents, family friends — everyone who loves your child gets invited. They each get their own prompts and their own way to contribute. The more people in the circle, the richer the vault." },
+];
+
+const SECONDARY_FEATURES = [
+  { num: "04", title: "Dispatches", body: "Send photos, videos, voice memos, or updates to your whole circle — privately. No group chat. No social media. Just the people who matter." },
+  { num: "05", title: "World Snapshot", body: "One page per month — the headlines, the #1 song, the weather. A time capsule of the world your child grew up in." },
+  { num: "06", title: "The Day They Were Born", body: "A permanent front page capturing the world the day your child arrived. Theirs forever." },
 ];
 
 export function FeaturesSection() {
@@ -23,14 +27,15 @@ export function FeaturesSection() {
             </div>
           </Reveal>
 
+          {/* Core features — prominent */}
           <div style={{ borderTop: "1px solid var(--border)" }}>
-            {FEATURES.map((f, i) => (
+            {CORE_FEATURES.map((f, i) => (
               <Reveal key={f.title} delay={i * 40}>
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "48px 1fr",
                   gap: "0 40px",
-                  padding: "36px 0",
+                  padding: "40px 0",
                   borderBottom: "1px solid var(--border)",
                   alignItems: "start",
                 }}>
@@ -47,7 +52,7 @@ export function FeaturesSection() {
                   <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "0 48px", alignItems: "start" }} className="feature-row-inner">
                     <h3 style={{
                       fontFamily: "var(--font-playfair)",
-                      fontSize: 21,
+                      fontSize: 22,
                       fontWeight: 700,
                       letterSpacing: "-0.01em",
                       lineHeight: 1.25,
@@ -66,6 +71,66 @@ export function FeaturesSection() {
                 </div>
               </Reveal>
             ))}
+          </div>
+
+          {/* Secondary features — smaller, more compact */}
+          <div style={{ marginTop: 48 }}>
+            <Reveal>
+              <p style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--text-4)",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                marginBottom: 20,
+              }}>
+                Also included
+              </p>
+            </Reveal>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 20,
+            }} className="secondary-features-grid">
+              {SECONDARY_FEATURES.map((f, i) => (
+                <Reveal key={f.title} delay={i * 40}>
+                  <div style={{
+                    padding: "24px 20px",
+                    borderRadius: 12,
+                    border: "1px solid var(--border)",
+                    background: "var(--card)",
+                    height: "100%",
+                  }}>
+                    <p style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: "var(--text-4)",
+                      letterSpacing: "0.1em",
+                      marginBottom: 8,
+                    }}>
+                      {f.num}
+                    </p>
+                    <h3 style={{
+                      fontFamily: "var(--font-playfair)",
+                      fontSize: 17,
+                      fontWeight: 700,
+                      color: "var(--text)",
+                      marginBottom: 8,
+                      lineHeight: 1.3,
+                    }}>
+                      {f.title}
+                    </h3>
+                    <p style={{
+                      fontSize: 13,
+                      lineHeight: 1.7,
+                      color: "var(--text-2)",
+                    }}>
+                      {f.body}
+                    </p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -88,6 +153,14 @@ export function FeaturesSection() {
           .feature-row-inner {
             grid-template-columns: 1fr !important;
             gap: 10px 0 !important;
+          }
+          .secondary-features-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .secondary-features-grid {
+            grid-template-columns: 1fr 1fr !important;
           }
         }
       `}</style>

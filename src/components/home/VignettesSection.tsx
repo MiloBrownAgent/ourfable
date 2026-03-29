@@ -11,13 +11,13 @@ export function LetterMomentSection() {
           <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontWeight: 500, fontSize: "clamp(1.25rem, 3vw, 2.4rem)", lineHeight: 1.6, color: "#FFFFFF", marginBottom: 32 }}>
             &ldquo;Imagine your child at 18, opening a voice memo from their great-grandmother — recorded when they were 9 months old.
             <br /><br />
-            Their great-grandmother, who is no longer alive.
+            Singing the lullaby she sang to everyone in the family.
             <br /><br />
-            Telling them how she wants to be remembered.&rdquo;
+            In a voice your child will recognize instantly.&rdquo;
           </p>
           <div style={{ width: 48, height: 1, background: "rgba(201,169,110,0.4)", margin: "0 auto 32px" }} />
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: 500, margin: "0 auto" }}>
-            Our Fable makes this happen because once a month, it asked. She answered. Her voice is in the Vault — sealed, waiting.
+            Our Fable makes this happen because once a month, it asked. She answered. Her voice is in the Vault — sealed, waiting for the perfect moment.
           </p>
         </div>
       </Reveal>
@@ -29,21 +29,21 @@ const VIGNETTES = [
   {
     who: "Grandpa",
     age: "84 years old",
-    excerpt: "He forgets things now. Some days are harder than others. But last Tuesday, he recorded a video message — eleven minutes about the farm he grew up on, about his own father, about what he hopes for the baby he's only met twice.",
+    excerpt: "Last Tuesday, he recorded a video message — eleven minutes about the farm he grew up on, about his own father, about what he hopes for the baby he's only met twice. He laughed so hard telling the tractor story he had to start over.",
     seal: "Sealed until age 18.",
     color: "var(--gold)",
   },
   {
-    who: "Great-Aunt Carol",
-    age: "She passed last spring",
-    excerpt: "She submitted three voice memos before she died. None of them knew it would be the last time they'd hear her voice. Our Fable did. It was waiting.",
-    seal: "Her voice is still there.",
+    who: "Uncle Mike",
+    age: "Lives for the group chat",
+    excerpt: "He sent a video of himself doing the worst impression of your child's laugh — then got serious for thirty seconds and said something so genuine it made you cry. Classic Mike.",
+    seal: "Sealed until age 13.",
     color: "var(--sage)",
   },
   {
     who: "Your best friend from college",
     age: "Knew you before any of this",
-    excerpt: "She knew you when you were 22 and had no idea what you were doing. She wrote about who you were before you became someone's parent — things your child will never be able to find out any other way.",
+    excerpt: "She wrote about who you were before you became someone's parent — the road trips, the bad decisions, the version of you your child will never meet. Things they'd never find out any other way.",
     seal: "Sealed until graduation.",
     color: "var(--gold)",
   },
@@ -64,7 +64,7 @@ export function VignettesSection() {
           <div style={{ textAlign: "center", marginBottom: 80 }}>
             <p className="label label-green" style={{ marginBottom: 16 }}>Why it matters</p>
             <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, maxWidth: 600, margin: "0 auto" }}>
-              The people who love your child<br />won&apos;t always be here.
+              The people who love your child<br />have stories worth keeping.
             </h2>
           </div>
         </Reveal>
@@ -152,7 +152,7 @@ export function VideoMomentSection() {
             color: "var(--text)",
             marginBottom: 40,
           }}>
-            What would you give to have a video of your grandmother — just talking to you?
+            There&apos;s nothing like hearing someone&apos;s voice — really hearing it — years later.
           </p>
 
           <p style={{
@@ -162,7 +162,7 @@ export function VideoMomentSection() {
             marginBottom: 28,
             maxWidth: 580,
           }}>
-            Not a photo. Not a memory someone else told you. A video. Her, looking at the camera, saying your name. Telling you what she hoped for you. Laughing the way she laughed.
+            Not a photo. Not a story someone else told you. A video. Grandma, looking at the camera, saying your child&apos;s name. Laughing the way she laughs. Telling them what she hopes for them.
           </p>
 
           <p style={{
@@ -172,7 +172,7 @@ export function VideoMomentSection() {
             marginBottom: 48,
             maxWidth: 580,
           }}>
-            Your child could have that. From you. From their grandparents. From everyone who loves them right now — while they&apos;re still here, while the light is still good, while there&apos;s still time.
+            Your child could have that. From you. From their grandparents. From everyone who loves them right now. That&apos;s the magic of a vault that collects voices, not just words.
           </p>
 
           <div style={{

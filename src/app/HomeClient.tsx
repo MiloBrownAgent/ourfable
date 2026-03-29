@@ -19,6 +19,8 @@ import {
 
   MidPageCapture,
   MultiChildSection,
+  TrustSection,
+  VaultOpeningSection,
 } from "../components/home";
 
 export default function HomeClient() {
@@ -109,12 +111,14 @@ export default function HomeClient() {
       <LetterMomentSection />
       <VideoMomentSection />
       <CircleSection />
+      <VaultOpeningSection />
       <HowItWorksSection />
       <FeaturesSection />
       <MultiChildSection />
       <StatsSection />
       <FounderNote />
       <MidPageCapture />
+      <TrustSection />
       <PricingSection />
       <FooterSection />
 
