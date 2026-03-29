@@ -19,6 +19,7 @@ import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-intern
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { verifySession, COOKIE } from "@/lib/auth";
 
 function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -27,9 +28,16 @@ function getStripe(): Stripe {
 }
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const sessionToken = req.cookies.get(COOKIE)?.value;
+    const session = sessionToken ? await verifySession(sessionToken) : null;
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
-      familyId,
+      familyId: _clientFamilyId,
       childName,
       childDob,
       billingPeriod = "monthly",
@@ -47,6 +55,9 @@ export async function POST(req: NextRequest) {
       successUrl?: string;
       cancelUrl?: string;
     };
+
+    // SECURITY: Always use session familyId, ignore client-supplied value
+    const familyId = session.familyId;
 
     if (!familyId || !childName || !childDob) {
       return NextResponse.json(

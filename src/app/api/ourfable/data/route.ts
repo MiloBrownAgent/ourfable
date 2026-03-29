@@ -95,7 +95,6 @@ const ALLOWED_QUERIES = new Set([
   // Recovery codes & vault protection — safe read-only queries (public)
   "ourfable:isRecoverySetupComplete",
   "ourfable:getRecoveryCodeStatus",
-  "ourfable:getRecoveryInfo",
   "ourfable:getGuardianKeyShares",
   // Recovery/encryption operations that are internal — routed via INTERNAL_ALLOWED set
   "ourfable:storeRecoveryCodeHashes",
@@ -125,7 +124,6 @@ const INTERNAL_ALLOWED = new Set([
 // Only token-based lookups and read-only public data belong here.
 const PUBLIC_QUERIES = new Set([
   "ourfable:getDispatchByViewToken",
-  "ourfable:getRecoveryInfo",
   "ourfable:getShareData",
   "ourfable:getMemberByInviteToken",
   "ourfable:getMemberByShareToken",

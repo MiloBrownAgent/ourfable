@@ -66,13 +66,27 @@ export async function POST(req: NextRequest) {
       if (!familyId || !codeHash) {
         return NextResponse.json({ error: "Missing fields" }, { status: 400 });
       }
+
+      // Rate limit: check failed attempts (reuse 2FA attempt tracking)
+      try {
+        const attempts = await internalConvexQuery("ourfable:get2FAAttempts", { familyId }) as { count: number; lockedUntil?: number } | null;
+        if (attempts && attempts.lockedUntil && Date.now() < attempts.lockedUntil) {
+          const waitMinutes = Math.ceil((attempts.lockedUntil - Date.now()) / 60000);
+          return NextResponse.json({ error: `Too many attempts. Try again in ${waitMinutes} minutes.` }, { status: 429 });
+        }
+      } catch { /* continue if rate limit check fails */ }
+
       try {
         const result = await internalConvexMutation("ourfable:verifyAndConsumeRecoveryCode", {
           familyId,
           codeHash,
         });
+        // Reset attempts on success
+        try { await internalConvexMutation("ourfable:reset2FAAttempts", { familyId }); } catch { /* non-fatal */ }
         return NextResponse.json({ value: result });
       } catch (err) {
+        // Record failed attempt
+        try { await internalConvexMutation("ourfable:record2FAAttempt", { familyId }); } catch { /* non-fatal */ }
         const message = err instanceof Error ? err.message : "Invalid recovery code";
         return NextResponse.json({ error: message }, { status: 400 });
       }
