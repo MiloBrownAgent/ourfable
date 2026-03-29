@@ -12,67 +12,113 @@ export function FounderNote() {
         <div style={{
           maxWidth: 640,
           margin: "0 auto",
-          padding: "56px 48px",
-          background: "#FDFBF5",
-          border: "1px solid #E8E2D4",
-          borderRadius: 2,
-          position: "relative",
         }}>
-          {/* Subtle corner ornament feel */}
-          <div style={{
-            position: "absolute",
-            top: 20,
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            fontSize: 10,
-            letterSpacing: "0.5em",
-            color: "#C8A87A",
-            opacity: 0.5,
-          }}>
-            ✦
-          </div>
-
-          {/* Letter body */}
+          {/* Label */}
           <p style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontStyle: "italic",
-            fontSize: "clamp(1.1rem, 2vw, 1.35rem)",
-            lineHeight: 2.1,
-            color: "#2A2A28",
-            textAlign: "left",
-            marginBottom: 0,
-            letterSpacing: "0.005em",
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "var(--green)",
+            marginBottom: 20,
+            textAlign: "center",
           }}>
-            We built Our Fable as a gift for our son — and to fix something that&apos;s been broken about parenting for a long time. The people who love your child most are getting older. Their stories, their voices, their memories of who you were before you were a parent — none of that gets preserved automatically. We decided to build something that would.
+            A note from the founders
           </p>
 
-          {/* Signature */}
+          {/* Letter container */}
           <div style={{
-            marginTop: 40,
-            paddingTop: 24,
-            borderTop: "1px solid #E8E2D4",
+            padding: "52px 48px",
+            background: "#FDFBF5",
+            border: "1px solid #E8E2D4",
+            borderRadius: 2,
+            position: "relative",
           }}>
+            {/* Opening */}
             <p style={{
               fontFamily: "Georgia, 'Times New Roman', serif",
               fontStyle: "italic",
-              fontSize: "clamp(1rem, 1.8vw, 1.2rem)",
-              fontWeight: 400,
+              fontSize: "clamp(1.1rem, 2vw, 1.3rem)",
+              lineHeight: 2.1,
               color: "#2A2A28",
-              letterSpacing: "0.01em",
-              marginBottom: 6,
+              textAlign: "left",
+              marginBottom: 24,
+              letterSpacing: "0.005em",
             }}>
-              Amanda &amp; Dave Sweeney
+              We&apos;re Dave and Amanda — the founders of Our Fable, and parents to a 9-month-old named Soren.
             </p>
+
             <p style={{
-              fontFamily: "var(--font-body)",
-              fontSize: 11,
-              color: "#9A9590",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: "clamp(0.95rem, 1.8vw, 1.1rem)",
+              lineHeight: 2.1,
+              color: "#3A3A38",
+              textAlign: "left",
+              marginBottom: 20,
+              letterSpacing: "0.005em",
             }}>
-              Minneapolis · Parents to a 9 month old son
+              We built Our Fable because we realized something that scared us: the people who love Soren most — his grandparents, his aunts, his uncles, our closest friends — they all have stories about him, about us, about our family. And none of it was being captured. Not the voice memos. Not the funny moments. Not the things they&apos;d want him to know someday.
             </p>
+
+            <p style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: "clamp(0.95rem, 1.8vw, 1.1rem)",
+              lineHeight: 2.1,
+              color: "#3A3A38",
+              textAlign: "left",
+              marginBottom: 20,
+              letterSpacing: "0.005em",
+            }}>
+              So we built something to fix that. Our Fable asks the people in your child&apos;s life one simple question a month. They answer however they want — a letter, a voice recording, a photo, a video. It all seals in a vault that your child opens when they&apos;re ready.
+            </p>
+
+            <p style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontStyle: "italic",
+              fontSize: "clamp(1rem, 1.9vw, 1.2rem)",
+              lineHeight: 2.1,
+              color: "#2A2A28",
+              textAlign: "left",
+              marginBottom: 0,
+              letterSpacing: "0.005em",
+            }}>
+              We&apos;re not a big company. We&apos;re two parents who wanted this for our own kid and decided to build it for yours too. Every family on Our Fable matters to us personally.
+            </p>
+
+            {/* Signature */}
+            <div style={{
+              marginTop: 40,
+              paddingTop: 24,
+              borderTop: "1px solid #E8E2D4",
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 12,
+            }}>
+              <div>
+                <p style={{
+                  fontFamily: "Georgia, 'Times New Roman', serif",
+                  fontStyle: "italic",
+                  fontSize: "clamp(1rem, 1.8vw, 1.2rem)",
+                  fontWeight: 400,
+                  color: "#2A2A28",
+                  letterSpacing: "0.01em",
+                  marginBottom: 4,
+                }}>
+                  Dave &amp; Amanda Sweeney
+                </p>
+                <p style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 11,
+                  color: "#9A9590",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                }}>
+                  Co-Founders, Our Fable · Minneapolis
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </Reveal>
