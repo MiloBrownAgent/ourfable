@@ -155,11 +155,11 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
     const stream = streamRef.current;
     if (!stream) return;
 
-    // Negotiate mime type: prefer webm, fall back to mp4 for Safari
-    let mimeType = "video/webm";
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
-      mimeType = MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "";
-    }
+    // Negotiate mime type: prefer mp4 for Safari compatibility, then webm
+    let mimeType = "";
+    if (MediaRecorder.isTypeSupported("video/mp4")) mimeType = "video/mp4";
+    else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) mimeType = "video/webm;codecs=vp9,opus";
+    else if (MediaRecorder.isTypeSupported("video/webm")) mimeType = "video/webm";
     const options: MediaRecorderOptions = mimeType ? { mimeType } : {};
     const recorder = new MediaRecorder(stream, options);
     const actualMime = recorder.mimeType || mimeType || "video/mp4";
@@ -207,12 +207,16 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       // Negotiate mime type for cross-browser (Safari needs mp4)
       let targetMime = "";
       if (type === "voice") {
-        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) targetMime = "audio/webm;codecs=opus";
+        // Safari: try mp4/aac first, then webm
+        if (MediaRecorder.isTypeSupported("audio/mp4")) targetMime = "audio/mp4";
+        else if (MediaRecorder.isTypeSupported("audio/aac")) targetMime = "audio/aac";
+        else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) targetMime = "audio/webm;codecs=opus";
         else if (MediaRecorder.isTypeSupported("audio/webm")) targetMime = "audio/webm";
-        else if (MediaRecorder.isTypeSupported("audio/mp4")) targetMime = "audio/mp4";
       } else {
-        if (MediaRecorder.isTypeSupported("video/webm")) targetMime = "video/webm";
-        else if (MediaRecorder.isTypeSupported("video/mp4")) targetMime = "video/mp4";
+        // Safari: try mp4 first, then webm
+        if (MediaRecorder.isTypeSupported("video/mp4")) targetMime = "video/mp4";
+        else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) targetMime = "video/webm;codecs=vp9,opus";
+        else if (MediaRecorder.isTypeSupported("video/webm")) targetMime = "video/webm";
       }
       const options: MediaRecorderOptions = targetMime ? { mimeType: targetMime } : {};
       const recorder = new MediaRecorder(stream, options);

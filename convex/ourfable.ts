@@ -471,10 +471,21 @@ export const submitContribution = mutation({
     photoUrl: v.optional(v.string()),
     openOn: v.optional(v.string()),
     prompt: v.optional(v.string()),
+    mediaStorageId: v.optional(v.string()),
+    mediaMimeType: v.optional(v.string()),
+    contentType: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const today = new Date().toISOString().slice(0, 10);
     const isOpen = !args.openOn || args.openOn <= today;
+
+    // Resolve media URL from Convex storage if mediaStorageId provided
+    let resolvedMediaUrl = args.photoUrl ?? args.audioUrl;
+    if (args.mediaStorageId) {
+      const url = await ctx.storage.getUrl(args.mediaStorageId);
+      if (url) resolvedMediaUrl = url;
+    }
+
     const id = await ctx.db.insert("ourfable_vault_contributions", {
       ...args,
       isOpen,
@@ -489,12 +500,16 @@ export const submitContribution = mutation({
         acceptedAt: member.acceptedAt ?? Date.now(),
       });
 
+      // Determine the effective content type
+      const effectiveType = args.contentType ?? args.type;
+      const vaultType = effectiveType === "letter" || effectiveType === "write" ? "text" : effectiveType;
+
       // Also write to ourfable_vault_entries so it appears in the vault
       await ctx.db.insert("ourfable_vault_entries", {
         familyId: args.familyId,
-        type: args.type === "letter" ? "text" : args.type,
+        type: vaultType,
         content: args.body,
-        mediaUrl: args.photoUrl ?? args.audioUrl,
+        mediaUrl: resolvedMediaUrl,
         authorEmail: member.email ?? "circle@ourfable.ai",
         authorName: member.name,
         isSealed: !isOpen,
