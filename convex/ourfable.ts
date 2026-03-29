@@ -4395,3 +4395,316 @@ export const getServerSecret = internalQuery({
     return process.env.CONVEX_SERVER_SECRET ?? null;
   },
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OurFable Users — Dual-Parent Login
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const createOurFableUser = internalMutation({
+  args: {
+    email: v.string(),
+    passwordHash: v.string(),
+    familyId: v.string(),
+    name: v.string(),
+    role: v.union(v.literal("owner"), v.literal("parent")),
+    encryptedFamilyKey: v.optional(v.string()),
+    keySalt: v.optional(v.string()),
+    totpSecret: v.optional(v.string()),
+    totpEnabled: v.optional(v.boolean()),
+    recoveryCodeHashes: v.optional(v.array(v.string())),
+    recoveryCodesUsed: v.optional(v.array(v.string())),
+    recoveryWrappedKeys: v.optional(v.array(v.string())),
+    recoverySetupComplete: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    // Check if user already exists
+    const existing = await ctx.db
+      .query("ourfable_users")
+      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
+      .first();
+    if (existing) return existing._id;
+
+    return await ctx.db.insert("ourfable_users", {
+      email: args.email.toLowerCase(),
+      passwordHash: args.passwordHash,
+      familyId: args.familyId,
+      name: args.name,
+      role: args.role,
+      encryptedFamilyKey: args.encryptedFamilyKey,
+      keySalt: args.keySalt,
+      totpSecret: args.totpSecret,
+      totpEnabled: args.totpEnabled,
+      recoveryCodeHashes: args.recoveryCodeHashes,
+      recoveryCodesUsed: args.recoveryCodesUsed,
+      recoveryWrappedKeys: args.recoveryWrappedKeys,
+      recoverySetupComplete: args.recoverySetupComplete,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const getOurFableUserByEmail = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    return await ctx.db
+      .query("ourfable_users")
+      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+      .first();
+  },
+});
+
+export const getOurFableUserById = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    // userId is a serialized Convex ID string
+    const allUsers = await ctx.db.query("ourfable_users").collect();
+    return allUsers.find((u) => u._id.toString() === userId) ?? null;
+  },
+});
+
+export const listOurFableUsersByFamily = internalQuery({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    return await ctx.db
+      .query("ourfable_users")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+  },
+});
+
+export const updateOurFableUserPasswordHash = internalMutation({
+  args: {
+    email: v.string(),
+    passwordHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("ourfable_users")
+      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
+      .first();
+    if (!user) return null;
+    await ctx.db.patch(user._id, { passwordHash: args.passwordHash });
+    return user._id;
+  },
+});
+
+export const updateOurFableUser2FA = internalMutation({
+  args: {
+    userId: v.string(),
+    totpSecret: v.optional(v.string()),
+    totpEnabled: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { userId, totpSecret, totpEnabled }) => {
+    const allUsers = await ctx.db.query("ourfable_users").collect();
+    const user = allUsers.find((u) => u._id.toString() === userId);
+    if (!user) return null;
+    const patch: Record<string, unknown> = {};
+    if (totpSecret !== undefined) patch.totpSecret = totpSecret;
+    if (totpEnabled !== undefined) patch.totpEnabled = totpEnabled;
+    await ctx.db.patch(user._id, patch);
+    return user._id;
+  },
+});
+
+export const getOurFableUser2FAStatus = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    const allUsers = await ctx.db.query("ourfable_users").collect();
+    const user = allUsers.find((u) => u._id.toString() === userId);
+    if (!user) return null;
+    return {
+      totpEnabled: user.totpEnabled ?? false,
+      totpSecret: user.totpSecret,
+    };
+  },
+});
+
+export const setupUserEncryption = internalMutation({
+  args: {
+    userId: v.string(),
+    encryptedFamilyKey: v.string(),
+    keySalt: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const allUsers = await ctx.db.query("ourfable_users").collect();
+    const user = allUsers.find((u) => u._id.toString() === args.userId);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, {
+      encryptedFamilyKey: args.encryptedFamilyKey,
+      keySalt: args.keySalt,
+    });
+    return user._id;
+  },
+});
+
+export const getUserEncryptionKeys = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    const allUsers = await ctx.db.query("ourfable_users").collect();
+    const user = allUsers.find((u) => u._id.toString() === userId);
+    if (!user) return null;
+    return {
+      encryptedFamilyKey: user.encryptedFamilyKey ?? null,
+      keySalt: user.keySalt ?? null,
+    };
+  },
+});
+
+export const storeUserRecoveryCodeHashes = internalMutation({
+  args: {
+    userId: v.string(),
+    hashes: v.array(v.string()),
+    wrappedKeys: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const allUsers = await ctx.db.query("ourfable_users").collect();
+    const user = allUsers.find((u) => u._id.toString() === args.userId);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, {
+      recoveryCodeHashes: args.hashes,
+      recoveryCodesUsed: [],
+      recoveryWrappedKeys: args.wrappedKeys,
+    });
+    return user._id;
+  },
+});
+
+// ── Parent Invites ─────────────────────────────────────────────────────────────
+
+export const createParentInvite = internalMutation({
+  args: {
+    familyId: v.string(),
+    invitedByUserId: v.string(),
+    invitedByName: v.string(),
+    email: v.string(),
+    token: v.string(),
+    encryptedFamilyKeyForInvite: v.optional(v.string()),
+    inviteKeySalt: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Expire any existing pending invites for this email+family
+    const existing = await ctx.db
+      .query("ourfable_parent_invites")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .collect();
+    for (const inv of existing) {
+      if (inv.email === args.email.toLowerCase() && inv.status === "pending") {
+        await ctx.db.patch(inv._id, { status: "expired" });
+      }
+    }
+
+    return await ctx.db.insert("ourfable_parent_invites", {
+      familyId: args.familyId,
+      invitedByUserId: args.invitedByUserId,
+      invitedByName: args.invitedByName,
+      email: args.email.toLowerCase(),
+      token: args.token,
+      encryptedFamilyKeyForInvite: args.encryptedFamilyKeyForInvite,
+      inviteKeySalt: args.inviteKeySalt,
+      status: "pending",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+  },
+});
+
+export const getParentInviteByToken = internalQuery({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    return await ctx.db
+      .query("ourfable_parent_invites")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .first();
+  },
+});
+
+export const acceptParentInvite = internalMutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const invite = await ctx.db
+      .query("ourfable_parent_invites")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .first();
+    if (!invite) return null;
+    await ctx.db.patch(invite._id, {
+      status: "accepted",
+      acceptedAt: Date.now(),
+    });
+    return invite;
+  },
+});
+
+export const listParentInvites = internalQuery({
+  args: { familyId: v.string() },
+  handler: async (ctx, { familyId }) => {
+    return await ctx.db
+      .query("ourfable_parent_invites")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+  },
+});
+
+export const updateParentInviteKey = internalMutation({
+  args: {
+    token: v.string(),
+    encryptedFamilyKeyForInvite: v.string(),
+    inviteKeySalt: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const invite = await ctx.db
+      .query("ourfable_parent_invites")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+    if (!invite) return null;
+    await ctx.db.patch(invite._id, {
+      encryptedFamilyKeyForInvite: args.encryptedFamilyKeyForInvite,
+      inviteKeySalt: args.inviteKeySalt,
+    });
+    return invite._id;
+  },
+});
+
+// ── Migration: Move auth from families to users ────────────────────────────────
+
+export const migrateToUserAccounts = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const families = await ctx.db.query("ourfable_families").collect();
+    let migrated = 0;
+    let skipped = 0;
+
+    for (const family of families) {
+      if (!family.email || !family.passwordHash) { skipped++; continue; }
+      if (family.status === "deleted") { skipped++; continue; }
+
+      // Check if user already exists for this email
+      const existingUser = await ctx.db
+        .query("ourfable_users")
+        .withIndex("by_email", (q) => q.eq("email", family.email))
+        .first();
+      if (existingUser) { skipped++; continue; }
+
+      // Create user record from family auth data
+      await ctx.db.insert("ourfable_users", {
+        email: family.email,
+        passwordHash: family.passwordHash,
+        familyId: family.familyId,
+        name: family.parentNames ?? "Parent",
+        role: "owner",
+        totpSecret: family.totpSecret,
+        totpEnabled: family.totpEnabled,
+        encryptedFamilyKey: family.encryptedFamilyKey,
+        keySalt: family.keySalt,
+        recoveryCodeHashes: family.recoveryCodeHashes,
+        recoveryCodesUsed: family.recoveryCodesUsed,
+        recoveryWrappedKeys: family.recoveryWrappedKeys,
+        recoverySetupComplete: family.recoverySetupComplete,
+        createdAt: family.createdAt,
+      });
+      migrated++;
+    }
+
+    console.log(`[migrateToUserAccounts] Migrated ${migrated}, skipped ${skipped}`);
+    return { migrated, skipped };
+  },
+});

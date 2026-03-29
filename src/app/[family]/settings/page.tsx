@@ -164,6 +164,21 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
   const [savingLegacy, setSavingLegacy] = useState(false);
   const [savingGuardianCheckIn, setSavingGuardianCheckIn] = useState(false);
 
+  // Family Members (co-parents)
+  interface FamilyMember {
+    _id: string;
+    email: string;
+    name: string;
+    role: "owner" | "parent";
+    createdAt: number;
+  }
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
   // Children
   interface ChildRecord {
     _id: string;
@@ -187,7 +202,7 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
   // Load data
   useEffect(() => {
     async function load() {
-      const [fam, acct, stor, facData, twoFA, ms, me, kids, legacyData] = await Promise.all([
+      const [fam, acct, stor, facData, twoFA, ms, me, kids, legacyData, members] = await Promise.all([
         convexFetch("ourfable:getFamily", { familyId }),
         convexFetch("ourfable:getOurFableFamilyByIdSafe", { familyId }),
         convexFetch("ourfable:getOurFableStorageUsage", { familyId }),
@@ -197,6 +212,7 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
         fetch("/api/auth/me").then(r => r.ok ? r.json() : null).catch(() => null),
         convexFetch("ourfable:listChildren", { familyId }),
         convexFetch("ourfable:getLegacySettings", { familyId }),
+        convexFetch("ourfable:listOurFableUsersByFamily", { familyId }),
       ]);
       setFamily(fam as FamilyData);
       // Merge account data — use auth email (from session) if available, falling back to Convex record
@@ -225,6 +241,8 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
       }
       setMilestones((ms as Milestone[]) ?? []);
       setChildList((kids as ChildRecord[]) ?? []);
+      setFamilyMembers((members as FamilyMember[]) ?? []);
+      if (me?.role) setCurrentUserRole(me.role);
       if (legacyData) {
         const ld = legacyData as { legacyMode: boolean; guardianCheckIn: boolean };
         setLegacyMode(ld.legacyMode ?? false);
@@ -555,6 +573,113 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
           <Plus size={14} strokeWidth={2} />
           Add another child
         </Link>
+      </Section>
+
+      {/* ═══ FAMILY MEMBERS ═══ */}
+      <Section icon={<Users size={16} />} title="Family Members">
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text-3)", lineHeight: 1.65, marginBottom: 20 }}>
+          Each parent has their own login, password, and 2FA — sharing the same vault.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+          {familyMembers.length === 0 && (
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", fontStyle: "italic" }}>
+              No individual accounts yet. Your account will be migrated on next login.
+            </p>
+          )}
+          {familyMembers.map((member) => (
+            <div key={member._id} style={{
+              padding: "14px 18px",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 10,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>
+                  {member.name}
+                </p>
+                <p style={{ fontSize: 12, color: "var(--text-3)" }}>{member.email}</p>
+              </div>
+              <span style={{
+                display: "inline-block",
+                padding: "2px 10px", borderRadius: 20,
+                fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
+                background: member.role === "owner" ? "var(--green-light)" : "var(--gold-dim)",
+                color: member.role === "owner" ? "var(--green)" : "var(--gold)",
+                border: member.role === "owner" ? "1px solid var(--green-border)" : "1px solid var(--gold-border)",
+              }}>
+                {member.role === "owner" ? "Owner" : "Co-parent"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Invite co-parent */}
+        {familyMembers.length < 2 && (
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: 12, padding: 20,
+          }}>
+            <p style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "var(--green)", marginBottom: 12,
+            }}>
+              Invite co-parent
+            </p>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="Co-parent's email"
+                style={{
+                  ...inputStyle, flex: 1,
+                }}
+              />
+              <button
+                onClick={async () => {
+                  setInviteError("");
+                  setInviteSuccess(false);
+                  if (!inviteEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)) {
+                    setInviteError("Enter a valid email");
+                    return;
+                  }
+                  setInviting(true);
+                  try {
+                    const res = await fetch("/api/ourfable/invite-parent", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email: inviteEmail }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      setInviteSuccess(true);
+                      setInviteEmail("");
+                      setTimeout(() => setInviteSuccess(false), 5000);
+                    } else {
+                      setInviteError(data.error ?? "Failed to send invite");
+                    }
+                  } catch {
+                    setInviteError("Network error");
+                  } finally {
+                    setInviting(false);
+                  }
+                }}
+                disabled={inviting}
+                style={{
+                  ...btnPrimary,
+                  padding: "10px 20px",
+                  fontSize: 13,
+                  whiteSpace: "nowrap" as const,
+                }}
+              >
+                {inviting ? "Sending…" : "Send invite"}
+              </button>
+            </div>
+            {inviteError && <p style={{ fontSize: 12, color: "#c0392b", marginTop: 8 }}>{inviteError}</p>}
+            {inviteSuccess && <p style={{ fontSize: 12, color: "var(--green)", marginTop: 8 }}>Invite sent! They&apos;ll receive an email to create their account.</p>}
+          </div>
+        )}
       </Section>
 
       {/* ═══ FEATURES ═══ */}

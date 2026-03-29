@@ -659,6 +659,49 @@ export default defineSchema({
     .index("by_ipKey", ["ipKey"]),
 
   // ---------------------------------------------------------------------------
+  // OurFable Users — individual parent accounts (dual-parent login)
+  // ---------------------------------------------------------------------------
+  ourfable_users: defineTable({
+    email: v.string(),
+    passwordHash: v.string(),
+    familyId: v.string(),
+    name: v.string(),
+    role: v.union(v.literal("owner"), v.literal("parent")),
+    totpSecret: v.optional(v.string()),
+    totpEnabled: v.optional(v.boolean()),
+    encryptedFamilyKey: v.optional(v.string()),
+    keySalt: v.optional(v.string()),
+    recoveryCodeHashes: v.optional(v.array(v.string())),
+    recoveryCodesUsed: v.optional(v.array(v.string())),
+    recoveryWrappedKeys: v.optional(v.array(v.string())),
+    recoverySetupComplete: v.optional(v.boolean()),
+    createdAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_familyId", ["familyId"]),
+
+  // ---------------------------------------------------------------------------
+  // Parent Invites — pending invitations for co-parent to join
+  // ---------------------------------------------------------------------------
+  ourfable_parent_invites: defineTable({
+    familyId: v.string(),
+    invitedByUserId: v.string(),
+    invitedByName: v.string(),
+    email: v.string(),
+    token: v.string(),
+    // Encrypted family key wrapped with invite secret (for key transfer)
+    encryptedFamilyKeyForInvite: v.optional(v.string()),
+    inviteKeySalt: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("expired")),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+  })
+    .index("by_token", ["token"])
+    .index("by_familyId", ["familyId"])
+    .index("by_email", ["email"]),
+
+  // ---------------------------------------------------------------------------
   // 2FA Rate Limiting — tracks failed attempts per family (H1 fix)
   // ---------------------------------------------------------------------------
   ourfable_2fa_attempts: defineTable({

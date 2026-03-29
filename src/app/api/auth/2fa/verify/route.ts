@@ -38,7 +38,7 @@ function verifyDeviceToken(token: string, expectedFamilyId: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const { familyId, code, rememberDevice } = await req.json();
+  const { familyId, code, rememberDevice, email: loginEmail } = await req.json();
 
   if (!familyId || !code) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -58,11 +58,34 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Get 2FA secret
-  const twoFA = await internalConvexQuery<{
-    totpSecret?: string;
-    totpEnabled: boolean;
-  } | null>("ourfable:getOurFable2FAStatus", { familyId });
+  // Try user-level 2FA first, fall back to family-level
+  let twoFA: { totpSecret?: string; totpEnabled: boolean } | null = null;
+  let userId: string | undefined;
+  let userName: string | undefined;
+  let userEmail: string | undefined;
+
+  if (loginEmail) {
+    const user = await internalConvexQuery<{
+      _id: string;
+      totpSecret?: string;
+      totpEnabled?: boolean;
+      name: string;
+      email: string;
+    } | null>("ourfable:getOurFableUserByEmail", { email: loginEmail });
+    if (user && user.totpEnabled && user.totpSecret) {
+      twoFA = { totpSecret: user.totpSecret, totpEnabled: true };
+      userId = user._id;
+      userName = user.name;
+      userEmail = user.email;
+    }
+  }
+
+  if (!twoFA) {
+    twoFA = await internalConvexQuery<{
+      totpSecret?: string;
+      totpEnabled: boolean;
+    } | null>("ourfable:getOurFable2FAStatus", { familyId });
+  }
 
   if (!twoFA?.totpSecret || !twoFA.totpEnabled) {
     return NextResponse.json({ error: "2FA not enabled" }, { status: 400 });
@@ -82,28 +105,40 @@ export async function POST(req: NextRequest) {
   // H1: Reset failed attempts on success
   await internalConvexMutation("ourfable:reset2FAAttempts", { familyId });
 
-  // Fetch encryption keys to return alongside session
+  // Fetch encryption keys — prefer user-level, fall back to family
   let encryptionKeys: { encryptedFamilyKey: string | null; keySalt: string | null } | null = null;
   try {
-    const encData = await internalConvexQuery<{
-      encryptedFamilyKey: string | null;
-      keySalt: string | null;
-    } | null>("ourfable:getFamilyEncryptionKeys", { familyId });
-    if (encData?.encryptedFamilyKey) {
-      encryptionKeys = {
-        encryptedFamilyKey: encData.encryptedFamilyKey,
-        keySalt: encData.keySalt,
-      };
+    if (userId) {
+      const userEnc = await internalConvexQuery<{
+        encryptedFamilyKey: string | null;
+        keySalt: string | null;
+      } | null>("ourfable:getUserEncryptionKeys", { userId });
+      if (userEnc?.encryptedFamilyKey) {
+        encryptionKeys = { encryptedFamilyKey: userEnc.encryptedFamilyKey, keySalt: userEnc.keySalt };
+      }
+    }
+    if (!encryptionKeys) {
+      const encData = await internalConvexQuery<{
+        encryptedFamilyKey: string | null;
+        keySalt: string | null;
+      } | null>("ourfable:getFamilyEncryptionKeys", { familyId });
+      if (encData?.encryptedFamilyKey) {
+        encryptionKeys = { encryptedFamilyKey: encData.encryptedFamilyKey, keySalt: encData.keySalt };
+      }
     }
   } catch {
     // Non-fatal
   }
 
-  // Issue session
-  const sessionToken = await createSession(familyId);
+  // Issue session with userId
+  const sessionToken = await createSession(familyId, {
+    userId,
+    email: userEmail ?? loginEmail,
+    name: userName,
+  });
   const redirectPath = `/${familyId}`;
 
-  const res = NextResponse.json({ redirect: redirectPath, familyId, encryptionKeys });
+  const res = NextResponse.json({ redirect: redirectPath, familyId, userId, encryptionKeys });
   res.cookies.set(COOKIE, sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

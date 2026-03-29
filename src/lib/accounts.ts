@@ -52,14 +52,52 @@ export function needsHashUpgrade(hash: string): boolean {
 }
 
 // ── Convex-backed account operations ──────────────────────────────────────────
-export async function getAccount(email: string): Promise<OurFableAccount | undefined> {
+
+export interface OurFableUserRecord {
+  _id: string;
+  email: string;
+  passwordHash: string;
+  familyId: string;
+  name: string;
+  role: "owner" | "parent";
+}
+
+/**
+ * Look up account by email.
+ * Checks ourfable_users first (new dual-parent system), falls back to ourfable_families (legacy).
+ */
+export async function getAccount(email: string): Promise<(OurFableAccount & { userId?: string; userName?: string }) | undefined> {
   const normalized = email.toLowerCase().trim();
+
+  // Try user-based auth first
+  const userResult = await internalConvexQuery<OurFableUserRecord | null>(
+    "ourfable:getOurFableUserByEmail", { email: normalized }
+  );
+
+  if (userResult) {
+    // Look up the family for childName
+    const family = await internalConvexQuery<{ childName: string } | null>(
+      "ourfable:getOurFableFamilyById", { familyId: userResult.familyId }
+    );
+    return {
+      email: userResult.email,
+      passwordHash: userResult.passwordHash,
+      familyId: userResult.familyId,
+      childName: family?.childName ?? "",
+      parentNames: userResult.name,
+      userId: userResult._id,
+      userName: userResult.name,
+    };
+  }
+
+  // Fall back to family-based auth (unmigrated accounts)
   const result = await internalConvexQuery<{
     email: string;
     passwordHash: string;
     familyId: string;
     childName: string;
     planType: string;
+    parentNames?: string;
   } | null>("ourfable:getOurFableFamilyByEmail", { email: normalized });
 
   if (!result) return undefined;
@@ -69,7 +107,7 @@ export async function getAccount(email: string): Promise<OurFableAccount | undef
     passwordHash: result.passwordHash,
     familyId: result.familyId,
     childName: result.childName,
-    parentNames: "",
+    parentNames: result.parentNames ?? "",
   };
 }
 
@@ -89,6 +127,20 @@ export async function addAccount(account: OurFableAccount & {
     stripeSubscriptionId: account.stripeSubscriptionId,
     birthDate: account.birthDate,
   });
+
+  // Also create a user record (dual-parent system)
+  try {
+    await internalConvexMutation("ourfable:createOurFableUser", {
+      email: account.email.toLowerCase().trim(),
+      passwordHash: account.passwordHash,
+      familyId: account.familyId,
+      name: account.parentNames || "Parent",
+      role: "owner",
+    });
+  } catch (err) {
+    // Non-fatal — user will be lazy-migrated on login
+    console.warn("[addAccount] Failed to create user record:", err);
+  }
 }
 
 export async function accountExists(email: string): Promise<boolean> {

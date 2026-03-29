@@ -67,17 +67,27 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       .then(r => r.json())
       .then(d => { if (Array.isArray(d.value)) setCircleMembers(d.value) })
       .catch(() => {})
-    // Fetch parent name from ourfable_families
-    fetch('/api/ourfable/data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: 'ourfable:getOurFableFamilyByIdSafe', args: { familyId } }),
-    })
-      .then(r => r.json())
+    // Fetch logged-in user's name first, fall back to family parentNames
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (d.value?.parentNames) setParentName(d.value.parentNames)
+        if (d?.name) setParentName(d.name)
       })
       .catch(() => {})
+      .then(() => {
+        // Fall back to family record if no user name set
+        fetch('/api/ourfable/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: 'ourfable:getOurFableFamilyByIdSafe', args: { familyId } }),
+        })
+          .then(r => r.json())
+          .then(d => {
+            // Only set from family if not already set by user
+            setParentName(prev => prev === 'Parent' && d.value?.parentNames ? d.value.parentNames : prev)
+          })
+          .catch(() => {})
+      })
   }, [familyId])
 
   const today = new Date().toLocaleDateString('en-US', {

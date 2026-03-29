@@ -41,18 +41,24 @@ async function verify(data: string, signature: string): Promise<boolean> {
   } catch { return false; }
 }
 
-// ── Token format: base64url(familyId:issuedAt:expiresAt).signature ───────────
+// ── Token format: base64url(JSON payload).signature ───────────
 
 export interface SessionPayload {
   familyId: string;
+  userId?: string;   // Convex _id of the ourfable_users record
+  email?: string;
+  name?: string;
   issuedAt: number;
   expiresAt: number;
 }
 
-export async function createSession(familyId: string): Promise<string> {
+export async function createSession(familyId: string, extra?: { userId?: string; email?: string; name?: string }): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     familyId,
+    userId: extra?.userId,
+    email: extra?.email,
+    name: extra?.name,
     issuedAt: now,
     expiresAt: now + SESSION_MAX_AGE,
   };

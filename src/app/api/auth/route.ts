@@ -44,10 +44,18 @@ export async function POST(req: NextRequest) {
   // Auth success — clear rate limit
   await clearLoginRateLimit(ip);
 
-  // Check if 2FA is enabled
-  const twoFAStatus = await internalConvexQuery<{ totpEnabled: boolean } | null>(
-    "ourfable:getOurFable2FAStatus", { familyId: account.familyId }
-  ).catch(() => null);
+  // Check if 2FA is enabled — user-level takes priority, fall back to family-level
+  let twoFAStatus: { totpEnabled: boolean } | null = null;
+  if (account.userId) {
+    twoFAStatus = await internalConvexQuery<{ totpEnabled: boolean } | null>(
+      "ourfable:getOurFableUser2FAStatus", { userId: account.userId }
+    ).catch(() => null);
+  }
+  if (!twoFAStatus?.totpEnabled) {
+    twoFAStatus = await internalConvexQuery<{ totpEnabled: boolean } | null>(
+      "ourfable:getOurFable2FAStatus", { familyId: account.familyId }
+    ).catch(() => null);
+  }
 
   if (twoFAStatus?.totpEnabled) {
     // H2: Check for HMAC-signed remembered device token (prevents forgery)
@@ -68,7 +76,7 @@ export async function POST(req: NextRequest) {
     })();
 
     if (!isRemembered) {
-      return NextResponse.json({ requires2fa: true, familyId: account.familyId });
+      return NextResponse.json({ requires2fa: true, familyId: account.familyId, email: email.toLowerCase().trim() });
     }
   }
 
@@ -76,10 +84,18 @@ export async function POST(req: NextRequest) {
   if (needsHashUpgrade(account.passwordHash)) {
     try {
       const newHash = hashPassword(password);
-      await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
-        email: email.toLowerCase().trim(),
-        passwordHash: newHash,
-      });
+      // Update in user table if user-based, otherwise family table
+      if (account.userId) {
+        await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
+          email: email.toLowerCase().trim(),
+          passwordHash: newHash,
+        });
+      } else {
+        await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
+          email: email.toLowerCase().trim(),
+          passwordHash: newHash,
+        });
+      }
       console.log(`[auth] Migrated password hash to bcrypt for ${email}`);
     } catch (err) {
       // Non-fatal — old hash still works
@@ -87,29 +103,63 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fetch encryption key material for client-side key derivation
+  // Lazy migration: if logged in via family (no userId), create a user record
+  if (!account.userId) {
+    try {
+      const userId = await internalConvexMutation("ourfable:createOurFableUser", {
+        email: email.toLowerCase().trim(),
+        passwordHash: account.passwordHash,
+        familyId: account.familyId,
+        name: account.parentNames || "Parent",
+        role: "owner" as const,
+      });
+      if (userId) {
+        (account as Record<string, unknown>).userId = String(userId);
+        (account as Record<string, unknown>).userName = account.parentNames || "Parent";
+        console.log(`[auth] Lazy-migrated user for ${email}`);
+      }
+    } catch (err) {
+      // Non-fatal
+      console.warn("[auth] Failed to lazy-migrate user:", err);
+    }
+  }
+
+  // Fetch encryption key material — prefer user-level keys, fall back to family
   let encryptionKeys: { encryptedFamilyKey: string | null; keySalt: string | null } | null = null;
   try {
-    const encData = await internalConvexQuery<{
-      encryptedFamilyKey: string | null;
-      keySalt: string | null;
-    } | null>("ourfable:getFamilyEncryptionKeys", { familyId: account.familyId });
-    if (encData?.encryptedFamilyKey) {
-      encryptionKeys = {
-        encryptedFamilyKey: encData.encryptedFamilyKey,
-        keySalt: encData.keySalt,
-      };
+    if (account.userId) {
+      const userEnc = await internalConvexQuery<{
+        encryptedFamilyKey: string | null;
+        keySalt: string | null;
+      } | null>("ourfable:getUserEncryptionKeys", { userId: account.userId });
+      if (userEnc?.encryptedFamilyKey) {
+        encryptionKeys = { encryptedFamilyKey: userEnc.encryptedFamilyKey, keySalt: userEnc.keySalt };
+      }
+    }
+    if (!encryptionKeys) {
+      const encData = await internalConvexQuery<{
+        encryptedFamilyKey: string | null;
+        keySalt: string | null;
+      } | null>("ourfable:getFamilyEncryptionKeys", { familyId: account.familyId });
+      if (encData?.encryptedFamilyKey) {
+        encryptionKeys = { encryptedFamilyKey: encData.encryptedFamilyKey, keySalt: encData.keySalt };
+      }
     }
   } catch {
     // Non-fatal — encryption may not be set up
   }
 
-  const token = await createSession(account.familyId);
+  const token = await createSession(account.familyId, {
+    userId: account.userId,
+    email: email.toLowerCase().trim(),
+    name: account.userName ?? account.parentNames,
+  });
   const redirectPath = `/${account.familyId}`;
 
   const res = NextResponse.json({
     redirect: redirectPath,
     familyId: account.familyId,
+    userId: account.userId,
     encryptionKeys,
   });
   res.cookies.set(COOKIE, token, {
