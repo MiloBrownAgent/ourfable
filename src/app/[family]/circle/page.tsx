@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, use } from "react";
-import { Users, Copy, Check, ExternalLink, MapPin, Plus, X, Mail, Loader2, Sparkles, ArrowRight, ChevronDown } from "lucide-react";
+import { Users, Copy, Check, ExternalLink, MapPin, Plus, X, Mail, Loader2, Sparkles, ArrowRight, ChevronDown, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useChildContext } from "@/components/ChildContext";
 
@@ -127,6 +127,104 @@ function FrequencySelector({
   );
 }
 
+function HeadsUpNudge({ text, memberName, sent }: { text: string; memberName: string; sent: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(!sent);
+
+  return (
+    <div style={{
+      background: "var(--gold-dim)",
+      border: "1px solid var(--gold-border)",
+      borderRadius: 12,
+      overflow: "hidden",
+      transition: "all 200ms ease",
+    }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 14px",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--gold)",
+          fontFamily: "var(--font-body)",
+        }}
+      >
+        <MessageCircle size={14} strokeWidth={1.5} />
+        <span style={{ flex: 1, textAlign: "left" }}>Give {memberName} a heads up first</span>
+        <ChevronDown size={14} style={{ transform: expanded ? "rotate(180deg)" : "rotate(0)", transition: "transform 200ms" }} />
+      </button>
+
+      {expanded && (
+        <div style={{ padding: "0 14px 14px" }}>
+          <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 8, lineHeight: 1.5 }}>
+            People are more likely to open the invite email if they hear from you first. Send them a quick text:
+          </p>
+
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 13,
+            color: "var(--text-2)",
+            lineHeight: 1.6,
+            fontFamily: "var(--font-body)",
+            marginBottom: 10,
+          }}>
+            {text}
+          </div>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(text);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 14px", borderRadius: 100,
+                border: `1px solid ${copied ? "var(--green-border)" : "var(--border)"}`,
+                background: copied ? "var(--green-light)" : "transparent",
+                fontSize: 11, fontWeight: 500,
+                color: copied ? "var(--green)" : "var(--text-3)",
+                cursor: "pointer", fontFamily: "var(--font-body)",
+                transition: "all 150ms",
+              }}
+            >
+              {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy message</>}
+            </button>
+
+            <a
+              href={`sms:?&body=${encodeURIComponent(text)}`}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 14px", borderRadius: 100,
+                border: "1px solid var(--border)",
+                background: "transparent",
+                fontSize: 11, fontWeight: 500,
+                color: "var(--text-3)",
+                cursor: "pointer", fontFamily: "var(--font-body)",
+                textDecoration: "none",
+                transition: "all 150ms",
+              }}
+            >
+              <MessageCircle size={12} /> Send via text
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MemberCard({ member, familyId, activeChildId }: { member: CircleMember; familyId: string; activeChildId?: string }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const inviteUrl = `${origin}/join/${member.inviteToken}`;
@@ -194,6 +292,15 @@ function MemberCard({ member, familyId, activeChildId }: { member: CircleMember;
             <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-3)", padding: 4, opacity: 0.6, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}><ExternalLink size={13} strokeWidth={1.5} aria-hidden="true" /></a>
           </div>
         ))}
+
+        {/* Give them a heads up — always visible when member has email */}
+        {member.email && (() => {
+          const firstName = member.name.split(" ")[0];
+          const headsUpText = `Hey ${firstName}! I set up something called Our Fable for the kids — it's going to send you a question every now and then and save your answers in a vault for them to read someday. You'll get an email from "Our Fable" soon. Just open it and hit the big button. It takes 2 minutes. ❤️`;
+          return (
+            <HeadsUpNudge text={headsUpText} memberName={firstName} sent={sent} />
+          );
+        })()}
 
         {member.email && (
           sent ? (

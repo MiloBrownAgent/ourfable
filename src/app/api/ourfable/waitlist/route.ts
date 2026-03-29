@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { waitlistWelcomeEmail } from "../../../../lib/email-templates/waitlist-welcome";
 import { CONVEX_URL } from "@/lib/convex";
+import { appendWaitlistRow, ensureSheetHeaders } from "@/lib/google-sheets";
 import crypto from "crypto";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
@@ -109,7 +110,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 
-    // 2. Add to Resend Audience
+    // 2. Log to Google Sheets (fire-and-forget, non-fatal)
+    ensureSheetHeaders().catch(() => {});
+    appendWaitlistRow({
+      timestamp: new Date().toISOString(),
+      email: cleanEmail,
+      childName: childName ? String(childName).trim() : undefined,
+      childBirthday: childBirthday ? String(childBirthday) : undefined,
+      source: cleanSource,
+      utm_source: utm_source ? String(utm_source) : undefined,
+      utm_medium: utm_medium ? String(utm_medium) : undefined,
+      utm_campaign: utm_campaign ? String(utm_campaign) : undefined,
+      utm_content: utm_content ? String(utm_content) : undefined,
+      utm_term: utm_term ? String(utm_term) : undefined,
+      foundingMember: "yes",
+    }).catch((err) => console.error("Sheets log error:", err));
+
+    // 3. Add to Resend Audience
     if (RESEND_FULL_KEY && AUDIENCE_ID) {
       fetch(`https://api.resend.com/audiences/${AUDIENCE_ID}/contacts`, {
         method: "POST",
@@ -121,7 +138,7 @@ export async function POST(req: NextRequest) {
       }).catch((err) => console.error("Resend audience error:", err));
     }
 
-    // 3. Send welcome email
+    // 4. Send welcome email
     if (RESEND_API_KEY) {
       const { subject, html, text } = waitlistWelcomeEmail(
         childName ? String(childName).trim() : undefined
@@ -150,12 +167,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Fire Meta Conversions API (server-side Lead event, deduped via eventId)
+    // 5. Fire Meta Conversions API (server-side Lead event, deduped via eventId)
     sendCapiEvent(cleanEmail, req, cleanSource, eventId).catch((err) =>
       console.error("CAPI fire-and-forget error:", err)
     );
 
-    // 5. Notify Dave — Telegram + Email
+    // 6. Notify Dave — Telegram + Email
     const childLabel = childName ? ` for ${childName}` : "";
     const utmLabel = utm_source ? ` (via ${utm_source})` : "";
     const referralLabel = (req as unknown as { body?: { referralCode?: string } }).body?.referralCode
