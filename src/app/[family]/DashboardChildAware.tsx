@@ -326,7 +326,7 @@ export default function DashboardChildAware({
   const writingBlockRef = useRef<HTMLDivElement>(null);
 
   // Onboarding: check for parent-authored entries (no memberRelationship = parent)
-  const hasParentEntry = vaultEntries.some((e) => !e.memberRelationship);
+  const hasParentEntry = vaultEntries.some((e) => !e.memberRelationship || e.memberRelationship === "Parent");
   const safeCircleCount = circleCount ?? 0;
 
   // Vault protection modal state
