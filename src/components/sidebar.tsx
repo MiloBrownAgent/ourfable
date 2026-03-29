@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
-  Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
+  Bell, Settings, BookOpen, LogOut,
   ChevronDown, Check, Plus, Mail, PackageOpen,
 } from "lucide-react";
 import { useChildContext, type Child } from "@/components/ChildContext";
@@ -28,7 +28,6 @@ function buildChildNav(familyId: string) {
     { name: "The Vault", href: `/${familyId}/vault`, icon: FolderLock },
     { name: "Dispatches", href: `/${familyId}/outgoings`, icon: Send },
 
-    { name: "The World", href: `/${familyId}/born`, icon: Sunrise },
     { name: "Before You Were Born", href: `/${familyId}/before-born`, icon: BookOpen },
   ];
 }

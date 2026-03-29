@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { AnimatedHeadline } from "./AnimatedHeadline";
 import Link from "next/link";
-import { Mic, Image as ImageIcon, Video, Music, Globe, Cloud } from "lucide-react";
+import { Mic, Image as ImageIcon, Video } from "lucide-react";
 
 // ── Product screenshot mockups ─────────────────────────────────────────────────
 function VaultMockup() {
@@ -97,94 +97,10 @@ function WritingBlockMockup() {
   );
 }
 
-export function SnapshotMockup() {
-  return (
-    <div className="mockup-scale-wrapper"><div style={{ background: "#FDFBF7", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,0.10)", border: "1px solid #E8E2D8" }}>
-      <div style={{ padding: "28px 24px" }}>
-        {/* Section header — matches dashboard editorial style */}
-        <div style={{ borderTop: "2px solid #C8A87A", paddingTop: 16, marginBottom: 20 }}>
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9A9590", marginBottom: 4 }}>The World</p>
-          <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 400, color: "#1A1A18", lineHeight: 1.25, marginBottom: 10 }}>March 2026</h3>
-          <p style={{ fontSize: 11, color: "#6A6A65", lineHeight: 1.75, marginBottom: 6 }}>Spring is arriving early — cherry blossoms ahead of schedule, everyone stepping outside again.</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 11, color: "#9A9590", fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}><Music size={10} strokeWidth={1.5} /> Not Like Us — Kendrick Lamar</p>
-        </div>
-        {/* Ornament */}
-        <p style={{ fontSize: 7, letterSpacing: "0.5em", color: "#C8A87A", textAlign: "center", marginBottom: 20 }}>✦ ✦ ✦</p>
-        {/* Timeline entries */}
-        {[
-          {
-            month: "February 2026", age: "8m 1d",
-            items: [
-              { icon: "globe", label: "In the world", text: "Valentine's month — love songs everywhere, the Super Bowl bringing everyone together." },
-              { icon: "music", label: "Everyone was singing", text: "Not Like Us — Kendrick Lamar" },
-              { icon: "cloud", label: "The weather", text: "18°F · Heavy snow, but the days are getting longer" },
-            ]
-          },
-        ].map((snap, i) => (
-          <div key={i} style={{ display: "flex", gap: 14 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 12, paddingTop: 4, flexShrink: 0 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4A5E4C", flexShrink: 0 }} />
-              <div style={{ width: 1, flex: 1, background: "#E8E4DC", marginTop: 4 }} />
-            </div>
-            <div style={{ flex: 1, padding: "10px 14px", background: "#FFFFFF", border: "1px solid #E8E4DC", borderRadius: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <p style={{ fontFamily: "var(--font-playfair)", fontSize: 12, fontWeight: 600, color: "#2A2A2A" }}>{snap.month}</p>
-                <p style={{ fontSize: 9, color: "#9A9590", background: "#F0EDE6", padding: "1px 6px", borderRadius: 3 }}>{snap.age}</p>
-              </div>
-              {snap.items.map((item, j) => (
-                <div key={j} style={{ display: "flex", gap: 7, marginBottom: j < snap.items.length - 1 ? 7 : 0, alignItems: "flex-start" }}>
-                  <span style={{ flexShrink: 0, marginTop: 1, color: "#9A9590" }}>{item.icon === "globe" ? <Globe size={10} strokeWidth={1.5} /> : item.icon === "music" ? <Music size={10} strokeWidth={1.5} /> : <Cloud size={10} strokeWidth={1.5} />}</span>
-                  <p style={{ fontSize: 9, color: "#6A6660", lineHeight: 1.5 }}>
-                    <span style={{ color: "#9A9590", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: 8 }}>{item.label} · </span>
-                    {item.text}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div></div>
-  );
-}
-
-function BornMockup() {
-  return (
-    <div className="mockup-scale-wrapper"><div style={{ background: "#FDFBF7", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,0.10)", border: "1px solid #E8E2D8" }}>
-      <div style={{ padding: "24px 20px" }}>
-        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 8, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "#9A9590", marginBottom: 8, textAlign: "center" }}>The Our Fable Gazette</p>
-        <div style={{ borderTop: "1px solid #E8E2D8", borderBottom: "1px solid #E8E2D8", padding: "16px 0", textAlign: "center", marginBottom: 14 }}>
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 7, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9A9590", marginBottom: 8 }}>Born into this world</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 24, fontWeight: 700, color: "#4A5E4C", lineHeight: 1.1, marginBottom: 6 }}>Noah Ellis</p>
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 8, color: "#9A9590", letterSpacing: "0.1em" }}>March 15, 2025 · Portland, Oregon</p>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-          <div style={{ padding: "10px 12px", borderRight: "1px solid #E8E2D8" }}>
-            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 7, letterSpacing: "0.15em", textTransform: "uppercase", color: "#9A9590", marginBottom: 6 }}>The Weather</p>
-            <p style={{ fontFamily: "var(--font-playfair)", fontSize: 28, fontWeight: 800, color: "#1A1A18", lineHeight: 1 }}>96°</p>
-            <p style={{ fontSize: 8, color: "#9A9590", marginTop: 4 }}>High · Low 72°F</p>
-          </div>
-          <div style={{ padding: "10px 12px" }}>
-            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 7, letterSpacing: "0.15em", textTransform: "uppercase", color: "#9A9590", marginBottom: 6 }}>#1 Song</p>
-            <p style={{ fontFamily: "var(--font-playfair)", fontSize: 13, fontStyle: "italic", color: "#1A1A18", lineHeight: 1.3, marginBottom: 4 }}>&ldquo;Manchild&rdquo;</p>
-            <p style={{ fontSize: 8, color: "#9A9590" }}>Sabrina Carpenter</p>
-          </div>
-        </div>
-        <div style={{ padding: "10px 12px", background: "var(--green-light)", border: "1px solid var(--green-border)", borderRadius: 6, textAlign: "center" }}>
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 7, letterSpacing: "0.15em", textTransform: "uppercase", color: "#9A9590", marginBottom: 6 }}>The World Welcomed You</p>
-          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 11, fontWeight: 400, fontStyle: "italic", color: "#4A5E4C", lineHeight: 1.5 }}>&ldquo;Every child begins the world again.&rdquo;</p>
-        </div>
-      </div>
-    </div></div>
-  );
-}
-
 // ── Mockup data for tab switcher ───────────────────────────────────────────────
 const MOCKUPS = [
   { label: "Dashboard", component: <WritingBlockMockup /> },
   { label: "The Vault", component: <VaultMockup /> },
-  { label: "World Snapshot", component: <SnapshotMockup /> },
-  { label: "The Day They Were Born", component: <BornMockup /> },
 ];
 
 export function HeroSection() {
@@ -193,7 +109,7 @@ export function HeroSection() {
 
   useEffect(() => {
     if (tabPaused) return;
-    const t = setInterval(() => setActiveTab(i => (i + 1) % 4), 4000);
+    const t = setInterval(() => setActiveTab(i => (i + 1) % MOCKUPS.length), 4000);
     return () => clearInterval(t);
   }, [tabPaused]);
 

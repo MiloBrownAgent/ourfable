@@ -5,12 +5,11 @@ const CORE_FEATURES = [
   { num: "01", title: "The Vault", body: "Every letter, photo, voice memo, and video — sealed until the milestone age you choose. Each child gets their own vault, managed from one dashboard. They open it at 13. At 18. At their wedding." },
   { num: "02", title: "Monthly Prompts", body: "On the 1st of every month, Our Fable sends a personalized prompt to every person in your circle. Grandma gets a different question than the family friend. They respond with text, a photo, a voice memo, or a video. No app required." },
   { num: "03", title: "The Circle", body: "Grandparents, aunts, uncles, godparents, family friends — everyone who loves your child gets invited. They each get their own prompts and their own way to contribute. The more people in the circle, the richer the vault." },
+  { num: "04", title: "Dispatches", body: "Send photos, videos, voice memos, or updates to your whole circle — privately. No group chat. No social media. Just the people who matter." },
 ];
 
 const SECONDARY_FEATURES = [
-  { num: "04", title: "Dispatches", body: "Send photos, videos, voice memos, or updates to your whole circle — privately. No group chat. No social media. Just the people who matter." },
-  { num: "05", title: "World Snapshot", body: "One page per month — the headlines, the #1 song, the weather. A time capsule of the world your child grew up in." },
-  { num: "06", title: "The Day They Were Born", body: "A permanent front page capturing the world the day your child arrived. Theirs forever." },
+  { num: "✦", title: "Born Day Snapshot", body: "The vault automatically captures the world the day your child arrived — the weather, the #1 song, the headlines. A time capsule, sealed inside." },
 ];
 
 export function FeaturesSection() {

@@ -6,7 +6,7 @@ import Greeting from "@/components/Greeting";
 import ListenButton from "@/components/ListenButton";
 import {
   LayoutDashboard, FolderLock, Users, Menu, X, Send,
-  Bell, Settings, Sunrise, BookOpen, Globe, LogOut,
+  Bell, Settings, BookOpen, LogOut,
   Mail, PackageOpen, Lock, FileText, Mic, Video, Music,
   Image as ImageIcon, MapPin, Check, GraduationCap,
 } from "lucide-react";
@@ -179,7 +179,6 @@ function DemoSidebarContent({
     { name: "The Vault", icon: FolderLock, key: "vault" },
     { name: "Dispatches", icon: Send, key: "dispatches" },
 
-    { name: "The World", icon: Sunrise, key: "world" },
     { name: "Before You Were Born", icon: BookOpen, key: "before-born" },
   ];
   const shareNav: Array<{ name: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; key: SectionKey }> = [
@@ -580,41 +579,16 @@ function HomeSection({ onNavigate }: { onNavigate?: (s: SectionKey) => void }) {
         </div>
       </div>
 
-      {/* 7. WORLD SNAPSHOT */}
-      <div style={{ marginBottom: 4 }}>
-        <p style={{ textAlign: "center", padding: "32px 0 8px", fontSize: 8, letterSpacing: "0.5em", color: "var(--gold)" }}>✦ ✦ ✦</p>
-        <div className="card-hover-luxury" onClick={() => onNavigate?.("world")} style={{
-          padding: "44px 32px 36px", borderTop: "2px solid var(--gold)", cursor: "pointer",
-          animation: "fadeUp 0.6s var(--spring) 0.7s both",
-        }}>
-          <p style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
-            color: "var(--text-3)", marginBottom: 5, fontFamily: "var(--font-body)",
-          }}>The World</p>
-          <h3 className="font-display" style={{
-            fontSize: 22, fontWeight: 400, color: "var(--text)", lineHeight: 1.25, marginBottom: 12,
-          }}>{(() => { const n = new Date(); return n.toLocaleDateString("en-US", { month: "long", year: "numeric" }); })()}</h3>
-          {(() => {
-            const n = new Date();
-            const snap = getCurrentDemoSnapshot();
-            return (
-              <>
-                <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 8, fontFamily: "var(--font-body)" }}>
-                  {snap.topHeadline}
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>
-                    <Music size={13} strokeWidth={1.5} style={{ display: "inline", verticalAlign: "-2px", marginRight: 4 }} />
-                    {snap.topSong}
-                  </p>
-                  {snap.topSong !== "Check the charts" && (
-                    <ListenButton song={snap.topSong} />
-                  )}
-                </div>
-              </>
-            );
-          })()}
-        </div>
+      {/* 7. WORLD SNAPSHOT — small link, not featured */}
+      <div onClick={() => onNavigate?.("world")} style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "14px 0", cursor: "pointer",
+        fontSize: 12, color: "var(--text-3)",
+        fontFamily: "var(--font-body)",
+        animation: "fadeUp 0.6s var(--spring) 0.7s both",
+      }}>
+        <Music size={12} strokeWidth={1.5} />
+        <span>World Snapshot · {(() => { const n = new Date(); return n.toLocaleDateString("en-US", { month: "long", year: "numeric" }); })()}</span>
       </div>
 
       <div style={{ height: 64 }} />

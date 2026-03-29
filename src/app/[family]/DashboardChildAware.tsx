@@ -7,7 +7,7 @@ import Greeting from "@/components/Greeting";
 import { useChildContext } from "@/components/ChildContext";
 import { calcAge, formatAgeLong } from "@/lib/convex";
 import { Music, Pen, Check, Circle, ArrowRight } from "lucide-react";
-import ListenButton from "@/components/ListenButton";
+// ListenButton removed — world snapshot demoted
 import { useRef } from "react";
 
 interface VaultEntry {
@@ -663,43 +663,18 @@ export default function DashboardChildAware({
         </Link>
       </div>
 
-      {/* ── 8. WORLD SNAPSHOT ── */}
+      {/* ── 8. WORLD SNAPSHOT — small link, not featured ── */}
       {currentSnap && (
-        <>
-          <div className="section-ornament">✦ ✦ ✦</div>
-          <Link href={`/${familyId}/snapshot`} className="card-hover-luxury" style={{
-            padding: "44px 32px 36px",
-            borderTop: "2px solid var(--gold)",
-            animation: "fadeUp 0.6s var(--spring) 0.7s both",
-          }}>
-            <div>
-              <p style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: "0.2em",
-                textTransform: "uppercase", color: "var(--text-3)", marginBottom: 5,
-                fontFamily: "var(--font-body)",
-              }}>The World</p>
-              <h3 className="font-display" style={{
-                fontSize: 22, fontWeight: 400,
-                color: "var(--text)", lineHeight: 1.25, marginBottom: 12,
-              }}>
-                {new Date(currentSnap.year, currentSnap.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-              </h3>
-              {currentSnap.topHeadline && (
-                <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 8, fontFamily: "var(--font-body)" }}>
-                  {currentSnap.topHeadline}
-                </p>
-              )}
-              {currentSnap.topSong && (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <p className="font-display" style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic", display: "inline-flex", alignItems: "center", gap: 5 }}>
-                    <Music size={13} strokeWidth={1.5} /> {currentSnap.topSong}
-                  </p>
-                  <ListenButton song={currentSnap.topSong} />
-                </div>
-              )}
-            </div>
-          </Link>
-        </>
+        <Link href={`/${familyId}/snapshot`} style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "14px 0",
+          fontSize: 12, color: "var(--text-3)", textDecoration: "none",
+          fontFamily: "var(--font-body)",
+          animation: "fadeUp 0.6s var(--spring) 0.7s both",
+        }}>
+          <Music size={12} strokeWidth={1.5} />
+          <span>World Snapshot · {new Date(currentSnap.year, currentSnap.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+        </Link>
       )}
 
       {/* ── 9. REFERRAL CODES ── */}
