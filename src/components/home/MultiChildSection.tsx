@@ -4,14 +4,14 @@ import { Reveal } from "./Reveal";
 export function MultiChildSection() {
   return (
     <section
-      className="section-pad"
+      className="section-pad dark-section"
       style={{
-        padding: "80px 40px",
-        background: "var(--bg)",
-        borderTop: "1px solid var(--border)",
+        padding: "100px 40px",
+        background: "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)",
+        color: "#F5F2ED",
       }}
     >
-      <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <Reveal>
           <p
             style={{
@@ -19,11 +19,12 @@ export function MultiChildSection() {
               fontWeight: 700,
               letterSpacing: "0.2em",
               textTransform: "uppercase",
-              color: "var(--green)",
+              color: "var(--gold)",
               marginBottom: 16,
+              textAlign: "center",
             }}
           >
-            Multiple Children
+            Built for families
           </p>
         </Reveal>
 
@@ -31,30 +32,33 @@ export function MultiChildSection() {
           <h2
             className="font-display"
             style={{
-              fontSize: "clamp(1.6rem, 4vw, 2.4rem)",
+              fontSize: "clamp(1.8rem, 4.5vw, 2.8rem)",
               fontWeight: 700,
-              color: "var(--text)",
-              lineHeight: 1.2,
+              color: "#F5F2ED",
+              lineHeight: 1.15,
               marginBottom: 16,
+              textAlign: "center",
+              letterSpacing: "-0.02em",
             }}
           >
-            Every child deserves their own story.
+            One dashboard.<br />Every child gets their own story.
           </h2>
         </Reveal>
 
         <Reveal>
           <p
             style={{
-              fontSize: 15,
-              color: "var(--text-2)",
+              fontSize: 16,
+              color: "rgba(245,242,237,0.65)",
               lineHeight: 1.8,
-              maxWidth: 560,
-              margin: "0 auto 40px",
+              maxWidth: 580,
+              margin: "0 auto 48px",
+              textAlign: "center",
             }}
           >
-            One account. Separate vaults. Each child gets their own Fable —
-            their own memories, their own circle, their own sealed collection
-            of love from the people who matter most. No child left out.
+            Each child&apos;s vault is completely separate — their own memories, their own
+            circle, their own sealed collection. Your circle members contribute to
+            every child without extra work. Manage it all from one place.
           </p>
         </Reveal>
 
@@ -63,39 +67,46 @@ export function MultiChildSection() {
             style={{
               display: "flex",
               justifyContent: "center",
-              gap: 20,
+              gap: 16,
               flexWrap: "wrap",
-              marginBottom: 40,
+              marginBottom: 48,
             }}
           >
-            {["Emma", "Liam", "Nora"].map((name, i) => (
+            {[
+              { name: "Emma", entries: 47, span: "2 years", active: true },
+              { name: "Liam", entries: 23, span: "1 year", active: false },
+              { name: "Nora", entries: 4, span: "just started", active: false },
+            ].map((child) => (
               <div
-                key={name}
+                key={child.name}
                 style={{
-                  width: 160,
-                  padding: "28px 20px",
-                  background: i === 0 ? "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)" : "var(--surface)",
-                  border: `1px solid ${i === 0 ? "rgba(200,168,122,0.3)" : "var(--border)"}`,
+                  width: 180,
+                  padding: "32px 24px",
+                  background: child.active
+                    ? "rgba(200,168,122,0.08)"
+                    : "rgba(245,242,237,0.04)",
+                  border: `1px solid ${child.active ? "rgba(200,168,122,0.25)" : "rgba(245,242,237,0.08)"}`,
                   borderRadius: 16,
                   textAlign: "center",
                   transition: "all 300ms ease",
                   position: "relative",
-                  overflow: "hidden",
                 }}
               >
-                {/* Vault icon */}
+                {/* Vault lock */}
                 <div
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 52,
+                    height: 52,
                     borderRadius: "50%",
-                    background: i === 0 ? "rgba(200,168,122,0.15)" : "var(--green-light)",
-                    border: `1px solid ${i === 0 ? "rgba(200,168,122,0.25)" : "var(--green-border)"}`,
+                    background: child.active
+                      ? "rgba(200,168,122,0.12)"
+                      : "rgba(245,242,237,0.06)",
+                    border: `1px solid ${child.active ? "rgba(200,168,122,0.2)" : "rgba(245,242,237,0.1)"}`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    margin: "0 auto 12px",
-                    fontSize: 18,
+                    margin: "0 auto 14px",
+                    fontSize: 20,
                   }}
                 >
                   🔒
@@ -104,42 +115,43 @@ export function MultiChildSection() {
                 <p
                   className="font-display"
                   style={{
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: 600,
-                    color: i === 0 ? "#F5F2ED" : "var(--text)",
-                    marginBottom: 4,
+                    color: "#F5F2ED",
+                    marginBottom: 6,
                   }}
                 >
-                  {name}&apos;s Fable
+                  {child.name}
                 </p>
 
                 <p
                   style={{
-                    fontSize: 11,
-                    color: i === 0 ? "rgba(245,242,237,0.5)" : "var(--text-3)",
+                    fontSize: 12,
+                    color: "rgba(245,242,237,0.45)",
+                    lineHeight: 1.5,
                   }}
                 >
-                  {i === 0 ? "47 entries · 2 years" : i === 1 ? "23 entries · 1 year" : "New · just started"}
+                  {child.entries} entries · {child.span}
                 </p>
 
-                {i === 0 && (
+                {child.active && (
                   <div
                     style={{
                       position: "absolute",
-                      top: 8,
-                      right: 8,
+                      top: 10,
+                      right: 10,
                       fontSize: 8,
-                      fontWeight: 600,
-                      letterSpacing: "0.1em",
+                      fontWeight: 700,
+                      letterSpacing: "0.12em",
                       textTransform: "uppercase",
-                      padding: "3px 8px",
+                      padding: "3px 10px",
                       borderRadius: 100,
-                      background: "rgba(200,168,122,0.2)",
+                      background: "rgba(200,168,122,0.15)",
                       color: "var(--gold)",
-                      border: "0.5px solid rgba(200,168,122,0.3)",
+                      border: "0.5px solid rgba(200,168,122,0.25)",
                     }}
                   >
-                    Active
+                    Viewing
                   </div>
                 )}
               </div>
@@ -147,28 +159,58 @@ export function MultiChildSection() {
           </div>
         </Reveal>
 
+        {/* Dashboard mockup hint */}
         <Reveal>
           <div
             style={{
-              display: "inline-flex",
+              maxWidth: 520,
+              margin: "0 auto",
+              padding: "24px 28px",
+              background: "rgba(245,242,237,0.04)",
+              border: "1px solid rgba(245,242,237,0.08)",
+              borderRadius: 14,
+              display: "flex",
               alignItems: "center",
-              gap: 12,
-              padding: "14px 24px",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: 12,
-              fontSize: 14,
-              color: "var(--text-2)",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 16,
             }}
           >
-            <span style={{ fontSize: 13, color: "var(--green)", fontWeight: 600 }}>
-              $7/mo
-            </span>
-            <span style={{ color: "var(--text-3)" }}>per additional child</span>
-            <span style={{ width: 1, height: 16, background: "var(--border)" }} />
-            <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-              Same circle can contribute to all
-            </span>
+            <div>
+              <p
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "#F5F2ED",
+                  marginBottom: 4,
+                }}
+              >
+                Add any child for $7/mo
+              </p>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "rgba(245,242,237,0.5)",
+                  lineHeight: 1.5,
+                }}
+              >
+                Same circle. Same account. Separate vaults.
+                <br />
+                No child left out.
+              </p>
+            </div>
+            <a
+              href="/reserve"
+              className="btn-gold"
+              style={{
+                padding: "10px 22px",
+                fontSize: 13,
+                textDecoration: "none",
+                flexShrink: 0,
+              }}
+            >
+              Get started →
+            </a>
           </div>
         </Reveal>
       </div>

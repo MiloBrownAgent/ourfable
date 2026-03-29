@@ -2,10 +2,10 @@
 import { Reveal } from "./Reveal";
 
 const STEPS = [
-  { n: "01", title: "Tell Our Fable about your child.", body: "Name, birthday, a family password — that's it. Five minutes. Our Fable builds their Vault, their circle, and their world snapshot, ready instantly." },
-  { n: "02", title: "Add the people who love them.", body: "Each person gets a unique link. The invitation comes from your child. No accounts. No apps." },
+  { n: "01", title: "Tell Our Fable about your children.", body: "Name, birthday, a family password — that's it. Five minutes per child. Each one gets their own Vault, their own circle, their own story. One dashboard to manage them all." },
+  { n: "02", title: "Add the people who love them.", body: "Each person gets a unique link. The invitation comes from your child. No accounts. No apps. Same circle can contribute to every child's Fable." },
   { n: "03", title: "Our Fable asks every circle member, every month.", body: "Personal prompts go out automatically — different for each relationship. They respond with text, photo, voice, or video." },
-  { n: "04", title: "Everything seals in the Vault.", body: "Time-locked. Some open at 13. Some at 18. Some on graduation day, or their wedding." },
+  { n: "04", title: "Everything seals in the Vault.", body: "Each child's vault is separate and private. Time-locked. Some open at 13. Some at 18. Some on graduation day, or their wedding." },
 ];
 
 export function HowItWorksSection() {

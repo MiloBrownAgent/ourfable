@@ -2,7 +2,7 @@
 import { Reveal } from "./Reveal";
 
 const FEATURES = [
-  { num: "01", title: "The Vault", body: "Every letter, photo, voice memo, and video — sealed until the milestone age you choose. Your child opens it at 13. At 18. At their wedding. Your child will hear voices that might otherwise be lost forever." },
+  { num: "01", title: "The Vault", body: "Every letter, photo, voice memo, and video — sealed until the milestone age you choose. Each child gets their own vault, managed from one dashboard. They open it at 13. At 18. At their wedding. They'll hear voices that might otherwise be lost forever." },
   { num: "02", title: "Monthly Prompts", body: "On the 1st of every month, Our Fable sends a personalized prompt to every person in your circle. Grandma gets a different question than the family friend. They respond with text, a photo, or a voice memo. No app required." },
   { num: "03", title: "Dispatches", body: "Send photos, videos, voice memos, or updates to your whole circle — privately. No group chat. No social media. Just the people who matter. Our Fable+ only." },
   { num: "04", title: "World Snapshot", body: "One page per month of your child's life — the top headlines, the #1 song, the weather. By the time they turn 18, they'll have 216 of them." },
