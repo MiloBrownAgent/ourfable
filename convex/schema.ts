@@ -501,11 +501,13 @@ export default defineSchema({
     type: v.string(),
     content: v.optional(v.string()),
     mediaUrl: v.optional(v.string()),
+    mediaUrls: v.optional(v.array(v.string())),
     authorEmail: v.string(),
     authorName: v.string(),
     isSealed: v.boolean(),
     unlockAge: v.optional(v.number()),
     createdAt: v.number(),
+    sourceType: v.optional(v.string()), // "letter" | "dispatch" | "prompt_reply"
   })
     .index("by_familyId", ["familyId"])
     .index("by_childId", ["childId"]),

@@ -19,15 +19,19 @@ interface VaultEntry {
   contentType: "text" | "photo" | "voice" | "video";
   textContent?: string;
   mediaUrl?: string;
+  mediaUrls?: string[];
   isSealed: boolean;
   unlockAge?: number;
   createdAt?: number;
+  sourceTable: "contributions" | "vault_entries"; // which Convex table
+  sourceType?: string; // "letter" | "dispatch" | "prompt_reply"
 }
 
 interface Family {
   childName: string;
   childDob: string;
   familyName: string;
+  parentNames?: string;
 }
 
 type QuickAddType = "note" | "photo" | "voice" | "video";
@@ -153,6 +157,16 @@ function SealedCard({ entry, onUnlock }: { entry: VaultEntry; onUnlock: (id: str
             )}
           </div>
 
+          {entry.sourceType && (
+            <span style={{
+              display: "inline-flex", alignItems: "center",
+              border: "0.5px solid rgba(200,168,122,0.25)",
+              borderRadius: 100, padding: "3px 10px", marginTop: 4,
+              fontSize: 10, color: "rgba(200,168,122,0.6)", fontFamily: "var(--font-body)",
+            }}>
+              {entry.sourceType === "letter" ? "Letter" : entry.sourceType === "dispatch" ? "Dispatch" : entry.sourceType === "prompt_reply" ? "Prompt Reply" : entry.sourceType}
+            </span>
+          )}
           {entry.createdAt && (
             <p style={{ fontSize: 11, color: "rgba(253,251,247,0.25)", marginTop: 10 }}>
               Sealed {formatDate(entry.createdAt)}
@@ -241,21 +255,39 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
             </div>
           )}
 
-          {entry.contentType === "photo" && entry.mediaUrl && (
+          {entry.contentType === "photo" && (entry.mediaUrls && entry.mediaUrls.length > 0 ? (
+            <div style={{
+              display: "flex", gap: 8, overflowX: "auto", marginTop: 6,
+              scrollbarWidth: "none", WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+            }}>
+              {entry.mediaUrls.map((url, idx) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={idx}
+                  src={url}
+                  alt={`Photo ${idx + 1} from ${entry.memberName}`}
+                  style={{ height: 200, width: "auto", borderRadius: 10, flexShrink: 0, display: "block" }}
+                />
+              ))}
+            </div>
+          ) : entry.mediaUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={entry.mediaUrl}
               alt={`Photo from ${entry.memberName}`}
               style={{ maxWidth: "100%", borderRadius: 10, marginTop: 6, display: "block" }}
             />
-          )}
+          ) : null)}
 
           {entry.contentType === "voice" && entry.mediaUrl && (
             <audio controls src={entry.mediaUrl} style={{ width: "100%", marginTop: 6 }} />
           )}
 
           {entry.contentType === "video" && entry.mediaUrl && (
-            <video controls src={entry.mediaUrl} style={{ width: "100%", borderRadius: 10, marginTop: 6 }} />
+            <video controls playsInline src={entry.mediaUrl} style={{ width: "100%", borderRadius: 10, marginTop: 6, maxHeight: 300, background: "#000" }}
+              // @ts-expect-error webkit-playsinline needed for iOS
+              webkit-playsinline=""
+            />
           )}
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
@@ -269,6 +301,16 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
               <Unlock size={9} strokeWidth={2} />
               Open
             </span>
+            {entry.sourceType && (
+              <span style={{
+                display: "inline-flex", alignItems: "center",
+                border: "0.5px solid rgba(200,168,122,0.3)",
+                borderRadius: 100, padding: "3px 10px",
+                fontSize: 10, color: "rgba(200,168,122,0.7)", fontFamily: "var(--font-body)",
+              }}>
+                {entry.sourceType === "letter" ? "Letter" : entry.sourceType === "dispatch" ? "Dispatch" : entry.sourceType === "prompt_reply" ? "Prompt Reply" : entry.sourceType}
+              </span>
+            )}
             {entry.createdAt && (
               <p style={{ fontSize: 11, color: "rgba(253,251,247,0.25)" }}>
                 Written {formatDate(entry.createdAt)}
@@ -903,7 +945,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { ...queryArgs }, format: "json" }),
+        body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { ...queryArgs, includeSealed: true }, format: "json" }),
       }).then(r => r.json()),
       fetch(`/api/ourfable/data`, {
         method: "POST",
@@ -933,25 +975,37 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         isSealed: sealed,
         unlockAge: (e.unlocksAtAge as number) ?? (e.unlockAge as number),
         createdAt: (e.submittedAt as number) ?? (e.createdAt as number),
+        sourceTable: "contributions" as const,
+        sourceType: e.promptId ? "prompt_reply" : undefined,
       };
     });
+
+    // Resolve parent name from family data
+    const familyData = familyRes.value;
+    const parentNames = (familyData?.parentNames as string | undefined) ?? null;
 
     // Normalize ourfable_vault_entries
     // SECURITY: Strip content from sealed entries — parents see metadata only
     const ourfableEntries: VaultEntry[] = (ourfableEntriesRes.value ?? []).map((e: Record<string, unknown>) => {
       const sealed = e.isSealed === true;
+      // Use stored authorName; fall back to parentNames if it's still "Parent"
+      const rawName = (e.authorName as string) ?? "Parent";
+      const displayName = (rawName === "Parent" && parentNames) ? parentNames : rawName;
       return {
         _id: e._id as string,
         memberId: "",
-        memberName: (e.authorName as string) ?? "Parent",
+        memberName: displayName,
         memberRelationship: undefined,
         promptText: undefined,
         contentType: (e.type as string ?? "text") as VaultEntry["contentType"],
         textContent: sealed ? undefined : (e.content as string | undefined),
         mediaUrl: sealed ? undefined : (e.mediaUrl as string | undefined),
+        mediaUrls: sealed ? undefined : (e.mediaUrls as string[] | undefined),
         isSealed: sealed,
         unlockAge: e.unlockAge as number | undefined,
         createdAt: e.createdAt as number | undefined,
+        sourceTable: "vault_entries" as const,
+        sourceType: (e.sourceType as string | undefined),
       };
     });
 
@@ -969,10 +1023,15 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
 
   const handleUnlock = async (entryId: string) => {
     if (!confirm("Unlock this entry early? The contributor will be notified.")) return;
+    // Determine which table this entry belongs to
+    const entry = entries.find(e => e._id === entryId);
+    const path = entry?.sourceTable === "vault_entries"
+      ? "ourfable:unlockOurFableVaultEntry"
+      : "ourfable:unlockEntry";
     await fetch(`/api/ourfable/data`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:unlockEntry", args: { entryId }, type: "mutation" }),
+      body: JSON.stringify({ path, args: { entryId }, type: "mutation" }),
     });
     await load();
   };

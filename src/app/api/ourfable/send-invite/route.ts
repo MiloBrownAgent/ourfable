@@ -46,7 +46,6 @@ function ourfableInviteHtml({
   childDob,
   parentNames,
   inviteUrl,
-  shareUrl,
   isTest,
 }: {
   recipientName: string;
@@ -55,7 +54,6 @@ function ourfableInviteHtml({
   childDob: string;
   parentNames: string;
   inviteUrl: string;
-  shareUrl: string;
   isTest?: boolean;
 }) {
   const childFirst = childFirstName(childName);
@@ -123,7 +121,7 @@ function ourfableInviteHtml({
                       ${intro}
                     </p>
                     <p style="margin:0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.75;">
-                      As my <strong style="color:#1A1A18;">${relationship.toLowerCase()}</strong>, there are two things waiting for you.
+                      As my <strong style="color:#1A1A18;">${relationship.toLowerCase()}</strong>, there's something waiting for you.
                     </p>
                   </td>
                 </tr>
@@ -137,7 +135,7 @@ function ourfableInviteHtml({
               <!-- Block 1: Write to me -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding:32px 40px 0;">
+                  <td style="padding:32px 40px 40px;">
                     <p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Write to me</p>
                     <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6B6860;line-height:1.7;">Leave me a letter, a memory, something you want me to know — sealed until I'm old enough to really read it. It'll be waiting for me.</p>
                     <table cellpadding="0" cellspacing="0">
@@ -151,22 +149,7 @@ function ourfableInviteHtml({
                 </tr>
               </table>
 
-              <!-- Block 2: Follow my story -->
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:28px 40px 40px;">
-                    <p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Follow my story</p>
-                    <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6B6860;line-height:1.7;">A private window into my world — milestones, updates, what's new. Bookmark it. It's just for you.</p>
-                    <table cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="border-radius:10px;border:1.5px solid #C8C0B4;">
-                          <a href="${shareUrl}" style="display:inline-block;padding:13px 26px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#4A5E4C;text-decoration:none;letter-spacing:0.02em;">See ${childFirst}'s world &rarr;</a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+
 
               <!-- Footer note inside card -->
               <table width="100%" cellpadding="0" cellspacing="0">

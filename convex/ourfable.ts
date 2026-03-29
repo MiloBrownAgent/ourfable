@@ -1329,11 +1329,13 @@ export const createOutgoing = mutation({
       .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
       .first();
 
+    // Save dispatch to vault — single entry with all media URLs
     await ctx.db.insert("ourfable_vault_entries", {
       familyId: args.familyId,
       type: args.mediaType ?? "dispatch",
       content: args.body,
       mediaUrl: args.mediaUrls?.[0],
+      mediaUrls: args.mediaUrls,
       authorEmail: family?.email ?? "parent@ourfable.ai",
       authorName: args.sentByName,
       isSealed: false,
@@ -2119,6 +2121,17 @@ export const listOurFableVaultEntries = query({
     );
 
     return resolved;
+  },
+});
+
+export const unlockOurFableVaultEntry = mutation({
+  args: {
+    entryId: v.id("ourfable_vault_entries"),
+  },
+  handler: async (ctx, { entryId }) => {
+    await ctx.db.patch(entryId, {
+      isSealed: false,
+    });
   },
 });
 

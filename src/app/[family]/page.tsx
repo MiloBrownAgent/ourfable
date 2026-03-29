@@ -64,7 +64,7 @@ export default async function FamilyHub({ params }: { params: Promise<{ family: 
 
   const [family, vaultEntries, snapshots, notifications, beforeBorn, circleMembers, outgoings, parentEntries] = await Promise.all([
     convexQuery<Family>("ourfable:getFamily", { familyId }).catch(() => null),
-    convexQuery<VaultEntry[]>("ourfable:listVaultEntries", { familyId }).catch(() => [] as VaultEntry[]),
+    convexQuery<VaultEntry[]>("ourfable:listVaultEntries", { familyId, includeSealed: true }).catch(() => [] as VaultEntry[]),
     convexQuery<Snapshot[]>("ourfable:listSnapshots", { familyId }).catch(() => [] as Snapshot[]),
     convexQuery<Notification[]>("ourfable:listNotifications", { familyId }).catch(() => [] as Notification[]),
     convexQuery<BeforeBorn[]>("ourfable:listBeforeBorn", { familyId }).catch(() => [] as BeforeBorn[]),

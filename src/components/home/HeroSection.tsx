@@ -223,9 +223,9 @@ export function HeroSection() {
           <p className="hero-sub-desktop" style={{ fontSize: 19, lineHeight: 1.8, color: "var(--text-2)", marginBottom: 40, maxWidth: 440, animation: "fadeUp 0.5s ease 0.7s both", opacity: 0 }}>
             The people who love your child won&apos;t always be here. Every month, Our Fable sends a simple question to grandparents, aunts, uncles, old friends. They write back with letters, voice recordings, photos, videos — all sealed in a private vault until your child is ready.
           </p>
-          {/* Mobile sub-headline — one emotional sentence */}
+          {/* Mobile sub-headline — matches desktop */}
           <p className="hero-sub-mobile" style={{ fontSize: 17, lineHeight: 1.7, color: "var(--text-2)", marginBottom: 36, maxWidth: 440, animation: "fadeUp 0.5s ease 0.7s both", opacity: 0 }}>
-            Capture the voices, stories, and love of the people in your child&apos;s life — before it&apos;s too late.
+            The people who love your child won&apos;t always be here. Every month, Our Fable sends a simple question to grandparents, aunts, uncles, old friends. They write back with letters, voice recordings, photos, videos — all sealed in a private vault until your child is ready.
           </p>
           <div id="waitlist" style={{ maxWidth: 480, animation: "fadeUp 0.5s ease 0.85s both", opacity: 0 }}>
             <Link href="/reserve" className="btn-primary" style={{ display: "inline-flex", padding: "15px 32px", fontSize: 16, textDecoration: "none" }}>

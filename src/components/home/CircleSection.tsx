@@ -19,48 +19,77 @@ const CIRCLE_NODES = [
 ];
 
 function CircleMobile() {
-  const [active, setActive] = useState(0);
-  const nodes = CIRCLE_NODES;
+  const [active, setActive] = useState<string | null>(null);
 
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none", WebkitOverflowScrolling: "touch", marginBottom: 20 }}>
-        {nodes.map((n, i) => (
-          <button key={n.id} onClick={() => setActive(i)} style={{
-            flexShrink: 0, padding: "8px 16px", borderRadius: 100, border: "1.5px solid",
-            borderColor: active === i ? "var(--green)" : "var(--border)",
-            background: active === i ? "var(--green)" : "var(--card)",
-            color: active === i ? "#fff" : "var(--text-2)",
-            fontSize: 13, fontWeight: active === i ? 700 : 400,
-            fontFamily: "var(--font-playfair)", fontStyle: "italic",
-            cursor: "pointer", transition: "all 0.2s",
-          }}>
-            {n.label}
-          </button>
-        ))}
-      </div>
-
-      <div key={active} style={{
-        padding: "24px 24px", background: "var(--card)",
-        border: "1.5px solid var(--green-border)", borderRadius: 16,
-        animation: "fadeIn 0.2s ease both",
-      }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", marginBottom: 12 }}>
-          Our Fable asks the {nodes[active].label.toLowerCase()}
-        </p>
-        <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 17, color: "var(--text)", lineHeight: 1.8 }}>
-          &ldquo;{nodes[active].prompt}&rdquo;
-        </p>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 16 }}>
-        {nodes.map((_, i) => (
-          <div key={i} onClick={() => setActive(i)} style={{
-            width: active === i ? 20 : 6, height: 6, borderRadius: 3,
-            background: active === i ? "var(--green)" : "var(--border)",
-            cursor: "pointer", transition: "all 0.25s",
-          }} />
-        ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {CIRCLE_NODES.map((n) => {
+          const isOpen = active === n.id;
+          return (
+            <div key={n.id}>
+              <button
+                onClick={() => setActive(isOpen ? null : n.id)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 14,
+                  padding: "14px 18px", borderRadius: isOpen ? "12px 12px 0 0" : 12,
+                  background: isOpen ? "var(--green)" : "var(--card)",
+                  border: `1.5px solid ${isOpen ? "var(--green)" : "var(--border)"}`,
+                  borderBottom: isOpen ? "none" : `1.5px solid ${n.parent ? "var(--green-border)" : "var(--border)"}`,
+                  cursor: "pointer", transition: "all 0.2s", textAlign: "left",
+                }}
+              >
+                {/* Avatar circle */}
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                  background: isOpen ? "rgba(255,255,255,0.15)" : n.parent ? "var(--green-light)" : "var(--bg-2)",
+                  border: `1.5px solid ${isOpen ? "rgba(255,255,255,0.3)" : n.parent ? "var(--green-border)" : "var(--border)"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "var(--font-playfair)", fontStyle: "italic",
+                  fontSize: 14, fontWeight: 600,
+                  color: isOpen ? "#fff" : n.parent ? "var(--green)" : "var(--text-2)",
+                }}>
+                  {n.label.charAt(0)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontFamily: "var(--font-playfair)", fontStyle: "italic",
+                    fontSize: 15, fontWeight: n.parent ? 700 : 500,
+                    color: isOpen ? "#fff" : "var(--text)",
+                    marginBottom: 1,
+                  }}>
+                    {n.label}
+                  </p>
+                  {!isOpen && (
+                    <p style={{ fontSize: 11, color: "var(--text-3)", lineHeight: 1.4 }}>
+                      Tap to see their prompt
+                    </p>
+                  )}
+                </div>
+                <span style={{ color: isOpen ? "rgba(255,255,255,0.7)" : "var(--text-3)", fontSize: 18 }}>
+                  {isOpen ? "−" : "+"}
+                </span>
+              </button>
+              {isOpen && (
+                <div style={{
+                  padding: "16px 18px 18px",
+                  background: "var(--green-light)",
+                  border: "1.5px solid var(--green)",
+                  borderTop: "none",
+                  borderRadius: "0 0 12px 12px",
+                  animation: "fadeIn 0.15s ease both",
+                }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)", marginBottom: 10 }}>
+                    Our Fable asks the {n.label.toLowerCase()}
+                  </p>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 16, color: "var(--text)", lineHeight: 1.75 }}>
+                    &ldquo;{n.prompt}&rdquo;
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -113,7 +113,7 @@ export default function DashboardChildAware({
       fetch("/api/ourfable/data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { familyId, childId } }),
+        body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { familyId, childId, includeSealed: true } }),
       }).then(r => r.json()).then(d => d.value ?? []),
       fetch("/api/ourfable/data", {
         method: "POST",
@@ -500,33 +500,29 @@ export default function DashboardChildAware({
   );
 }
 
-function ReferralWidget({ familyId }: { familyId: string }) {
-  const [codes, setCodes] = useState<Array<{ code: string; status: string }>>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
+function ReferralWidget({ familyId: _familyId }: { familyId: string }) {
+  const [copied, setCopied] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/ourfable/data", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:listReferralCodes", args: { familyId } }),
-    })
-      .then(r => r.json())
-      .then(d => { if (Array.isArray(d.value)) setCodes(d.value); })
-      .catch(() => {})
-      .finally(() => setLoaded(true));
-  }, [familyId]);
+  const SHARE_URL = "https://ourfable.ai/reserve";
+  const SHARE_TEXT = "Check out Our Fable — a private vault of letters and memories for your child.";
 
-  if (!loaded || codes.length === 0) return null;
+  const handleShare = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "Our Fable", text: SHARE_TEXT, url: SHARE_URL });
+        return;
+      } catch {
+        // User cancelled or not supported — fall through
+      }
+    }
+    setShowFallback(f => !f);
+  };
 
-  const available = codes.filter(c => c.status === "available");
-  const redeemed = codes.filter(c => c.status === "redeemed");
-
-  const copyCode = (code: string) => {
-    const url = `https://ourfable.ai/invite/${code}`;
-    navigator.clipboard.writeText(url);
-    setCopied(code);
-    setTimeout(() => setCopied(null), 2000);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(SHARE_URL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -539,56 +535,71 @@ function ReferralWidget({ familyId }: { familyId: string }) {
       <p style={{
         fontSize: 9, fontWeight: 700, letterSpacing: "0.2em",
         textTransform: "uppercase", color: "var(--green)", marginBottom: 8,
-      }}>Save a spot</p>
+      }}>Share</p>
       <h3 className="font-display" style={{
         fontSize: 20, fontWeight: 400, color: "var(--text)", lineHeight: 1.3, marginBottom: 8,
       }}>
-        Share Our Fable with someone you love.
+        Know someone who would love Our Fable?
       </h3>
       <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 20 }}>
-        {available.length > 0
-          ? `You have ${available.length} founding member invite${available.length !== 1 ? "s" : ""} to share.`
-          : "All your invites have been claimed!"}
-        {redeemed.length > 0 && ` ${redeemed.length} redeemed.`}
+        Share it with them.
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {codes.map(c => (
-          <div key={c.code} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "10px 14px", borderRadius: 10,
-            background: c.status === "redeemed" ? "var(--green-light)" : "var(--bg)",
-            border: `1px solid ${c.status === "redeemed" ? "var(--green-border)" : "var(--border)"}`,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{
-                fontFamily: "monospace", fontSize: 13, fontWeight: 600,
-                color: c.status === "redeemed" ? "var(--green)" : "var(--text)",
-                letterSpacing: "0.06em",
-              }}>
-                {c.code}
-              </span>
-              {c.status === "redeemed" && (
-                <span style={{ fontSize: 11, color: "var(--green)", fontWeight: 500 }}>Claimed</span>
-              )}
-            </div>
-            {c.status === "available" && (
-              <button
-                onClick={() => copyCode(c.code)}
-                style={{
-                  padding: "6px 14px", borderRadius: 8,
-                  background: copied === c.code ? "var(--green)" : "var(--surface)",
-                  border: `1px solid ${copied === c.code ? "var(--green)" : "var(--border)"}`,
-                  color: copied === c.code ? "#fff" : "var(--text-2)",
-                  fontSize: 12, fontWeight: 500, cursor: "pointer",
-                  transition: "all 150ms",
-                }}
-              >
-                {copied === c.code ? "Copied!" : "Copy link"}
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+      <button
+        onClick={handleShare}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "12px 24px", borderRadius: 10,
+          background: "var(--green)", color: "#fff",
+          border: "none", fontSize: 14, fontWeight: 600,
+          cursor: "pointer", transition: "all 150ms",
+        }}
+      >
+        Share Our Fable →
+      </button>
+
+      {showFallback && (
+        <div style={{
+          marginTop: 16, padding: "16px 18px",
+          background: "var(--bg)", border: "1px solid var(--border)",
+          borderRadius: 12, display: "flex", flexDirection: "column", gap: 10,
+          animation: "fadeIn 0.15s ease both",
+        }}>
+          {[
+            { label: "Send via Messages", href: `sms:?&body=${encodeURIComponent(SHARE_TEXT + " " + SHARE_URL)}` },
+            { label: "Send via Email", href: `mailto:?subject=${encodeURIComponent("Our Fable")}&body=${encodeURIComponent(SHARE_TEXT + "\n\n" + SHARE_URL)}` },
+            { label: "Share on Twitter / X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(SHARE_URL)}` },
+            { label: "Share on Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_URL)}` },
+          ].map(opt => (
+            <a
+              key={opt.label}
+              href={opt.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block", padding: "10px 14px", borderRadius: 8,
+                background: "var(--surface)", border: "1px solid var(--border)",
+                fontSize: 13, color: "var(--text-2)", textDecoration: "none",
+                transition: "all 150ms",
+              }}
+            >
+              {opt.label}
+            </a>
+          ))}
+          <button
+            onClick={handleCopy}
+            style={{
+              display: "block", width: "100%", padding: "10px 14px", borderRadius: 8,
+              background: copied ? "var(--green-light)" : "var(--surface)",
+              border: `1px solid ${copied ? "var(--green-border)" : "var(--border)"}`,
+              fontSize: 13, color: copied ? "var(--green)" : "var(--text-2)",
+              cursor: "pointer", fontWeight: copied ? 600 : 400,
+              transition: "all 150ms", textAlign: "left",
+            }}
+          >
+            {copied ? "Link copied!" : "Copy link"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

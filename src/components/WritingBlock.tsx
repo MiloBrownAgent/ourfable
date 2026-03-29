@@ -53,6 +53,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [circleMembers, setCircleMembers] = useState<CircleMember[]>([])
+  const [parentName, setParentName] = useState<string>('Parent')
 
   useEffect(() => {
     if (!familyId) return
@@ -63,6 +64,17 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     })
       .then(r => r.json())
       .then(d => { if (Array.isArray(d.value)) setCircleMembers(d.value) })
+      .catch(() => {})
+    // Fetch parent name from ourfable_families
+    fetch('/api/ourfable/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'ourfable:getOurFableFamilyById', args: { familyId } }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.value?.parentNames) setParentName(d.value.parentNames)
+      })
       .catch(() => {})
   }, [familyId])
 
@@ -364,7 +376,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       const contentType = getContentType()
       const entryArgs: Record<string, unknown> = {
         familyId,
-        memberName: 'Parent',
+        memberName: parentName,
         contentType,
         isSealed: true,
       }
