@@ -108,7 +108,7 @@ function VaultEntryCard({ entry, visible, dob }: { entry: SampleEntry; visible: 
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Author */}
           <p style={{
-            fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 400,
+            fontFamily: "var(--font-playfair), Georgia, serif", fontSize: 18, fontWeight: 400,
             fontStyle: "italic", color: "#FDFBF7", marginBottom: 6,
           }}>
             {entry.author}
@@ -317,11 +317,15 @@ export default function WelcomeClient() {
         setVisibleCount(idx);
         setVoiceCounter(idx);
 
-        // Auto-scroll
+        // Auto-scroll — smooth at first, then instant as entries accelerate
         if (vaultRef.current) {
-          vaultRef.current.scrollTo({
-            top: vaultRef.current.scrollHeight,
-            behavior: idx <= 4 ? "smooth" : "auto",
+          requestAnimationFrame(() => {
+            if (vaultRef.current) {
+              vaultRef.current.scrollTo({
+                top: vaultRef.current.scrollHeight,
+                behavior: idx <= 4 ? "smooth" : "auto",
+              });
+            }
           });
         }
       }, cumulativeDelay);
@@ -401,7 +405,7 @@ export default function WelcomeClient() {
             THE VAULT
           </p>
           <h1 style={{
-            fontFamily: "var(--font-cormorant)", fontSize: "clamp(32px, 8vw, 48px)",
+            fontFamily: "var(--font-playfair), Georgia, serif", fontSize: "clamp(32px, 8vw, 48px)",
             fontWeight: 300, fontStyle: "italic",
             color: "#FDFBF7", lineHeight: 1.2,
             marginBottom: 12,
@@ -425,7 +429,7 @@ export default function WelcomeClient() {
   if (phase === "vault") {
     return (
       <div style={{
-        minHeight: "100vh", display: "flex", flexDirection: "column",
+        minHeight: "100vh", height: "100vh", display: "flex", flexDirection: "column",
         background: BG, position: "relative", overflow: "hidden",
       }}>
         {/* Skip */}
@@ -489,13 +493,13 @@ export default function WelcomeClient() {
               textAlign: "center", padding: "40px 20px", marginTop: 20,
             }}>
               <p style={{
-                fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 300,
+                fontFamily: "var(--font-playfair), Georgia, serif", fontSize: 22, fontWeight: 300,
                 fontStyle: "italic", color: "#FDFBF7", lineHeight: 1.4,
               }}>
                 🔒 {entries.length} memories from {uniquePeopleCount} people who love {childFirst}.
               </p>
               <p style={{
-                fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 300,
+                fontFamily: "var(--font-playfair), Georgia, serif", fontSize: 18, fontWeight: 300,
                 fontStyle: "italic", color: "rgba(200,168,122,0.7)", marginTop: 8,
               }}>
                 Sealed until they&apos;re ready. Opening {getVaultOpenYear()}.
@@ -553,7 +557,7 @@ export default function WelcomeClient() {
         </p>
 
         <h1 style={{
-          fontFamily: "var(--font-cormorant)", fontSize: "clamp(24px, 6vw, 32px)",
+          fontFamily: "var(--font-playfair), Georgia, serif", fontSize: "clamp(24px, 6vw, 32px)",
           fontWeight: 300, fontStyle: "italic",
           color: "#FDFBF7", lineHeight: 1.3, marginBottom: 12,
         }}>
