@@ -12,6 +12,11 @@ const PLAN_PRICES: Record<PlanType, Record<BillingPeriod, number>> = {
   plus: { monthly: 19, annual: 99 },
 };
 
+const NORMAL_PRICES: Record<PlanType, Record<BillingPeriod, number>> = {
+  standard: { monthly: 12, annual: 99 },
+  plus: { monthly: 19, annual: 149 },
+};
+
 function StepDot({ n, active, done }: { n: number; active: boolean; done: boolean }) {
   return (
     <div style={{
@@ -46,18 +51,21 @@ export default function SignupClient() {
   const giftCodeParam = searchParams.get("gift") ?? "";
   const giftPlanParam = (searchParams.get("plan") ?? "standard") as PlanType;
   const isGiftRedemption = !!giftCodeParam;
+  const isFoundingMember = searchParams.get("founding") === "true";
+  const prefillEmail = searchParams.get("email") ?? "";
+  const prefillChild = searchParams.get("child") ?? "";
 
   const [step, setStep] = useState(1);
 
   // Step 1
-  const [childName, setChildName] = useState("");
+  const [childName, setChildName] = useState(prefillChild);
   const [childDob, setChildDob] = useState("");
 
   // Step 2
   const [parentNames, setParentNames] = useState("");
 
   // Step 3
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
@@ -178,11 +186,30 @@ export default function SignupClient() {
     }}>
 
       {/* Logo */}
-      <div style={{ marginBottom: 48, textAlign: "center" }}>
+      <div style={{ marginBottom: isFoundingMember ? 24 : 48, textAlign: "center" }}>
         <Link href="/" style={{ textDecoration: "none" }}>
           <span style={{ fontFamily: "var(--font-playfair)", fontSize: 24, fontWeight: 700, color: "var(--green)", letterSpacing: "0.12em" }}>Our Fable</span>
         </Link>
       </div>
+
+      {/* Founding Member Badge */}
+      {isFoundingMember && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          marginBottom: 32, padding: "10px 20px",
+          background: "rgba(200,168,122,0.08)",
+          border: "1px solid rgba(200,168,122,0.25)",
+          borderRadius: 100,
+        }}>
+          <Sparkles size={14} color="var(--gold, #C8A87A)" strokeWidth={2} />
+          <span style={{
+            fontFamily: "var(--font-playfair)", fontSize: 13, fontWeight: 600,
+            color: "var(--gold, #C8A87A)", letterSpacing: "0.06em",
+          }}>
+            Founding Member
+          </span>
+        </div>
+      )}
 
       <div style={{ width: "100%", maxWidth: 480 }}>
         {/* Step indicators */}
@@ -546,9 +573,16 @@ export default function SignupClient() {
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--green)", marginBottom: 6 }}>
                   Our Fable
                 </p>
-                <p style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-cormorant)", marginBottom: 2 }}>
-                  ${PLAN_PRICES.standard[billing]}
-                </p>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 2 }}>
+                  <p style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-cormorant)", margin: 0 }}>
+                    ${PLAN_PRICES.standard[billing]}
+                  </p>
+                  {isFoundingMember && billing === "annual" && NORMAL_PRICES.standard.annual !== PLAN_PRICES.standard.annual && (
+                    <p style={{ fontSize: 14, color: "var(--text-3)", textDecoration: "line-through", margin: 0 }}>
+                      ${NORMAL_PRICES.standard.annual}
+                    </p>
+                  )}
+                </div>
                 <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 10 }}>
                   {billing === "monthly" ? "per month" : "per year"}
                 </p>
@@ -592,9 +626,16 @@ export default function SignupClient() {
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--green)", marginBottom: 6 }}>
                   Our Fable+
                 </p>
-                <p style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-cormorant)", marginBottom: 2 }}>
-                  ${PLAN_PRICES.plus[billing]}
-                </p>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 2 }}>
+                  <p style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-cormorant)", margin: 0 }}>
+                    ${PLAN_PRICES.plus[billing]}
+                  </p>
+                  {isFoundingMember && billing === "annual" && NORMAL_PRICES.plus.annual !== PLAN_PRICES.plus.annual && (
+                    <p style={{ fontSize: 14, color: "var(--text-3)", textDecoration: "line-through", margin: 0 }}>
+                      ${NORMAL_PRICES.plus.annual}
+                    </p>
+                  )}
+                </div>
                 <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 10 }}>
                   {billing === "monthly" ? "per month" : "per year"}
                 </p>

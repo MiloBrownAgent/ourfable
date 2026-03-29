@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import CountUpNumber from "@/components/CountUpNumber";
 import WritingBlock from "@/components/WritingBlock";
 import Greeting from "@/components/Greeting";
 import { useChildContext } from "@/components/ChildContext";
 import { calcAge, formatAgeLong } from "@/lib/convex";
-import { Music, Pen } from "lucide-react";
+import { Music, Pen, Check, Circle, ArrowRight } from "lucide-react";
 import ListenButton from "@/components/ListenButton";
 import { useRef } from "react";
 
@@ -63,6 +63,180 @@ function getNextMilestone(dob: string): { age: number; date: Date; daysAway: num
     }
   }
   return null;
+}
+
+/* ── Onboarding Checklist ── */
+function OnboardingChecklist({
+  familyId,
+  childFirst,
+  hasParentEntry,
+  circleCount,
+  onScrollToWriting,
+}: {
+  familyId: string;
+  childFirst: string;
+  hasParentEntry: boolean;
+  circleCount: number;
+  onScrollToWriting: () => void;
+}) {
+  const storageKey = `ourfable-onboarding-dismissed-${familyId}`;
+  const [dismissed, setDismissed] = useState(true); // default hidden until we check
+  const [celebrating, setCelebrating] = useState(false);
+
+  const steps = [
+    { label: `Created ${childFirst}'s Fable`, done: true },
+    { label: "Write your first letter", done: hasParentEntry },
+    { label: "Invite 1 circle member", done: circleCount >= 1 },
+    { label: "Invite 2 more people", done: circleCount >= 3 },
+  ];
+  const completedCount = steps.filter((s) => s.done).length;
+  const allDone = completedCount === 4;
+  const progress = (completedCount / 4) * 100;
+
+  useEffect(() => {
+    const stored = localStorage.getItem(storageKey);
+    if (stored === "true") {
+      setDismissed(true);
+    } else {
+      setDismissed(false);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (allDone && !dismissed) {
+      setCelebrating(true);
+      const timer = setTimeout(() => {
+        localStorage.setItem(storageKey, "true");
+        setDismissed(true);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [allDone, dismissed, storageKey]);
+
+  if (dismissed && !celebrating) return null;
+
+  if (celebrating) {
+    return (
+      <div style={{
+        marginBottom: 32,
+        padding: "28px 24px",
+        background: "rgba(74,94,76,0.06)",
+        border: "1px solid rgba(74,94,76,0.18)",
+        borderRadius: 16,
+        textAlign: "center",
+        animation: "fadeUp 0.5s var(--spring) both",
+      }}>
+        <p style={{ fontSize: 28, marginBottom: 8 }}>🎉</p>
+        <h3 className="font-display" style={{
+          fontSize: 20, fontWeight: 600, color: "var(--green)", marginBottom: 6,
+        }}>
+          You&apos;re all set!
+        </h3>
+        <p style={{
+          fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", lineHeight: 1.6,
+        }}>
+          {childFirst}&apos;s Fable is off to a beautiful start.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      marginBottom: 32,
+      padding: "24px 24px 20px",
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
+      borderRadius: 16,
+      animation: "fadeUp 0.5s var(--spring) both",
+    }}>
+      <p style={{
+        fontFamily: "var(--font-body)",
+        fontSize: 10, fontWeight: 700, letterSpacing: "0.18em",
+        textTransform: "uppercase", color: "var(--green)", marginBottom: 14,
+      }}>
+        Getting started
+      </p>
+
+      {/* Progress bar */}
+      <div style={{
+        width: "100%", height: 4, borderRadius: 2,
+        background: "var(--border)", marginBottom: 20, overflow: "hidden",
+      }}>
+        <div style={{
+          width: `${progress}%`, height: "100%", borderRadius: 2,
+          background: "var(--green)",
+          transition: "width 500ms ease",
+        }} />
+      </div>
+
+      {/* Steps */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {steps.map((s, i) => {
+          const isClickable = !s.done && i > 0;
+          const handleClick = () => {
+            if (i === 1) onScrollToWriting();
+            // steps 2 and 3 link to circle page — handled via Link wrapper
+          };
+
+          const content = (
+            <div
+              key={i}
+              onClick={i === 1 && isClickable ? handleClick : undefined}
+              role={isClickable ? "button" : undefined}
+              tabIndex={isClickable && i === 1 ? 0 : undefined}
+              style={{
+                display: "flex", alignItems: "center", gap: 12,
+                cursor: isClickable ? "pointer" : "default",
+                padding: "6px 0",
+              }}
+            >
+              {s.done ? (
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%",
+                  background: "var(--green)", display: "flex",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <Check size={12} strokeWidth={3} color="#fff" />
+                </div>
+              ) : (
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%",
+                  border: "1.5px solid var(--border)", display: "flex",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <Circle size={8} strokeWidth={0} fill="var(--border)" />
+                </div>
+              )}
+              <span style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 13,
+                color: s.done ? "var(--text-3)" : "var(--text)",
+                textDecoration: s.done ? "line-through" : "none",
+                fontWeight: s.done ? 400 : 500,
+              }}>
+                {s.label}
+              </span>
+              {isClickable && (
+                <ArrowRight size={13} color="var(--sage)" style={{ marginLeft: "auto" }} />
+              )}
+            </div>
+          );
+
+          // For circle invite steps, wrap in Link
+          if (isClickable && (i === 2 || i === 3)) {
+            return (
+              <Link key={i} href={`/${familyId}/circle`} style={{ textDecoration: "none", color: "inherit" }}>
+                {content}
+              </Link>
+            );
+          }
+
+          return <div key={i}>{content}</div>;
+        })}
+      </div>
+    </div>
+  );
 }
 
 interface Props {
@@ -138,8 +312,29 @@ export default function DashboardChildAware({
   const milestoneBannerVisible = nextMilestone && nextMilestone.daysAway <= 183;
   const writingBlockRef = useRef<HTMLDivElement>(null);
 
+  // Onboarding: check for parent-authored entries (no memberRelationship = parent)
+  const hasParentEntry = vaultEntries.some((e) => !e.memberRelationship);
+  const safeCircleCount = circleCount ?? 0;
+
+  const scrollToWriting = useCallback(() => {
+    writingBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => {
+      const textarea = writingBlockRef.current?.querySelector("textarea");
+      if (textarea) textarea.focus();
+    }, 400);
+  }, []);
+
   return (
     <div style={{ opacity: loadingChild ? 0.7 : 1, transition: "opacity 200ms" }}>
+
+      {/* ── 0. ONBOARDING CHECKLIST ── */}
+      <OnboardingChecklist
+        familyId={familyId}
+        childFirst={childFirst}
+        hasParentEntry={hasParentEntry}
+        circleCount={safeCircleCount}
+        onScrollToWriting={scrollToWriting}
+      />
 
       {/* ── 1. GREETING HEADER ── */}
       <div style={{
@@ -229,6 +424,19 @@ export default function DashboardChildAware({
         marginBottom: 72,
         animation: "fadeUp 0.7s var(--spring) 0.1s both",
       }}>
+        {/* First letter prompt — shows only when vault has no parent entries */}
+        {!hasParentEntry && (
+          <p className="font-display" style={{
+            fontStyle: "italic",
+            fontSize: 17,
+            color: "var(--sage)",
+            lineHeight: 1.6,
+            marginBottom: 20,
+            opacity: 0.85,
+          }}>
+            What do you want {childFirst} to know about the day they were born?
+          </p>
+        )}
         <WritingBlock childFirst={childFirst} familyId={familyId} />
       </div>
 
