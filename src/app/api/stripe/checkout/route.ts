@@ -25,11 +25,34 @@ const PRICE_MAP: Record<PlanType, Record<BillingPeriod, string>> = {
     annual: process.env.STRIPE_PRICE_PLUS_ANNUAL ?? "price_1TEs5uPhcoXpcvebKqvMBSjk",
   },
 };
+
+const FOUNDING_ANNUAL_COUPON_MAP: Record<PlanType, string | undefined> = {
+  standard: process.env.STRIPE_COUPON_FOUNDING_STANDARD_ANNUAL,
+  plus: process.env.STRIPE_COUPON_FOUNDING_PLUS_ANNUAL,
+};
+
+function getCheckoutDiscounts(
+  planType: PlanType,
+  billingPeriod: BillingPeriod,
+  founding: boolean,
+): Stripe.Checkout.SessionCreateParams.Discount[] | undefined {
+  if (!founding || billingPeriod !== "annual") {
+    return undefined;
+  }
+
+  const coupon = FOUNDING_ANNUAL_COUPON_MAP[planType];
+  if (!coupon) {
+    throw new Error(`Missing founding annual coupon for ${planType} plan`);
+  }
+
+  return [{ coupon }];
+}
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
       email, password, childName, childDob, parentNames, planType, billingPeriod, plan,
+      founding,
       facilitator1Name, facilitator1Email, facilitator1Relationship,
       facilitator2Name, facilitator2Email, facilitator2Relationship,
       childEmail, notifyFacilitatorOnLapse,
@@ -42,6 +65,7 @@ export async function POST(req: NextRequest) {
       planType?: PlanType;
       billingPeriod?: BillingPeriod;
       plan?: "annual" | "monthly";
+      founding?: boolean;
       facilitator1Name?: string;
       facilitator1Email?: string;
       facilitator1Relationship?: string;
@@ -70,21 +94,29 @@ export async function POST(req: NextRequest) {
     // Resolve plan type and billing period (support both new and legacy params)
     const resolvedPlanType: PlanType = planType ?? "standard";
     const resolvedBilling: BillingPeriod = billingPeriod ?? plan ?? "annual";
+    const isFoundingMember = founding === true;
 
     const priceId = PRICE_MAP[resolvedPlanType][resolvedBilling];
+    const discounts = getCheckoutDiscounts(resolvedPlanType, resolvedBilling, isFoundingMember);
+    const cancelUrl = new URL("/signup", BASE_URL);
+    if (isFoundingMember) {
+      cancelUrl.searchParams.set("founding", "true");
+    }
 
     const session = await getStripe().checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      allow_promotion_codes: true,
+      // Stripe doesn't allow both allow_promotion_codes and discounts
+      ...(discounts ? { discounts } : { allow_promotion_codes: true }),
       success_url: `${BASE_URL}/welcome?session_id={CHECKOUT_SESSION_ID}&child=${encodeURIComponent(childName.split(" ")[0])}&dob=${encodeURIComponent(childDob)}`,
-      cancel_url: `${BASE_URL}/signup`,
+      cancel_url: cancelUrl.toString(),
       customer_email: email,
       metadata: {
         email,
         childName,
         childDob,
         parentNames,
+        founding: isFoundingMember ? "true" : "false",
         planType: resolvedPlanType,
         billingPeriod: resolvedBilling,
         plan: resolvedBilling, // legacy compat

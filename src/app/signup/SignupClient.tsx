@@ -7,11 +7,13 @@ import { ArrowRight, ArrowLeft, Check, Shield, Sparkles, Users, Gift } from "luc
 type PlanType = "standard" | "plus";
 type BillingPeriod = "monthly" | "annual";
 
+// During founding period, ALL signups get founding pricing
 const PLAN_PRICES: Record<PlanType, Record<BillingPeriod, number>> = {
   standard: { monthly: 12, annual: 79 },
   plus: { monthly: 19, annual: 99 },
 };
 
+// Full prices shown as strikethrough so users see the discount
 const NORMAL_PRICES: Record<PlanType, Record<BillingPeriod, number>> = {
   standard: { monthly: 12, annual: 99 },
   plus: { monthly: 19, annual: 149 },
@@ -53,7 +55,8 @@ export default function SignupClient() {
   const giftCodeParam = searchParams.get("gift") ?? "";
   const giftPlanParam = (searchParams.get("plan") ?? "standard") as PlanType;
   const isGiftRedemption = !!giftCodeParam;
-  const isFoundingMember = searchParams.get("founding") === "true";
+  // During founding period, ALL signups are founding members
+  const isFoundingMember = true;
   const prefillEmail = searchParams.get("email") ?? "";
   const prefillChild = searchParams.get("child") ?? "";
 
@@ -161,6 +164,7 @@ export default function SignupClient() {
           parentNames,
           planType,
           billingPeriod: billing,
+          founding: isFoundingMember,
           facilitator1Name: fac1Name.trim() || undefined,
           facilitator1Email: fac1Email.trim() || undefined,
           facilitator1Relationship: fac1Relationship.trim() || undefined,
@@ -584,7 +588,7 @@ export default function SignupClient() {
                   <p style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-cormorant)", margin: 0 }}>
                     ${PLAN_PRICES.standard[billing]}
                   </p>
-                  {isFoundingMember && billing === "annual" && NORMAL_PRICES.standard.annual !== PLAN_PRICES.standard.annual && (
+                  {billing === "annual" && NORMAL_PRICES.standard.annual !== PLAN_PRICES.standard.annual && (
                     <p style={{ fontSize: 14, color: "var(--text-3)", textDecoration: "line-through", margin: 0 }}>
                       ${NORMAL_PRICES.standard.annual}
                     </p>
@@ -637,7 +641,7 @@ export default function SignupClient() {
                   <p style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-cormorant)", margin: 0 }}>
                     ${PLAN_PRICES.plus[billing]}
                   </p>
-                  {isFoundingMember && billing === "annual" && NORMAL_PRICES.plus.annual !== PLAN_PRICES.plus.annual && (
+                  {billing === "annual" && NORMAL_PRICES.plus.annual !== PLAN_PRICES.plus.annual && (
                     <p style={{ fontSize: 14, color: "var(--text-3)", textDecoration: "line-through", margin: 0 }}>
                       ${NORMAL_PRICES.plus.annual}
                     </p>
