@@ -792,7 +792,6 @@ function QuickAddModal({
                     ref={fileInputRef}
                     type="file"
                     accept={currentTypeConfig.accept}
-                    capture={addType === "photo" ? "environment" : undefined}
                     onChange={onFileInput}
                     style={{ display: "none" }}
                   />
