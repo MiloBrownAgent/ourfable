@@ -125,6 +125,10 @@ export async function addAccount(account: OurFableAccount & {
   stripeSubscriptionId?: string;
   birthDate?: string;
 }): Promise<void> {
+  if (!account.passwordHash || !account.passwordHash.trim()) {
+    throw new Error(`[addAccount] passwordHash is required for ${account.email}`);
+  }
+
   await internalConvexMutation("ourfable:createOurFableFamily", {
     familyId: account.familyId,
     email: account.email.toLowerCase().trim(),

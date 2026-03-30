@@ -251,32 +251,47 @@ export default function WelcomeClient() {
         return;
       }
 
-      if (childParam) {
-        setPhase("reveal");
-        return;
-      }
-
       if (directFamilyId && !childParam) {
         router.replace(`/${directFamilyId}/onboarding`);
         return;
       }
 
       if (!sessionId) {
+        if (childParam) {
+          setPhase("reveal");
+          return;
+        }
         router.replace("/login");
         return;
       }
 
       try {
-        const res = await fetch(`/api/stripe/session?session_id=${sessionId}`);
-        if (res.ok) {
-          const d = await res.json();
-          setChildName(d.childName || "your child");
-          setChildDob(d.childDob || "");
-          setFamilyId(d.familyId || "");
-          setPhase("reveal");
-        } else {
-          router.replace("/login");
+        for (let attempt = 0; attempt < 8; attempt++) {
+          const res = await fetch("/api/auth/session-from-stripe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId }),
+          });
+
+          if (res.ok) {
+            const d = await res.json();
+            setChildName(d.childName || childParam || "your child");
+            setChildDob(d.childDob || dobParam || "");
+            setFamilyId(d.familyId || "");
+            setPhase("reveal");
+            return;
+          }
+
+          if (res.status !== 409) {
+            break;
+          }
+
+          if (attempt < 7) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
         }
+
+        router.replace("/login");
       } catch {
         router.replace("/login");
       }

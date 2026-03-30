@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       token: signupToken,
       passwordHash,
       email: email.toLowerCase().trim(),
-      expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     });
 
     // Resolve plan type and billing period (support both new and legacy params)
@@ -106,6 +106,8 @@ export async function POST(req: NextRequest) {
     const session = await getStripe().checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
+      // Intentionally omit payment_method_types so Stripe can surface Apple Pay
+      // and any other enabled payment methods automatically.
       // Stripe doesn't allow both allow_promotion_codes and discounts
       ...(discounts ? { discounts } : { allow_promotion_codes: true }),
       success_url: `${BASE_URL}/welcome?session_id={CHECKOUT_SESSION_ID}&child=${encodeURIComponent(childName.split(" ")[0])}&dob=${encodeURIComponent(childDob)}`,

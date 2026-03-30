@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { addAccount } from "@/lib/accounts";
+import crypto from "node:crypto";
+import { addAccount, hashPassword } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { escapeHtml } from "@/lib/email-templates/escape-html";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
@@ -55,6 +56,55 @@ function emailFooter(lightMode = true): string {
           <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:rgba(245,242,237,0.3);">ourfable.ai</p>
           <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:rgba(245,242,237,0.2);"><a href="https://ourfable.ai/unsubscribe" style="color:rgba(245,242,237,0.2);text-decoration:underline;">Unsubscribe</a></p>
         </td></tr>`;
+}
+
+function hasUsablePasswordHash(passwordHash: string | undefined | null): passwordHash is string {
+  return typeof passwordHash === "string" && passwordHash.trim().length > 0;
+}
+
+async function sendPasswordSetupEmail(email: string) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+  const resetUrl = `https://ourfable.ai/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+  await internalConvexMutation("ourfable:createPasswordReset", {
+    email,
+    token,
+    expiresAt,
+  });
+
+  await sendResendEmail(
+    email,
+    "Set your Our Fable password",
+    `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><title>Set your password</title></head>
+<body style="margin:0;padding:0;background:#F5F2ED;">
+  <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#F5F2ED" style="padding:64px 20px 80px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+        <tr><td align="center" style="padding-bottom:28px;">
+          <div style="width:56px;height:56px;border-radius:50%;border:1.5px solid #C8D4C9;background:#F0F5F0;display:inline-flex;align-items:center;justify-content:center;">
+            <span style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#4A5E4C;">Our Fable</span>
+          </div>
+        </td></tr>
+        <tr><td style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
+          <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
+          <table width="100%"><tr><td style="padding:44px;">
+            <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">One more step</p>
+            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">Set your password</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Your payment went through and your account is ready. We just need you to choose a password to finish securing it.</p>
+            <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">This link expires in 24 hours.</p>
+            <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
+              <a href="${resetUrl}" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Set password →</a>
+            </td></tr></table>
+          </td></tr></table>
+        </td></tr>
+        ${emailFooter(true)}
+      </table>
+    </td></tr>
+  </table>
+</body></html>`
+  );
 }
 
 // POST /api/stripe/webhook
@@ -447,25 +497,36 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const { email, childName, childDob, parentNames, plan, planType: metaPlanType, billingPeriod } = meta;
   const planType = metaPlanType ?? "standard";
   const resolvedPlan = billingPeriod ?? plan ?? "annual";
+  const normalizedEmail = email?.toLowerCase().trim();
 
-  if (!email || !childName) {
+  if (!normalizedEmail || !childName) {
     console.error("[webhook] checkout.session.completed — missing metadata", meta);
     throw new Error("Missing required metadata fields");
   }
 
-  // Idempotency: check if family already exists by email
-  const existing = await internalConvexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
-  if (existing) {
-    console.log(`[webhook] Family already exists for email=${email} — skipping creation (idempotent)`);
+  const existingAccount = await internalConvexQuery<{
+    familyId: string;
+    passwordHash?: string;
+  } | null>("ourfable:getOurFableFamilyByEmail", { email: normalizedEmail });
+  if (existingAccount && hasUsablePasswordHash(existingAccount.passwordHash)) {
+    console.log(`[webhook] Family already exists for email=${normalizedEmail} — skipping creation (idempotent)`);
     return;
   }
+
+  const existingVaultFamily = await internalConvexQuery<{ familyId: string } | null>(
+    "ourfable:getFamilyByEmail",
+    { parentEmail: normalizedEmail }
+  ).catch(() => null);
 
   const firstNameSlug = childName
     .split(" ")[0]
     .toLowerCase()
     .replace(/[^a-z]/g, "")
     .slice(0, 12);
-  const familyId = `${firstNameSlug}-${Date.now().toString(36)}`;
+  const familyId =
+    existingAccount?.familyId ??
+    existingVaultFamily?.familyId ??
+    `${firstNameSlug}-${Date.now().toString(36)}`;
 
   const stripeCustomerId =
     typeof session.customer === "string"
@@ -477,17 +538,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ? session.subscription
       : session.subscription?.id ?? undefined;
 
-  // 1. Create family in Convex (legacy ourfable_vault_families table)
-  await internalConvexMutation("ourfable:createFamily", {
-    familyId,
-    childName,
-    childDob: childDob ?? "",
-    parentNames: parentNames ?? "",
-    parentEmail: email,
-    plan: resolvedPlan,
-    stripeCustomerId,
-    stripeSubscriptionId,
-  });
+  if (!existingVaultFamily) {
+    // 1. Create family in Convex (legacy ourfable_vault_families table)
+    await internalConvexMutation("ourfable:createFamily", {
+      familyId,
+      childName,
+      childDob: childDob ?? "",
+      parentNames: parentNames ?? "",
+      parentEmail: normalizedEmail,
+      plan: resolvedPlan,
+      stripeCustomerId,
+      stripeSubscriptionId,
+    });
+  } else {
+    console.warn(`[webhook] Reusing existing vault family for ${normalizedEmail}: familyId=${familyId}`);
+  }
 
   // 2. Seed default content
   await convexMutation("ourfable:seedCircle", { familyId }).catch((err) => {
@@ -502,6 +567,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // 3. Register account — retrieve password hash from Convex signup token (C4 security fix)
   let passwordHash = "";
+  let requiresPasswordSetupEmail = false;
   if (meta.signup_token) {
     const signupData = await internalConvexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
       passwordHash: string;
@@ -514,21 +580,56 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       await internalConvexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
     }
   }
-  // Legacy password_hash fallback removed for security (C4 fix).
-  // All new checkouts use signup_token flow.
-  await addAccount({
-    email: email.toLowerCase(),
-    passwordHash,
-    familyId,
-    childName,
-    parentNames: parentNames ?? "",
-    planType,
-    stripeCustomerId,
-    stripeSubscriptionId,
-    birthDate: childDob,
-  });
 
-  console.log(`[webhook] ✅ Family created: familyId=${familyId} email=${email} planType=${planType} billing=${resolvedPlan}`);
+  if (!hasUsablePasswordHash(passwordHash)) {
+    requiresPasswordSetupEmail = true;
+    passwordHash = hashPassword(crypto.randomBytes(32).toString("hex"));
+    console.warn(`[webhook] signup_token missing/expired for ${normalizedEmail}; creating account with password-setup fallback`);
+  }
+
+  if (existingAccount) {
+    await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
+      email: normalizedEmail,
+      passwordHash,
+      passwordChangedAt: Date.now(),
+    });
+
+    const existingUser = await internalConvexQuery<{ _id: string } | null>(
+      "ourfable:getOurFableUserByEmail",
+      { email: normalizedEmail }
+    ).catch(() => null);
+
+    if (existingUser) {
+      await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
+        email: normalizedEmail,
+        passwordHash,
+        passwordChangedAt: Date.now(),
+      });
+    } else {
+      await internalConvexMutation("ourfable:createOurFableUser", {
+        email: normalizedEmail,
+        passwordHash,
+        passwordChangedAt: Date.now(),
+        familyId,
+        name: parentNames ?? "Parent",
+        role: "owner",
+      });
+    }
+  } else {
+    await addAccount({
+      email: normalizedEmail,
+      passwordHash,
+      familyId,
+      childName,
+      parentNames: parentNames ?? "",
+      planType,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      birthDate: childDob,
+    });
+  }
+
+  console.log(`[webhook] ✅ Family created: familyId=${familyId} email=${normalizedEmail} planType=${planType} billing=${resolvedPlan}`);
 
   // 3b. Save facilitator info + dead man's switch preference
   const {
@@ -573,8 +674,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // 4. Send welcome email
   const childFirst = childName.split(" ")[0];
+  if (requiresPasswordSetupEmail) {
+    await sendPasswordSetupEmail(normalizedEmail).catch((err) => {
+      console.warn("[webhook] Password setup email failed (non-fatal):", err);
+    });
+  }
+
   await sendResendEmail(
-    email,
+    normalizedEmail,
     "Welcome to Our Fable",
     `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><title>Welcome to Our Fable</title></head>

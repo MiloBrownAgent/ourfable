@@ -2467,15 +2467,28 @@ export const updateOurFablePassword = internalMutation({
     passwordChangedAt: v.optional(v.number()),
   },
   handler: async (ctx, { email, passwordHash, passwordChangedAt }) => {
+    const normalizedEmail = email.toLowerCase();
     const family = await ctx.db
       .query("ourfable_families")
-      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .first();
     if (!family) throw new Error("Account not found");
+
     await ctx.db.patch(family._id, {
       passwordHash,
       ...(passwordChangedAt !== undefined ? { passwordChangedAt } : {}),
     });
+
+    const user = await ctx.db
+      .query("ourfable_users")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .first();
+    if (user) {
+      await ctx.db.patch(user._id, {
+        passwordHash,
+        ...(passwordChangedAt !== undefined ? { passwordChangedAt } : {}),
+      });
+    }
   },
 });
 
