@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Partner with Us | Our Fable",
+  title: "Partner with Us",
   description: "We partner with businesses that share our commitment to family, legacy, and meaningful connection.",
 };
 

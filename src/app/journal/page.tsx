@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getAllPosts, formatDate } from "@/lib/blog";
 
 export const metadata: Metadata = {
-  title: "Journal | Our Fable",
+  title: "Journal",
   description:
     "Stories, guides, and reflections on parenthood, letters, and the memories we leave behind.",
   alternates: { canonical: "https://ourfable.ai/journal" },
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "https://ourfable.ai/journal",
-    title: "Journal | Our Fable",
+    title: "Journal",
     description:
       "Stories, guides, and reflections on parenthood, letters, and the memories we leave behind.",
     images: [{ url: "https://ourfable.ai/og-image.png", width: 1200, height: 630 }],
