@@ -135,6 +135,7 @@ export async function addAccount(account: OurFableAccount & {
     passwordHash: account.passwordHash,
     childName: account.childName,
     planType: account.planType ?? "annual",
+    parentNames: account.parentNames,
     stripeCustomerId: account.stripeCustomerId,
     stripeSubscriptionId: account.stripeSubscriptionId,
     birthDate: account.birthDate,

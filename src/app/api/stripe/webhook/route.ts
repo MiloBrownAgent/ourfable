@@ -544,21 +544,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ? session.subscription
       : session.subscription?.id ?? undefined;
 
-  if (!existingVaultFamily) {
-    // 1. Create family in Convex (legacy ourfable_vault_families table)
-    await internalConvexMutation("ourfable:createFamily", {
-      familyId,
-      childName,
-      childDob: childDob ?? "",
-      parentNames: parentNames ?? "",
-      parentEmail: normalizedEmail,
-      plan: resolvedPlan,
-      stripeCustomerId,
-      stripeSubscriptionId,
-    });
-  } else {
-    console.warn(`[webhook] Reusing existing vault family for ${normalizedEmail}: familyId=${familyId}`);
-  }
+  // 1. Upsert family in the vault/dashboard table.
+  // This keeps webhook retries and partial recoveries from leaving auth + vault state out of sync.
+  await internalConvexMutation("ourfable:createFamily", {
+    familyId,
+    childName,
+    childDob: childDob ?? "",
+    parentNames: parentNames ?? "",
+    parentEmail: normalizedEmail,
+    plan: resolvedPlan,
+    stripeCustomerId,
+    stripeSubscriptionId,
+  });
 
   // 2. Register account first so the post-checkout login flow does not depend on slower side effects.
   let passwordHash = "";

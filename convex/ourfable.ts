@@ -55,7 +55,19 @@ export const createFamily = internalMutation({
       .query("ourfable_vault_families")
       .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
       .first();
-    if (existing) return existing._id;
+    if (existing) {
+      const patch: Record<string, unknown> = {
+        childName: args.childName,
+        childDob: args.childDob,
+        parentNames: args.parentNames,
+        plan: args.plan ?? existing.plan,
+      };
+      if (typeof args.parentEmail !== "undefined") patch.parentEmail = args.parentEmail;
+      if (typeof args.stripeCustomerId !== "undefined") patch.stripeCustomerId = args.stripeCustomerId;
+      if (typeof args.stripeSubscriptionId !== "undefined") patch.stripeSubscriptionId = args.stripeSubscriptionId;
+      await ctx.db.patch(existing._id, patch);
+      return existing._id;
+    }
 
     const nameParts = args.childName.trim().split(/\s+/);
     const firstName = nameParts[0];
@@ -71,6 +83,8 @@ export const createFamily = internalMutation({
       parentEmail: args.parentEmail,
       timezone: "America/Chicago",
       plan: args.plan ?? "monthly",
+      stripeCustomerId: args.stripeCustomerId,
+      stripeSubscriptionId: args.stripeSubscriptionId,
       createdAt: Date.now(),
     });
 
@@ -1998,6 +2012,7 @@ export const createOurFableFamily = internalMutation({
     passwordHash: v.string(),
     childName: v.string(),
     planType: v.string(),
+    parentNames: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
     subscriptionStatus: v.optional(v.string()),
@@ -2008,7 +2023,22 @@ export const createOurFableFamily = internalMutation({
       .query("ourfable_families")
       .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
       .first();
-    if (existing) return existing._id;
+    if (existing) {
+      const patch: Record<string, unknown> = {
+        familyId: args.familyId,
+        passwordHash: args.passwordHash,
+        childName: args.childName,
+        planType: args.planType,
+        subscriptionStatus: args.subscriptionStatus ?? existing.subscriptionStatus ?? "active",
+        passwordChangedAt: Date.now(),
+      };
+      if (typeof args.stripeCustomerId !== "undefined") patch.stripeCustomerId = args.stripeCustomerId;
+      if (typeof args.stripeSubscriptionId !== "undefined") patch.stripeSubscriptionId = args.stripeSubscriptionId;
+      if (typeof args.birthDate !== "undefined") patch.birthDate = args.birthDate;
+      if (typeof args.parentNames !== "undefined") patch.parentNames = args.parentNames;
+      await ctx.db.patch(existing._id, patch);
+      return existing._id;
+    }
 
     return await ctx.db.insert("ourfable_families", {
       familyId: args.familyId,
@@ -2016,6 +2046,7 @@ export const createOurFableFamily = internalMutation({
       passwordHash: args.passwordHash,
       childName: args.childName,
       planType: args.planType,
+      parentNames: args.parentNames,
       stripeCustomerId: args.stripeCustomerId,
       stripeSubscriptionId: args.stripeSubscriptionId,
       subscriptionStatus: args.subscriptionStatus ?? "active",
@@ -4502,7 +4533,25 @@ export const createOurFableUser = internalMutation({
       .query("ourfable_users")
       .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
       .first();
-    if (existing) return existing._id;
+    if (existing) {
+      const patch: Record<string, unknown> = {
+        passwordHash: args.passwordHash,
+        passwordChangedAt: args.passwordChangedAt ?? Date.now(),
+        familyId: args.familyId,
+        name: args.name,
+        role: args.role,
+      };
+      if (typeof args.encryptedFamilyKey !== "undefined") patch.encryptedFamilyKey = args.encryptedFamilyKey;
+      if (typeof args.keySalt !== "undefined") patch.keySalt = args.keySalt;
+      if (typeof args.totpSecret !== "undefined") patch.totpSecret = args.totpSecret;
+      if (typeof args.totpEnabled !== "undefined") patch.totpEnabled = args.totpEnabled;
+      if (typeof args.recoveryCodeHashes !== "undefined") patch.recoveryCodeHashes = args.recoveryCodeHashes;
+      if (typeof args.recoveryCodesUsed !== "undefined") patch.recoveryCodesUsed = args.recoveryCodesUsed;
+      if (typeof args.recoveryWrappedKeys !== "undefined") patch.recoveryWrappedKeys = args.recoveryWrappedKeys;
+      if (typeof args.recoverySetupComplete !== "undefined") patch.recoverySetupComplete = args.recoverySetupComplete;
+      await ctx.db.patch(existing._id, patch);
+      return existing._id;
+    }
 
     return await ctx.db.insert("ourfable_users", {
       email: args.email.toLowerCase(),
