@@ -1428,8 +1428,10 @@ export const createOutgoing = internalMutation({
     scheduleEmailDelivery: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const { scheduleEmailDelivery, ...outgoingArgs } = args;
+
     // Save to outgoings (for the Dispatches page)
-    const outgoingId = await ctx.db.insert("ourfable_vault_outgoings", { ...args, sentAt: Date.now() });
+    const outgoingId = await ctx.db.insert("ourfable_vault_outgoings", { ...outgoingArgs, sentAt: Date.now() });
 
     // Also save to vault entries so dispatches appear in the vault
     const family = await ctx.db
@@ -1452,7 +1454,7 @@ export const createOutgoing = internalMutation({
     });
 
     // Legacy callers can still use the scheduled delivery path.
-    if (args.scheduleEmailDelivery !== false) {
+    if (scheduleEmailDelivery !== false) {
       await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendDispatchEmails, {
         familyId: args.familyId,
         childId: args.childId,

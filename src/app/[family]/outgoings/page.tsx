@@ -550,7 +550,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
       const mediaType = outgoingFiles.length > 0 ? outgoingFiles[0].mediaType : undefined;
 
       // Save to Convex first
-      await fetch(`/api/ourfable/data`, {
+      const saveRes = await fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -572,6 +572,8 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
           type: "mutation",
         }),
       });
+      const saveData = await saveRes.json().catch(() => ({}));
+      if (!saveRes.ok) throw new Error(saveData.error ?? "Failed to save dispatch");
 
       // Send emails
       const res = await fetch(`/api/ourfable/send-outgoing`, {
