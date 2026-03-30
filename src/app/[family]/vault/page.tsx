@@ -1196,19 +1196,14 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const handleUnlock = async (entryId: string) => {
     if (!confirm("Unlock this entry early? This will open the entry for reading.")) return;
     try {
-      // Determine which table this entry belongs to
-      const entry = entries.find(e => e._id === entryId);
-      const isVaultEntry = entry?.sourceTable === "vault_entries";
-      const path = isVaultEntry
-        ? "ourfable:unlockOurFableVaultEntry"
-        : "ourfable:unlockEntry";
-      const args = isVaultEntry
-        ? { entryId }
-        : { entryId, byParent: true };
       const res = await fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path, args, type: "mutation" }),
+        body: JSON.stringify({
+          path: "ourfable:unlockVaultEntryEarly",
+          args: { familyId, entryId },
+          type: "mutation",
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Unknown error" }));

@@ -3,7 +3,15 @@ import { use, useEffect, useState, useRef } from "react";
 import { Send, ChevronDown, ChevronUp, Check, Users, User, Loader2, Sparkles, ArrowRight, Paperclip, X, Mic, Video, Image as ImageIcon, Square } from "lucide-react";
 import Link from "next/link";
 import { useChildContext } from "@/components/ChildContext";
-import FileUpload, { UploadedFile } from "@/components/FileUpload";
+
+interface UploadedFile {
+  mediaType: "photo" | "video" | "voice" | "document";
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  mediaUrl: string;
+  storageId: string;
+}
 
 interface CircleMember {
   _id: string;
@@ -27,6 +35,31 @@ interface Outgoing {
 
 function formatDate(ts: number) {
   return new Date(ts).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+function getAudioMimeType(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4";
+  if (MediaRecorder.isTypeSupported("audio/aac")) return "audio/aac";
+  if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) return "audio/webm;codecs=opus";
+  if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
+  return "";
+}
+
+function getVideoMimeType(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  if (MediaRecorder.isTypeSupported("video/mp4")) return "video/mp4";
+  if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) return "video/webm;codecs=vp9,opus";
+  if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")) return "video/webm;codecs=vp8,opus";
+  if (MediaRecorder.isTypeSupported("video/webm")) return "video/webm";
+  return "";
+}
+
+function getMediaType(fileType: string): UploadedFile["mediaType"] {
+  if (fileType.startsWith("image/")) return "photo";
+  if (fileType.startsWith("video/")) return "video";
+  if (fileType.startsWith("audio/")) return "voice";
+  return "document";
 }
 
 function OutgoingCard({ item }: { item: Outgoing }) {
@@ -143,8 +176,11 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
   const [showAttach, setShowAttach] = useState(false);
   const [sentToAll, setSentToAll] = useState(true);
+  const [uploadError, setUploadError] = useState("");
 
   // Recording state
+  const [voiceReady, setVoiceReady] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [isRecordingVideo, setIsRecordingVideo] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -153,6 +189,17 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
   const recordingChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
+  const pendingStreamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const clearPendingStream = () => {
+    if (!pendingStreamRef.current) return;
+    pendingStreamRef.current.getTracks().forEach((track) => track.stop());
+    pendingStreamRef.current = null;
+    if (videoPreviewRef.current) {
+      videoPreviewRef.current.srcObject = null;
+    }
+  };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -161,65 +208,219 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
     if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
     setIsRecordingVoice(false);
     setIsRecordingVideo(false);
-    setRecordingSeconds(0);
+  };
+
+  const prepareVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      clearPendingStream();
+      pendingStreamRef.current = stream;
+      setUploadError("");
+      setVoiceReady(true);
+      setVideoReady(false);
+    } catch {
+      alert("Microphone access denied. Please allow microphone access and try again.");
+    }
   };
 
   const startVoiceRecording = async () => {
+    const stream = pendingStreamRef.current;
+    if (!stream) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const mimeType = getAudioMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const actualMimeType = recorder.mimeType || mimeType || "audio/mp4";
       recordingChunksRef.current = [];
       recorder.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data); };
       recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(recordingChunksRef.current, { type: "audio/webm" });
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
-        await uploadRecordedFile(file, "voice");
+        const ext = actualMimeType.includes("mp4") || actualMimeType.includes("aac") ? "m4a" : "webm";
+        const blob = new Blob(recordingChunksRef.current, { type: actualMimeType });
+        clearPendingStream();
+        setVoiceReady(false);
+        setRecordingSeconds(0);
+        await uploadRecordedBlob(blob, `voice-${Date.now()}.${ext}`, "voice");
       };
       recorder.start();
       mediaRecorderRef.current = recorder;
+      setVoiceReady(false);
       setIsRecordingVoice(true);
       setRecordingSeconds(0);
       recordingTimerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
-    } catch { alert("Microphone access denied. Please allow microphone access and try again."); }
+    } catch {
+      clearPendingStream();
+      setVoiceReady(false);
+      alert("Unable to start voice recording. Please try again.");
+    }
+  };
+
+  const prepareVideoRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: true,
+      });
+      clearPendingStream();
+      pendingStreamRef.current = stream;
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = stream;
+        videoPreviewRef.current.muted = true;
+        videoPreviewRef.current.play().catch(() => {});
+      }
+      setUploadError("");
+      setVideoReady(true);
+      setVoiceReady(false);
+    } catch {
+      alert("Camera access denied. Please allow camera access and try again.");
+    }
   };
 
   const startVideoRecording = async () => {
+    const stream = pendingStreamRef.current;
+    if (!stream) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (videoPreviewRef.current) { videoPreviewRef.current.srcObject = stream; videoPreviewRef.current.play(); }
-      const recorder = new MediaRecorder(stream);
+      const mimeType = getVideoMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const actualMimeType = recorder.mimeType || mimeType || "video/mp4";
       recordingChunksRef.current = [];
       recorder.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data); };
       recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
-        const blob = new Blob(recordingChunksRef.current, { type: "video/webm" });
-        const file = new File([blob], `video-${Date.now()}.webm`, { type: "video/webm" });
-        await uploadRecordedFile(file, "video");
+        const ext = actualMimeType.includes("mp4") ? "mp4" : "webm";
+        const blob = new Blob(recordingChunksRef.current, { type: actualMimeType });
+        clearPendingStream();
+        setVideoReady(false);
+        setRecordingSeconds(0);
+        await uploadRecordedBlob(blob, `video-${Date.now()}.${ext}`, "video");
       };
       recorder.start();
       mediaRecorderRef.current = recorder;
+      setVideoReady(false);
       setIsRecordingVideo(true);
       setRecordingSeconds(0);
       recordingTimerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
-    } catch { alert("Camera access denied. Please allow camera access and try again."); }
+    } catch {
+      clearPendingStream();
+      setVideoReady(false);
+      alert("Unable to start video recording. Please try again.");
+    }
   };
 
-  const uploadRecordedFile = async (file: File, type: "voice" | "video") => {
+  const uploadRecordedBlob = async (blob: Blob, fileName: string, type: "voice" | "video") => {
     setUploadingRecording(true);
     try {
-      const presignRes = await fetch(`/api/ourfable/upload`, {
+      if (blob.size === 0) throw new Error("Recording was empty. Please record again.");
+
+      const uploadUrlRes = await fetch("/api/ourfable/upload-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ familyId, fileName: file.name, fileType: file.type, contributionType: "dispatch" }),
+        body: JSON.stringify({}),
       });
-      if (!presignRes.ok) throw new Error("Upload failed");
-      const { uploadUrl, r2Key, r2Url } = await presignRes.json();
-      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      setAttachedFiles(prev => [...prev, { fileName: file.name, r2Key, r2Url, mediaType: type, fileType: file.type, fileSize: file.size }]);
-    } catch { alert("Upload failed. Please try again."); }
-    finally { setUploadingRecording(false); }
+      const uploadUrlData = await uploadUrlRes.json().catch(() => ({}));
+      if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {
+        throw new Error(uploadUrlData.error ?? "Failed to prepare upload.");
+      }
+
+      const uploadRes = await fetch(uploadUrlData.uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": blob.type || (type === "video" ? "video/mp4" : "audio/mp4") },
+        body: blob,
+      });
+      const uploadData = await uploadRes.json().catch(() => ({}));
+      if (!uploadRes.ok || !uploadData.storageId) {
+        throw new Error(uploadData.error ?? "Failed to upload recording.");
+      }
+
+      const mediaUrlRes = await fetch("/api/ourfable/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: "ourfable:getMediaUrl",
+          args: { storageId: uploadData.storageId },
+          type: "query",
+        }),
+      });
+      const mediaUrlData = await mediaUrlRes.json().catch(() => ({}));
+      if (!mediaUrlRes.ok || !mediaUrlData.value) {
+        throw new Error(mediaUrlData.error ?? "Failed to resolve uploaded media.");
+      }
+
+      setAttachedFiles(prev => [
+        ...prev,
+        {
+          fileName,
+          fileType: blob.type || (type === "video" ? "video/mp4" : "audio/mp4"),
+          fileSize: blob.size,
+          mediaType: type,
+          mediaUrl: mediaUrlData.value,
+          storageId: uploadData.storageId,
+        },
+      ]);
+      setUploadError("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Upload failed. Please try again.";
+      setUploadError(message);
+      alert(message);
+    } finally {
+      setUploadingRecording(false);
+    }
+  };
+
+  const uploadSelectedFile = async (file: File) => {
+    setUploadingRecording(true);
+    try {
+      const fileType = file.type || "application/octet-stream";
+      const uploadUrlRes = await fetch("/api/ourfable/upload-media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const uploadUrlData = await uploadUrlRes.json().catch(() => ({}));
+      if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {
+        throw new Error(uploadUrlData.error ?? "Failed to prepare upload.");
+      }
+
+      const uploadRes = await fetch(uploadUrlData.uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": fileType },
+        body: file,
+      });
+      const uploadData = await uploadRes.json().catch(() => ({}));
+      if (!uploadRes.ok || !uploadData.storageId) {
+        throw new Error(uploadData.error ?? "Failed to upload file.");
+      }
+
+      const mediaUrlRes = await fetch("/api/ourfable/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: "ourfable:getMediaUrl",
+          args: { storageId: uploadData.storageId },
+          type: "query",
+        }),
+      });
+      const mediaUrlData = await mediaUrlRes.json().catch(() => ({}));
+      if (!mediaUrlRes.ok || !mediaUrlData.value) {
+        throw new Error(mediaUrlData.error ?? "Failed to resolve uploaded media.");
+      }
+
+      setAttachedFiles(prev => [
+        ...prev,
+        {
+          fileName: file.name,
+          fileType,
+          fileSize: file.size,
+          mediaType: getMediaType(fileType),
+          mediaUrl: mediaUrlData.value,
+          storageId: uploadData.storageId,
+        },
+      ]);
+      setShowAttach(false);
+      setUploadError("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Upload failed. Please try again.";
+      setUploadError(message);
+    } finally {
+      setUploadingRecording(false);
+    }
   };
 
   const formatSeconds = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -257,6 +458,13 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
 
   useEffect(() => { loadData(); }, [familyId]);
 
+  useEffect(() => {
+    return () => {
+      clearPendingStream();
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, []);
+
   const toggleMember = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -278,7 +486,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
     setSendError("");
     try {
       const memberIds = sentToAll ? undefined : Array.from(selectedIds);
-      const mediaUrls = attachedFiles.map(f => f.r2Url);
+      const mediaUrls = attachedFiles.map(f => f.mediaUrl);
       const mediaType = attachedFiles.length > 0 ? attachedFiles[0].mediaType : undefined;
 
       // Save to Convex first
@@ -330,6 +538,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
       setBody("");
       setAttachedFiles([]);
       setShowAttach(false);
+      setUploadError("");
       setSelectedIds(new Set());
       setSentToAll(true);
       await loadData();
@@ -544,22 +753,48 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
               </label>
 
               {/* Active recording UI */}
-              {(isRecordingVoice || isRecordingVideo) && (
+              {(voiceReady || videoReady || isRecordingVoice || isRecordingVideo) && (
                 <div style={{ padding: "16px 20px", background: "var(--sage-dim)", border: "1px solid rgba(107,143,111,0.3)", borderRadius: 12, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#E07070", animation: "pulse 1s infinite" }} />
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#E07070", animation: (isRecordingVoice || isRecordingVideo) ? "pulse 1s infinite" : "none" }} />
                     <span style={{ fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)" }}>
-                      {isRecordingVoice ? "Recording voice" : "Recording video"} — {formatSeconds(recordingSeconds)}
+                      {voiceReady ? "Microphone ready" : videoReady ? "Camera ready" : isRecordingVoice ? `Recording voice — ${formatSeconds(recordingSeconds)}` : `Recording video — ${formatSeconds(recordingSeconds)}`}
                     </span>
                   </div>
-                  <button onClick={stopRecording} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#E07070", border: "none", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 500, fontFamily: "var(--font-body)" }}>
-                    <Square size={12} strokeWidth={2.5} fill="#fff" /> Stop
-                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {(voiceReady || videoReady) && (
+                      <button
+                        onClick={() => {
+                          clearPendingStream();
+                          setVoiceReady(false);
+                          setVideoReady(false);
+                        }}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "transparent", border: "1px solid var(--border)", cursor: "pointer", color: "var(--text-2)", fontSize: 13, fontWeight: 500, fontFamily: "var(--font-body)" }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    {voiceReady && (
+                      <button onClick={startVoiceRecording} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#E07070", border: "none", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 500, fontFamily: "var(--font-body)" }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff" }} /> Start
+                      </button>
+                    )}
+                    {videoReady && (
+                      <button onClick={startVideoRecording} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#E07070", border: "none", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 500, fontFamily: "var(--font-body)" }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff" }} /> Start
+                      </button>
+                    )}
+                    {(isRecordingVoice || isRecordingVideo) && (
+                      <button onClick={stopRecording} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#E07070", border: "none", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 500, fontFamily: "var(--font-body)" }}>
+                        <Square size={12} strokeWidth={2.5} fill="#fff" /> Stop
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Video preview */}
-              {isRecordingVideo && (
+              {(videoReady || isRecordingVideo) && (
                 <video ref={videoPreviewRef} muted playsInline style={{ width: "100%", borderRadius: 10, marginBottom: 12, maxHeight: 200, background: "#000", display: "block", transform: "scaleX(-1)" }} />
               )}
 
@@ -571,16 +806,16 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
               )}
 
               {/* Action buttons */}
-              {!isRecordingVoice && !isRecordingVideo && !uploadingRecording && (
+              {!voiceReady && !videoReady && !isRecordingVoice && !isRecordingVideo && !uploadingRecording && (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <button
-                    onClick={startVoiceRecording}
+                    onClick={prepareVoiceRecording}
                     style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
                   >
                     <Mic size={15} strokeWidth={1.5} color="var(--sage)" /> Record voice
                   </button>
                   <button
-                    onClick={startVideoRecording}
+                    onClick={prepareVideoRecording}
                     style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
                   >
                     <Video size={15} strokeWidth={1.5} color="var(--sage)" /> Record video
@@ -595,16 +830,18 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
               )}
 
               {/* File upload (photo/file picker) */}
-              {showAttach && !isRecordingVoice && !isRecordingVideo && (
+              {showAttach && !voiceReady && !videoReady && !isRecordingVoice && !isRecordingVideo && (
                 <div style={{ marginTop: 12 }}>
-                  <FileUpload
-                    familyId={familyId}
-                    contributionType="dispatch"
-                    maxFiles={5}
-                    onUploadComplete={(files) => {
-                      setAttachedFiles(prev => [...prev, ...files]);
-                      setShowAttach(false);
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,video/*,audio/*,.m4a,.mp3,.wav,.ogg"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void uploadSelectedFile(file);
+                      event.target.value = "";
                     }}
+                    style={{ display: "block", width: "100%", fontSize: 13, color: "var(--text-2)" }}
                   />
                 </div>
               )}
@@ -621,6 +858,10 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
                     </div>
                   ))}
                 </div>
+              )}
+
+              {uploadError && (
+                <p style={{ fontSize: 13, color: "#E07070", marginTop: 10 }}>{uploadError}</p>
               )}
             </div>
 

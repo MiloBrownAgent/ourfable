@@ -55,6 +55,7 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:listOurFableVaultEntries",
   "ourfable:addOurFableVaultEntry",
   "ourfable:unlockOurFableVaultEntry",
+  "ourfable:unlockVaultEntryEarly",
   "ourfable:listOurFableLetters",
   "ourfable:listOurFableSnapshots",
   "ourfable:listOurFableMilestones",
@@ -216,7 +217,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({ error: "Upstream error" }, { status: 502 });
+    const message = e instanceof Error ? e.message : "Upstream error";
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }
 

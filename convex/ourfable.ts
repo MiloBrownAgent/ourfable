@@ -2281,6 +2281,42 @@ export const unlockOurFableVaultEntry = internalMutation({
   },
 });
 
+export const unlockVaultEntryEarly = internalMutation({
+  args: {
+    familyId: v.string(),
+    entryId: v.string(),
+  },
+  handler: async (ctx, { familyId, entryId }) => {
+    const vaultEntries = await ctx.db
+      .query("ourfable_vault_entries")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+
+    const vaultEntry = vaultEntries.find((entry) => String(entry._id) === entryId);
+    if (vaultEntry) {
+      await ctx.db.patch(vaultEntry._id, { isSealed: false });
+      return { table: "ourfable_vault_entries", entryId };
+    }
+
+    const contributionEntries = await ctx.db
+      .query("ourfable_vault_contributions")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+
+    const contributionEntry = contributionEntries.find((entry) => String(entry._id) === entryId);
+    if (contributionEntry) {
+      await ctx.db.patch(contributionEntry._id, {
+        isOpen: true,
+        openedAt: Date.now(),
+        openedByParent: true,
+      });
+      return { table: "ourfable_vault_contributions", entryId };
+    }
+
+    throw new Error("Entry not found in this vault.");
+  },
+});
+
 // ── OurFable Letters ────────────────────────────────────────────────────────
 
 export const addOurFableLetter = internalMutation({
