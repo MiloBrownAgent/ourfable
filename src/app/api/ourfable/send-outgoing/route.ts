@@ -91,7 +91,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No eligible recipients" }, { status: 400 });
     }
 
-    const cFirst = family.childName.split(" ")[0];
     const viewToken = generateViewToken();
     const viewUrl = `https://ourfable.ai/view/${viewToken}`;
     const results: Array<{ name: string; success: boolean; error?: string }> = [];
@@ -112,7 +111,7 @@ export async function POST(req: NextRequest) {
         });
 
         await sendEmail({
-          from: `${cFirst} via Our Fable <hello@ourfable.ai>`,
+          from: `${sentByName} via Our Fable <hello@ourfable.ai>`,
           to: member.email!,
           subject: emailSubject,
           html,

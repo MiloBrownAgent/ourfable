@@ -567,6 +567,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
             recipientCount,
             mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
             mediaType,
+            scheduleEmailDelivery: false,
           },
           type: "mutation",
         }),

@@ -1425,6 +1425,7 @@ export const createOutgoing = internalMutation({
     sentToMemberIds: v.optional(v.array(v.string())),
     sentByName: v.string(),
     recipientCount: v.optional(v.number()),
+    scheduleEmailDelivery: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Save to outgoings (for the Dispatches page)
@@ -1450,17 +1451,19 @@ export const createOutgoing = internalMutation({
       createdAt: Date.now(),
     });
 
-    // Schedule email delivery to circle members
-    await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendDispatchEmails, {
-      familyId: args.familyId,
-      childId: args.childId,
-      body: args.body,
-      mediaUrls: args.mediaUrls,
-      mediaType: args.mediaType,
-      sentToAll: args.sentToAll,
-      sentToMemberIds: args.sentToMemberIds,
-      sentByName: args.sentByName,
-    });
+    // Legacy callers can still use the scheduled delivery path.
+    if (args.scheduleEmailDelivery !== false) {
+      await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendDispatchEmails, {
+        familyId: args.familyId,
+        childId: args.childId,
+        body: args.body,
+        mediaUrls: args.mediaUrls,
+        mediaType: args.mediaType,
+        sentToAll: args.sentToAll,
+        sentToMemberIds: args.sentToMemberIds,
+        sentByName: args.sentByName,
+      });
+    }
 
     return outgoingId;
   },

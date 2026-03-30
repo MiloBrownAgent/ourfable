@@ -4,8 +4,8 @@ import { escapeHtml } from "./escape-html";
  * dispatch.ts — Email template for Dispatches (parent → circle member)
  *
  * Used when a parent sends a dispatch (text/photo/voice/video) to
- * selected circle members. The email IS the dispatch — no portal.
- * Exception: video links to R2 URL directly for browser playback.
+ * selected circle members. The email IS the dispatch for text/photo/voice.
+ * Video uses the branded viewer page for playback.
  */
 
 interface DispatchEmailOptions {
@@ -65,14 +65,23 @@ function mediaBlock(mediaUrls: string[], mediaType: string, childFirst: string, 
   }
 
   if (mediaType === "video") {
-    // Always link to branded view page when viewUrl is provided
     const href = viewUrl || mediaUrls[0];
     return `
-      <table cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
         <tr>
-          <td style="background:#1A1A18;border-radius:12px;overflow:hidden;">
-            <a href="${escapeHtml(href)}" style="display:inline-flex;align-items:center;gap:10px;padding:16px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
-              <span style="font-size:18px;">▶</span> Watch video
+          <td>
+            <a href="${escapeHtml(href)}" style="display:block;text-decoration:none;">
+              <div style="background:linear-gradient(180deg,#2F3A32 0%,#171A18 100%);border:1px solid #2A312D;border-radius:16px;padding:30px 24px;">
+                <div style="width:74px;height:74px;border-radius:999px;background:rgba(253,251,247,0.14);border:1px solid rgba(253,251,247,0.22);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+                  <span style="font-size:28px;line-height:1;color:#FFFFFF;">▶</span>
+                </div>
+                <p style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:400;color:#FDFBF7;text-align:center;line-height:1.3;">
+                  Video from ${escapeHtml(childFirst)}&rsquo;s family
+                </p>
+                <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:rgba(253,251,247,0.78);text-align:center;line-height:1.7;">
+                  Open the Our Fable viewer to watch the full video.
+                </p>
+              </div>
             </a>
           </td>
         </tr>
@@ -170,6 +179,17 @@ export function dispatchEmail({
                     <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:21px;font-weight:400;color:#1A1A18;line-height:1.35;">${escapeHtml(subject)}</h2>
                     ${formatBody(body)}
                     ${mediaBlock(mediaUrls, mediaType, cFirst, viewUrl)}
+                    ${mediaType === "video" && viewUrl ? `
+                      <table cellpadding="0" cellspacing="0" style="margin:16px 0 0;">
+                        <tr>
+                          <td style="background:#4A5E4C;border-radius:12px;">
+                            <a href="${escapeHtml(viewUrl)}" style="display:inline-block;padding:15px 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
+                              Watch full video
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    ` : ""}
                   </td>
                 </tr>
               </table>
@@ -215,7 +235,7 @@ export function dispatchEmail({
     if (!mediaUrls || mediaUrls.length === 0) return "";
     if (mediaType === "photo") return `\n\n📷 Photo attached: ${mediaUrls.join(", ")}`;
     if (mediaType === "voice") return `\n\n🎙 Listen: ${mediaUrls.join(", ")}`;
-    if (mediaType === "video") return `\n\n▶ Watch: ${mediaUrls.join(", ")}`;
+    if (mediaType === "video") return `\n\n▶ Watch full video: ${viewUrl || mediaUrls[0]}`;
     return "";
   })();
 

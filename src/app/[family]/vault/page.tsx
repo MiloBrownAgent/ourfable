@@ -287,9 +287,14 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
           )}
 
           {entry.contentType === "photo" && (entry.mediaUrls && entry.mediaUrls.length > 0 ? (
-            <div style={{
+            <div
+              className="vault-dispatch-media"
+              style={{
               display: "flex", gap: 8, overflowX: "auto", marginTop: 6,
-              scrollbarWidth: "none", WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(107,143,111,0.72) rgba(255,255,255,0.04)",
+              WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+              paddingBottom: 8,
             }}>
               {entry.mediaUrls.map((url, idx) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -1243,6 +1248,22 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       padding: "40px 24px calc(80px + env(safe-area-inset-bottom, 0px))",
       position: "relative",
     }}>
+      <style>{`
+        .vault-dispatch-media::-webkit-scrollbar {
+          height: 10px;
+        }
+
+        .vault-dispatch-media::-webkit-scrollbar-track {
+          background: rgba(255,255,255,0.04);
+          border-radius: 999px;
+        }
+
+        .vault-dispatch-media::-webkit-scrollbar-thumb {
+          background: linear-gradient(90deg, rgba(107,143,111,0.92) 0%, rgba(74,94,76,0.92) 100%);
+          border-radius: 999px;
+          border: 2px solid rgba(20,32,22,0.92);
+        }
+      `}</style>
       {/* Ambient gold glow */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
