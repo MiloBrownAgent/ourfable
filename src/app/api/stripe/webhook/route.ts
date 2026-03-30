@@ -406,6 +406,9 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error(`[webhook] Error handling ${event.type}:`, err);
+    if (event.type === "checkout.session.completed") {
+      return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
+    }
     return NextResponse.json({ received: true, warning: "Handler error — check logs" });
   }
 
@@ -529,6 +532,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     existingVaultFamily?.familyId ??
     `${firstNameSlug}-${Date.now().toString(36)}`;
 
+  console.log(`[webhook] handleCheckoutCompleted start — email=${normalizedEmail} familyId=${familyId}`);
+
   const stripeCustomerId =
     typeof session.customer === "string"
       ? session.customer
@@ -558,65 +563,73 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // 2. Register account first so the post-checkout login flow does not depend on slower side effects.
   let passwordHash = "";
   let requiresPasswordSetupEmail = false;
-  if (meta.signup_token) {
-    const signupData = await internalConvexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
-      passwordHash: string;
-      consumed?: boolean;
-      expiresAt: number;
-    } | null;
-    if (signupData && !signupData.consumed && Date.now() < signupData.expiresAt) {
-      passwordHash = signupData.passwordHash;
-      // Consume and delete the token
-      await internalConvexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
+  try {
+    if (meta.signup_token) {
+      const signupData = await internalConvexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
+        passwordHash: string;
+        consumed?: boolean;
+        expiresAt: number;
+      } | null;
+      if (signupData && !signupData.consumed && Date.now() < signupData.expiresAt) {
+        passwordHash = signupData.passwordHash;
+        // Consume and delete the token
+        await internalConvexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
+      }
     }
-  }
 
-  if (!hasUsablePasswordHash(passwordHash)) {
-    requiresPasswordSetupEmail = true;
-    passwordHash = hashPassword(crypto.randomBytes(32).toString("hex"));
-    console.warn(`[webhook] signup_token missing/expired for ${normalizedEmail}; creating account with password-setup fallback`);
-  }
+    if (!hasUsablePasswordHash(passwordHash)) {
+      requiresPasswordSetupEmail = true;
+      passwordHash = hashPassword(crypto.randomBytes(32).toString("hex"));
+      console.warn(`[webhook] signup_token missing/expired for ${normalizedEmail}; creating account with password-setup fallback`);
+    }
 
-  if (existingAccount) {
-    await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
-      email: normalizedEmail,
-      passwordHash,
-      passwordChangedAt: Date.now(),
-    });
-
-    const existingUser = await internalConvexQuery<{ _id: string } | null>(
-      "ourfable:getOurFableUserByEmail",
-      { email: normalizedEmail }
-    ).catch(() => null);
-
-    if (existingUser) {
-      await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
+    if (existingAccount) {
+      await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
         email: normalizedEmail,
         passwordHash,
         passwordChangedAt: Date.now(),
       });
+
+      const existingUser = await internalConvexQuery<{ _id: string } | null>(
+        "ourfable:getOurFableUserByEmail",
+        { email: normalizedEmail }
+      ).catch(() => null);
+
+      if (existingUser) {
+        await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
+          email: normalizedEmail,
+          passwordHash,
+          passwordChangedAt: Date.now(),
+        });
+      } else {
+        await internalConvexMutation("ourfable:createOurFableUser", {
+          email: normalizedEmail,
+          passwordHash,
+          passwordChangedAt: Date.now(),
+          familyId,
+          name: parentNames ?? "Parent",
+          role: "owner",
+        });
+      }
     } else {
-      await internalConvexMutation("ourfable:createOurFableUser", {
+      await addAccount({
         email: normalizedEmail,
         passwordHash,
-        passwordChangedAt: Date.now(),
         familyId,
-        name: parentNames ?? "Parent",
-        role: "owner",
+        childName,
+        parentNames: parentNames ?? "",
+        planType,
+        stripeCustomerId,
+        stripeSubscriptionId,
+        birthDate: childDob,
       });
     }
-  } else {
-    await addAccount({
-      email: normalizedEmail,
-      passwordHash,
-      familyId,
-      childName,
-      parentNames: parentNames ?? "",
-      planType,
-      stripeCustomerId,
-      stripeSubscriptionId,
-      birthDate: childDob,
-    });
+  } catch (err) {
+    console.error(
+      `[webhook] handleCheckoutCompleted account creation failed — email=${normalizedEmail} familyId=${familyId}`,
+      err
+    );
+    throw err;
   }
 
   console.log(`[webhook] ✅ Family created: familyId=${familyId} email=${normalizedEmail} planType=${planType} billing=${resolvedPlan}`);
@@ -719,6 +732,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   ).catch((err) => {
     console.warn("[webhook] Welcome email failed (non-fatal):", err);
   });
+
+  console.log(`[webhook] handleCheckoutCompleted complete — email=${normalizedEmail} familyId=${familyId}`);
 }
 
 
