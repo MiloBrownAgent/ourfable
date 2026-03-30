@@ -9,10 +9,6 @@ function getStripe() {
   return new Stripe(key, { apiVersion: "2026-02-25.clover" });
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -33,18 +29,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Checkout session missing email" }, { status: 400 });
     }
 
-    let account = null;
-    for (let attempt = 0; attempt < 6; attempt++) {
-      account = await getAccount(email);
-      if (account?.familyId) break;
-      await sleep(1000);
-    }
+    const account = await getAccount(email);
 
     if (!account?.familyId) {
       return NextResponse.json(
         {
           error: "Account is still being provisioned",
           pending: true,
+          retryAfterMs: 1000,
           childName: meta.childName ?? "your child",
           childDob: meta.childDob ?? "",
         },

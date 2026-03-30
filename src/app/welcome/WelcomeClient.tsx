@@ -205,6 +205,7 @@ function VaultEntryCard({ entry, visible, dob }: { entry: SampleEntry; visible: 
 // ─── Main Welcome Experience ────────────────────────────────────────────────
 
 type Phase = "loading" | "reveal" | "vault" | "cta";
+const MAX_PROVISIONING_ATTEMPTS = 15;
 
 export default function WelcomeClient() {
   const params = useSearchParams();
@@ -226,6 +227,9 @@ export default function WelcomeClient() {
   const [voiceCounter, setVoiceCounter] = useState(0);
   const [showFinalText, setShowFinalText] = useState(false);
   const [skipped, setSkipped] = useState(false);
+  const [loadingAttempt, setLoadingAttempt] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState("Preparing your vault...");
+  const [loadingError, setLoadingError] = useState("");
   const vaultRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<{ timers: ReturnType<typeof setTimeout>[] }>({ timers: [] });
 
@@ -266,34 +270,47 @@ export default function WelcomeClient() {
       }
 
       try {
-        for (let attempt = 0; attempt < 8; attempt++) {
+        for (let attempt = 0; attempt < MAX_PROVISIONING_ATTEMPTS; attempt++) {
+          setLoadingAttempt(attempt + 1);
+
           const res = await fetch("/api/auth/session-from-stripe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ session_id: sessionId }),
           });
 
+          const d = await res.json().catch(() => ({}));
+
           if (res.ok) {
-            const d = await res.json();
             setChildName(d.childName || childParam || "your child");
             setChildDob(d.childDob || dobParam || "");
             setFamilyId(d.familyId || "");
+            setLoadingError("");
             setPhase("reveal");
             return;
           }
 
-          if (res.status !== 409) {
+          if (res.status === 409) {
+            setLoadingMessage(
+              attempt < 5
+                ? "Preparing your vault..."
+                : attempt < 10
+                  ? "Finalizing your account..."
+                  : "Still provisioning your vault..."
+            );
+          } else {
+            setLoadingError(d.error || "We couldn't finish setting up your vault.");
             break;
           }
 
-          if (attempt < 7) {
+          if (attempt < MAX_PROVISIONING_ATTEMPTS - 1) {
             await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
 
-        router.replace("/login");
+        setLoadingError("Your payment went through, but setup is taking longer than expected. Please use the link in your welcome email or try logging in again in a minute.");
       } catch {
-        router.replace("/login");
+        setLoadingError("We couldn't confirm your vault setup right now. Please try again in a minute or use the link in your welcome email.");
       }
     }
     load();
@@ -377,9 +394,83 @@ export default function WelcomeClient() {
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
         background: BG,
       }}>
-        <p style={{ fontSize: 13, color: "rgba(253,251,247,0.4)", fontFamily: "var(--font-body)" }}>
-          Preparing your vault…
-        </p>
+        <div style={{ width: "min(320px, calc(100vw - 48px))", textAlign: "center" }}>
+          <p style={{ fontSize: 13, color: "rgba(253,251,247,0.4)", fontFamily: "var(--font-body)", margin: 0 }}>
+            {loadingMessage}
+          </p>
+          <div style={{
+            width: "100%",
+            height: 2,
+            marginTop: 14,
+            borderRadius: 999,
+            background: "rgba(253,251,247,0.08)",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              width: `${Math.max((loadingAttempt / MAX_PROVISIONING_ATTEMPTS) * 100, 8)}%`,
+              height: "100%",
+              borderRadius: 999,
+              background: "rgba(200,168,122,0.72)",
+              transition: "width 300ms ease",
+            }} />
+          </div>
+          {!loadingError ? (
+            <p style={{
+              fontSize: 11,
+              color: "rgba(253,251,247,0.26)",
+              fontFamily: "var(--font-body)",
+              margin: "10px 0 0",
+            }}>
+              This usually takes a few seconds.
+            </p>
+          ) : (
+            <>
+              <p style={{
+                fontSize: 12,
+                lineHeight: 1.6,
+                color: "rgba(253,251,247,0.72)",
+                fontFamily: "var(--font-body)",
+                margin: "16px 0 0",
+              }}>
+                {loadingError}
+              </p>
+              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
+                <button
+                  onClick={() => window.location.reload()}
+                  style={{
+                    background: "rgba(200,168,122,0.14)",
+                    border: "1px solid rgba(200,168,122,0.35)",
+                    color: "#FDFBF7",
+                    fontSize: 12,
+                    padding: "10px 16px",
+                    borderRadius: 999,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-body)",
+                  }}
+                >
+                  Try again
+                </button>
+                <Link
+                  href="/login"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "10px 16px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(253,251,247,0.14)",
+                    color: "rgba(253,251,247,0.78)",
+                    textDecoration: "none",
+                    fontSize: 12,
+                    fontFamily: "var(--font-body)",
+                  }}
+                >
+                  Go to login
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -497,7 +588,7 @@ export default function WelcomeClient() {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
-            {entries.slice(0, visibleCount).map((entry, i) => (
+            {entries.slice(0, visibleCount).map((entry) => (
               <VaultEntryCard key={entry.id} entry={entry} visible={true} dob={childDob} />
             ))}
           </div>

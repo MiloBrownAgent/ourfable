@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import crypto from "node:crypto";
 import { addAccount, hashPassword } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { convexMutation } from "@/lib/convex";
 import { escapeHtml } from "@/lib/email-templates/escape-html";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
@@ -554,18 +555,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.warn(`[webhook] Reusing existing vault family for ${normalizedEmail}: familyId=${familyId}`);
   }
 
-  // 2. Seed default content
-  await convexMutation("ourfable:seedCircle", { familyId }).catch((err) => {
-    console.warn("[webhook] seedCircle failed (non-fatal):", err);
-  });
-  await convexMutation("ourfable:seedMilestones", { familyId }).catch((err) => {
-    console.warn("[webhook] seedMilestones failed (non-fatal):", err);
-  });
-  await convexMutation("ourfable:seedFirstLetter", { familyId }).catch((err) => {
-    console.warn("[webhook] seedFirstLetter failed (non-fatal):", err);
-  });
-
-  // 3. Register account — retrieve password hash from Convex signup token (C4 security fix)
+  // 2. Register account first so the post-checkout login flow does not depend on slower side effects.
   let passwordHash = "";
   let requiresPasswordSetupEmail = false;
   if (meta.signup_token) {
@@ -631,7 +621,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   console.log(`[webhook] ✅ Family created: familyId=${familyId} email=${normalizedEmail} planType=${planType} billing=${resolvedPlan}`);
 
-  // 3b. Save facilitator info + dead man's switch preference
+  // 3. Seed default content after the account is ready.
+  await convexMutation("ourfable:seedCircle", { familyId }).catch((err) => {
+    console.warn("[webhook] seedCircle failed (non-fatal):", err);
+  });
+  await convexMutation("ourfable:seedMilestones", { familyId }).catch((err) => {
+    console.warn("[webhook] seedMilestones failed (non-fatal):", err);
+  });
+  await convexMutation("ourfable:seedFirstLetter", { familyId }).catch((err) => {
+    console.warn("[webhook] seedFirstLetter failed (non-fatal):", err);
+  });
+
+  // 4. Save facilitator info + dead man's switch preference
   const {
     facilitator1Name, facilitator1Email, facilitator1Relationship,
     facilitator2Name, facilitator2Email, facilitator2Relationship,
@@ -662,7 +663,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.warn("[webhook] updateOurFableLapseNotification failed (non-fatal):", err);
   });
 
-  // 3c. Create delivery milestones
+  // 5. Create delivery milestones
   if (childDob) {
     await convexMutation("ourfable:createOurFableDeliveryMilestones", {
       familyId,
@@ -672,7 +673,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
   }
 
-  // 4. Send welcome email
+  // 6. Send welcome email
   const childFirst = childName.split(" ")[0];
   if (requiresPasswordSetupEmail) {
     await sendPasswordSetupEmail(normalizedEmail).catch((err) => {
@@ -723,7 +724,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
   const meta = session.metadata ?? {};
-  const { giftCode, recipientEmail, gifterName, gifterEmail, gifterMessage, planType, billingPeriod } = meta;
+  const { giftCode, recipientEmail, gifterName, gifterEmail, gifterMessage, planType } = meta;
 
   if (!giftCode || !recipientEmail || !gifterName) {
     console.error("[webhook] gift checkout — missing metadata", meta);
