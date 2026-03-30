@@ -7,7 +7,7 @@ import { CookieBanner } from "../components/CookieBanner";
 import "./globals.css";
 
 const playfair = localFont({
-  src: "../../public/playfair-800.ttf",
+  src: "../../public/playfair-800.woff2",
   variable: "--font-playfair",
   weight: "800",
   display: "swap",
