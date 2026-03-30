@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { verifyPassword, hashPassword } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
 
 export async function POST(req: NextRequest) {
   const sessionToken = req.cookies.get(COOKIE)?.value;
@@ -21,8 +22,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Both current and new password are required" }, { status: 400 });
   }
 
-  if (newPassword.length < 8) {
-    return NextResponse.json({ error: "New password must be at least 8 characters" }, { status: 400 });
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json({ error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` }, { status: 400 });
   }
 
   const family = await internalConvexQuery<{
@@ -49,14 +50,17 @@ export async function POST(req: NextRequest) {
 
   // Hash new password and update
   const newHash = hashPassword(newPassword);
+  const passwordChangedAt = Date.now();
   await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
     email: family.email,
     passwordHash: newHash,
+    passwordChangedAt,
   });
   if (user) {
     await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
       email: user.email,
       passwordHash: newHash,
+      passwordChangedAt,
     });
   }
 

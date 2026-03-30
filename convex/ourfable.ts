@@ -483,6 +483,9 @@ export const submitContribution = internalMutation({
     prompt: v.optional(v.string()),
     mediaStorageId: v.optional(v.string()),
     mediaMimeType: v.optional(v.string()),
+    mediaEncryptionIv: v.optional(v.string()),
+    mediaEncryptionTag: v.optional(v.string()),
+    mediaEncryptionVersion: v.optional(v.number()),
     contentType: v.optional(v.string()),
     // Encryption fields (client-side encrypted)
     encryptedBody: v.optional(v.string()),
@@ -524,6 +527,11 @@ export const submitContribution = internalMutation({
         type: vaultType,
         content: args.encryptedBody ? undefined : args.body,
         mediaUrl: resolvedMediaUrl,
+        mediaStorageId: args.mediaStorageId,
+        mediaMimeType: args.mediaMimeType,
+        mediaEncryptionIv: args.mediaEncryptionIv,
+        mediaEncryptionTag: args.mediaEncryptionTag,
+        mediaEncryptionVersion: args.mediaEncryptionVersion,
         authorEmail: member.email ?? "circle@ourfable.ai",
         authorName: member.name,
         isSealed: !isOpen,
@@ -748,6 +756,9 @@ export const submitVaultEntry = internalMutation({
     videoUrl: v.optional(v.string()),
     mediaStorageId: v.optional(v.string()),
     mediaMimeType: v.optional(v.string()),
+    mediaEncryptionIv: v.optional(v.string()),
+    mediaEncryptionTag: v.optional(v.string()),
+    mediaEncryptionVersion: v.optional(v.number()),
     openOn: v.optional(v.string()),
     unlocksAtAge: v.optional(v.number()),
     unlocksAtEvent: v.optional(v.string()),
@@ -875,6 +886,9 @@ export const sealParentLetter = internalMutation({
     body: v.optional(v.string()),
     mediaStorageId: v.optional(v.string()),
     mediaMimeType: v.optional(v.string()),
+    mediaEncryptionIv: v.optional(v.string()),
+    mediaEncryptionTag: v.optional(v.string()),
+    mediaEncryptionVersion: v.optional(v.number()),
     // Encryption fields (client-side encrypted)
     encryptedBody: v.optional(v.string()),
     contentHash: v.optional(v.string()),
@@ -902,6 +916,11 @@ export const sealParentLetter = internalMutation({
       contentHash: args.contentHash,
       encryptionVersion: args.encryptionVersion,
       mediaUrl,
+      mediaStorageId: args.mediaStorageId,
+      mediaMimeType: args.mediaMimeType,
+      mediaEncryptionIv: args.mediaEncryptionIv,
+      mediaEncryptionTag: args.mediaEncryptionTag,
+      mediaEncryptionVersion: args.mediaEncryptionVersion,
       authorEmail: family.parentEmail ?? "parent@ourfable.ai",
       authorName: args.memberName || "Parent",
       isSealed: args.isSealed,
@@ -2000,6 +2019,7 @@ export const createOurFableFamily = internalMutation({
       stripeCustomerId: args.stripeCustomerId,
       stripeSubscriptionId: args.stripeSubscriptionId,
       subscriptionStatus: args.subscriptionStatus ?? "active",
+      passwordChangedAt: Date.now(),
       birthDate: args.birthDate,
       createdAt: Date.now(),
     });
@@ -2103,6 +2123,7 @@ export const updateOurFablePasswordHash = internalMutation({
   args: {
     email: v.string(),
     passwordHash: v.string(),
+    passwordChangedAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const family = await ctx.db
@@ -2110,7 +2131,10 @@ export const updateOurFablePasswordHash = internalMutation({
       .withIndex("by_email", (q) => q.eq("email", args.email))
       .first();
     if (!family) return null;
-    await ctx.db.patch(family._id, { passwordHash: args.passwordHash });
+    await ctx.db.patch(family._id, {
+      passwordHash: args.passwordHash,
+      ...(args.passwordChangedAt !== undefined ? { passwordChangedAt: args.passwordChangedAt } : {}),
+    });
     return family._id;
   },
 });
@@ -2371,6 +2395,25 @@ export const listOurFableDispatches = internalQuery({
   },
 });
 
+export const consumeBirthdayReminderDispatch = internalMutation({
+  args: { familyId: v.string(), token: v.string() },
+  handler: async (ctx, { familyId, token }) => {
+    const dispatch = await ctx.db
+      .query("ourfable_dispatches")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("type"), "birthday_reminder_token"),
+          q.eq(q.field("content"), token)
+        )
+      )
+      .first();
+    if (!dispatch || dispatch.usedAt) return null;
+    await ctx.db.patch(dispatch._id, { usedAt: Date.now() });
+    return dispatch._id;
+  },
+});
+
 // ── Password Reset ─────────────────────────────────────────────────────────────
 
 export const createPasswordReset = internalMutation({
@@ -2421,14 +2464,18 @@ export const updateOurFablePassword = internalMutation({
   args: {
     email: v.string(),
     passwordHash: v.string(),
+    passwordChangedAt: v.optional(v.number()),
   },
-  handler: async (ctx, { email, passwordHash }) => {
+  handler: async (ctx, { email, passwordHash, passwordChangedAt }) => {
     const family = await ctx.db
       .query("ourfable_families")
       .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
       .first();
     if (!family) throw new Error("Account not found");
-    await ctx.db.patch(family._id, { passwordHash });
+    await ctx.db.patch(family._id, {
+      passwordHash,
+      ...(passwordChangedAt !== undefined ? { passwordChangedAt } : {}),
+    });
   },
 });
 
@@ -2833,6 +2880,20 @@ export const getPromptSkipStats = internalQuery({
     return Object.entries(stats)
       .sort((a, b) => b[1] - a[1])
       .map(([prompt, count]) => ({ prompt, skipCount: count }));
+  },
+});
+
+export const getPromptSkipByMemberAndPrompt = internalQuery({
+  args: {
+    memberId: v.string(),
+    promptId: v.optional(v.string()),
+  },
+  handler: async (ctx, { memberId, promptId }) => {
+    const skips = await ctx.db
+      .query("ourfable_prompt_skips")
+      .withIndex("by_memberId", (q) => q.eq("memberId", memberId))
+      .collect();
+    return skips.find((skip) => (skip.promptId ?? "") === (promptId ?? "")) ?? null;
   },
 });
 
@@ -4409,6 +4470,7 @@ export const createOurFableUser = internalMutation({
   args: {
     email: v.string(),
     passwordHash: v.string(),
+    passwordChangedAt: v.optional(v.number()),
     familyId: v.string(),
     name: v.string(),
     role: v.union(v.literal("owner"), v.literal("parent")),
@@ -4432,6 +4494,7 @@ export const createOurFableUser = internalMutation({
     return await ctx.db.insert("ourfable_users", {
       email: args.email.toLowerCase(),
       passwordHash: args.passwordHash,
+      passwordChangedAt: args.passwordChangedAt ?? Date.now(),
       familyId: args.familyId,
       name: args.name,
       role: args.role,
@@ -4481,6 +4544,7 @@ export const updateOurFableUserPasswordHash = internalMutation({
   args: {
     email: v.string(),
     passwordHash: v.string(),
+    passwordChangedAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -4488,7 +4552,10 @@ export const updateOurFableUserPasswordHash = internalMutation({
       .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
       .first();
     if (!user) return null;
-    await ctx.db.patch(user._id, { passwordHash: args.passwordHash });
+    await ctx.db.patch(user._id, {
+      passwordHash: args.passwordHash,
+      ...(args.passwordChangedAt !== undefined ? { passwordChangedAt: args.passwordChangedAt } : {}),
+    });
     return user._id;
   },
 });

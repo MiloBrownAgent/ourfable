@@ -5,6 +5,8 @@
  */
 
 import { convexQuery, convexMutation } from "@/lib/convex";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
+import { escapeHtml } from "@/lib/email-templates/escape-html";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -25,20 +27,17 @@ interface Family {
 
 async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
   if (!RESEND_API_KEY) return;
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-    body: JSON.stringify({
-      from: "Our Fable <hello@ourfable.ai>",
-      to,
-      subject,
-      html,
-      headers: {
-        "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-      },
-    }),
-  });
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+      body: JSON.stringify({
+        from: "Our Fable <hello@ourfable.ai>",
+        to,
+        subject,
+        html,
+        headers: buildUnsubscribeHeaders(to),
+      }),
+    });
 }
 
 function warningEmailHtml({
@@ -64,7 +63,7 @@ function warningEmailHtml({
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
-  <title>${headline}</title>
+  <title>${escapeHtml(headline)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F5F2ED;-webkit-text-size-adjust:100%;">
   <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#F5F2ED" style="background-color:#F5F2ED;padding:48px 20px 56px;">
@@ -89,10 +88,10 @@ function warningEmailHtml({
                 <tr>
                   <td style="padding:40px 40px 32px;">
                     <p style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:400;color:#1A1A1A;line-height:1.3;">
-                      ${headline}
+                      ${escapeHtml(headline)}
                     </p>
                     <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.75;">
-                      ${body}
+                      ${escapeHtml(body)}
                     </p>
                     <table cellpadding="0" cellspacing="0">
                       <tr>
@@ -114,7 +113,7 @@ function warningEmailHtml({
                 Our Fable &middot; ourfable.ai
               </p>
               <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;">
-                <a href="https://ourfable.ai/unsubscribe" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a>
+                <a href="${escapeHtml(buildUnsubscribeUrl(to))}" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a>
               </p>
             </td>
           </tr>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
+import { createSession, verifyPreAuthChallenge, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decryptTOTPSecret } from "@/lib/totp-encryption";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
@@ -10,8 +10,8 @@ const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
 /**
  * HMAC-sign a device token to prevent forgery (H2 fix).
  */
-function createDeviceToken(familyId: string): string {
-  const payload = `${familyId}:${Date.now()}`;
+function createDeviceToken(userId: string, familyId: string): string {
+  const payload = `${userId}:${familyId}:${Date.now()}`;
   const hmac = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
   return `${Buffer.from(payload).toString("base64url")}.${hmac}`;
 }
@@ -19,12 +19,13 @@ function createDeviceToken(familyId: string): string {
 /**
  * Verify an HMAC-signed device token (H2 fix).
  */
-function verifyDeviceToken(token: string, expectedFamilyId: string): boolean {
+function verifyDeviceToken(token: string, expectedUserId: string, expectedFamilyId: string): boolean {
   try {
     const [payloadB64, sig] = token.split(".");
     if (!payloadB64 || !sig) return false;
     const payload = Buffer.from(payloadB64, "base64url").toString();
-    const [familyId, tsStr] = payload.split(":");
+    const [userId, familyId, tsStr] = payload.split(":");
+    if (userId !== expectedUserId) return false;
     if (familyId !== expectedFamilyId) return false;
     const ts = parseInt(tsStr);
     if (isNaN(ts) || Date.now() - ts > 30 * 24 * 60 * 60 * 1000) return false; // expired
@@ -38,11 +39,16 @@ function verifyDeviceToken(token: string, expectedFamilyId: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const { familyId, code, rememberDevice, email: loginEmail } = await req.json();
+  const { familyId, code, rememberDevice, email: loginEmail, challengeToken } = await req.json();
   const normalizedLoginEmail = typeof loginEmail === "string" ? loginEmail.toLowerCase().trim() : undefined;
 
-  if (!familyId || !code) {
+  if (!familyId || !code || !challengeToken || typeof challengeToken !== "string") {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  const challenge = await verifyPreAuthChallenge(challengeToken);
+  if (!challenge || challenge.familyId !== familyId || challenge.email !== normalizedLoginEmail) {
+    return NextResponse.json({ error: "Invalid or expired 2FA challenge" }, { status: 401 });
   }
 
   // H1: Convex-backed rate limiting for 2FA
@@ -64,6 +70,7 @@ export async function POST(req: NextRequest) {
   let userId: string | undefined;
   let userName: string | undefined;
   let userEmail: string | undefined;
+  let passwordChangedAt: number | undefined;
 
   if (normalizedLoginEmail) {
     const user = await internalConvexQuery<{
@@ -71,6 +78,7 @@ export async function POST(req: NextRequest) {
       familyId: string;
       totpSecret?: string;
       totpEnabled?: boolean;
+      passwordChangedAt?: number;
       name: string;
       email: string;
     } | null>("ourfable:getOurFableUserByEmail", { email: normalizedLoginEmail });
@@ -79,14 +87,23 @@ export async function POST(req: NextRequest) {
       userId = user._id;
       userName = user.name;
       userEmail = user.email;
+      passwordChangedAt = user.passwordChangedAt;
     }
   }
 
   if (!twoFA) {
-    twoFA = await internalConvexQuery<{
+    const familyTwoFA = await internalConvexQuery<{
       totpSecret?: string;
       totpEnabled: boolean;
     } | null>("ourfable:getOurFable2FAStatus", { familyId });
+    twoFA = familyTwoFA;
+    if (!userId) {
+      const family = await internalConvexQuery<{ passwordChangedAt?: number } | null>(
+        "ourfable:getOurFableFamilyById",
+        { familyId }
+      ).catch(() => null);
+      passwordChangedAt = family?.passwordChangedAt;
+    }
   }
 
   if (!twoFA?.totpSecret || !twoFA.totpEnabled) {
@@ -137,6 +154,7 @@ export async function POST(req: NextRequest) {
     userId,
     email: userEmail ?? normalizedLoginEmail,
     name: userName,
+    passwordChangedAt: Math.floor((passwordChangedAt ?? Date.now()) / 1000),
   });
   const redirectPath = `/${familyId}`;
 
@@ -151,7 +169,10 @@ export async function POST(req: NextRequest) {
 
   // H2: HMAC-signed device token (prevents forgery)
   if (rememberDevice) {
-    const deviceToken = createDeviceToken(familyId);
+    if (!userId) {
+      return NextResponse.json({ error: "Remembered devices require a user account" }, { status: 400 });
+    }
+    const deviceToken = createDeviceToken(userId, familyId);
     res.cookies.set("ourfable_2fa_device", deviceToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

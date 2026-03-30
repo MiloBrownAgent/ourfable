@@ -7,6 +7,7 @@ import {
   ChevronRight, AlertTriangle, Sparkles, Download, Trash2,
   Users, Lock, Smartphone, Gift, Clock, Baby, Plus,
 } from "lucide-react";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -277,7 +278,7 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
   async function handleChangePassword() {
     setPwError("");
     if (newPw !== confirmPw) { setPwError("Passwords don't match"); return; }
-    if (newPw.length < 8) { setPwError("Password must be at least 8 characters"); return; }
+    if (newPw.length < MIN_PASSWORD_LENGTH) { setPwError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`); return; }
 
     setSavingPw(true);
     const res = await apiPost("/api/auth/change-password", { currentPassword: currentPw, newPassword: newPw });
@@ -756,7 +757,7 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
                 onChange={(e) => setCurrentPw(e.target.value)} style={inputStyle}
               />
               <input
-                type="password" placeholder="New password (min 8 chars)" value={newPw}
+                type="password" placeholder={`New password (min ${MIN_PASSWORD_LENGTH} chars)`} value={newPw}
                 onChange={(e) => setNewPw(e.target.value)} style={inputStyle}
               />
               <input

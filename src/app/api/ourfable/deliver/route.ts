@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery, convexMutation } from "@/lib/convex";
+import { escapeHtml } from "@/lib/email-templates/escape-html";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -96,10 +98,7 @@ export async function POST(req: NextRequest) {
         from: "Our Fable <hello@ourfable.ai>",
         to: childEmail,
         subject: "Someone's been writing to you",
-        headers: {
-          "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-        },
+        headers: buildUnsubscribeHeaders(childEmail),
         html: `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#0D0F0B;">
@@ -117,7 +116,7 @@ export async function POST(req: NextRequest) {
             <p style="margin:0 0 32px;font-family:Georgia,serif;font-size:32px;color:#F5F2ED;line-height:1.3;letter-spacing:-0.01em;">Someone&rsquo;s been writing to you.</p>
             <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:rgba(245,242,237,0.7);line-height:1.8;">Before you could read. Before you could walk. Before you knew any of their names — the people who love you most have been leaving you letters, photos, and voice memos.</p>
             <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:rgba(245,242,237,0.7);line-height:1.8;">They sealed them away, waiting for this exact moment.</p>
-            <p style="margin:0 0 40px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:rgba(245,242,237,0.7);line-height:1.8;">Your vault is ready, ${childFirst}.</p>
+            <p style="margin:0 0 40px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:rgba(245,242,237,0.7);line-height:1.8;">Your vault is ready, ${escapeHtml(childFirst)}.</p>
             <table cellpadding="0" cellspacing="0" width="100%"><tr><td align="center">
               <a href="https://ourfable.ai/delivery/${token}" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#4A5E4C,#6B8F6F);color:#F5F2ED;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;letter-spacing:0.02em;">Open your vault</a>
             </td></tr></table>
@@ -125,7 +124,7 @@ export async function POST(req: NextRequest) {
         </td></tr>
         <tr><td align="center" style="padding-top:32px;">
           <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:rgba(245,242,237,0.3);">Our Fable · New York, NY</p>
-          <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:rgba(245,242,237,0.2);"><a href="https://ourfable.ai/unsubscribe" style="color:rgba(245,242,237,0.2);text-decoration:underline;">Unsubscribe</a></p>
+          <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:rgba(245,242,237,0.2);"><a href="${buildUnsubscribeUrl(childEmail)}" style="color:rgba(245,242,237,0.2);text-decoration:underline;">Unsubscribe</a></p>
         </td></tr>
       </table>
     </td></tr>

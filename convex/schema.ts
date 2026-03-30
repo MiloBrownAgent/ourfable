@@ -175,6 +175,9 @@ export default defineSchema({
     videoUrl: v.optional(v.string()),
     mediaStorageId: v.optional(v.string()),
     mediaMimeType: v.optional(v.string()),
+    mediaEncryptionIv: v.optional(v.string()),
+    mediaEncryptionTag: v.optional(v.string()),
+    mediaEncryptionVersion: v.optional(v.number()),
     openOn: v.optional(v.string()),
     unlocksAtAge: v.optional(v.number()),
     unlocksAtEvent: v.optional(v.string()),
@@ -430,6 +433,7 @@ export default defineSchema({
     stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
     subscriptionStatus: v.string(),
+    passwordChangedAt: v.optional(v.number()),
     birthDate: v.optional(v.string()),
     parentNames: v.optional(v.string()),
     storageUsedBytes: v.optional(v.number()),
@@ -519,6 +523,11 @@ export default defineSchema({
     content: v.optional(v.string()),
     mediaUrl: v.optional(v.string()),
     mediaUrls: v.optional(v.array(v.string())),
+    mediaStorageId: v.optional(v.string()),
+    mediaMimeType: v.optional(v.string()),
+    mediaEncryptionIv: v.optional(v.string()),
+    mediaEncryptionTag: v.optional(v.string()),
+    mediaEncryptionVersion: v.optional(v.number()),
     authorEmail: v.string(),
     authorName: v.string(),
     isSealed: v.boolean(),
@@ -582,6 +591,7 @@ export default defineSchema({
     recipientCount: v.optional(v.number()),
     sentAt: v.number(),
     viewToken: v.optional(v.string()), // public token for branded view page
+    usedAt: v.optional(v.number()),
   })
     .index("by_viewToken", ["viewToken"])
     .index("by_familyId", ["familyId"])
@@ -666,6 +676,7 @@ export default defineSchema({
   ourfable_users: defineTable({
     email: v.string(),
     passwordHash: v.string(),
+    passwordChangedAt: v.optional(v.number()),
     familyId: v.string(),
     name: v.string(),
     role: v.union(v.literal("owner"), v.literal("parent")),

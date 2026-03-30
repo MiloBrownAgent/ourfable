@@ -7,6 +7,7 @@ if (!SECRET) {
 }
 export const COOKIE = "ourfable_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
+export const PRE_AUTH_CHALLENGE_MAX_AGE = 60 * 5; // 5 minutes
 
 // ── HMAC helpers ──────────────────────────────────────────────────────────────
 
@@ -48,44 +49,106 @@ export interface SessionPayload {
   userId?: string;   // Convex _id of the ourfable_users record
   email?: string;
   name?: string;
+  passwordChangedAt: number;
   issuedAt: number;
   expiresAt: number;
 }
 
-export async function createSession(familyId: string, extra?: { userId?: string; email?: string; name?: string }): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const payload: SessionPayload = {
-    familyId,
-    userId: extra?.userId,
-    email: extra?.email,
-    name: extra?.name,
-    issuedAt: now,
-    expiresAt: now + SESSION_MAX_AGE,
-  };
+export interface PreAuthChallengePayload {
+  familyId: string;
+  email: string;
+  userId?: string;
+  issuedAt: number;
+  expiresAt: number;
+}
+
+async function encodeSignedPayload(payload: object): Promise<string> {
   const encoded = btoa(JSON.stringify(payload))
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   const sig = await sign(encoded);
   return `${encoded}.${sig}`;
 }
 
+async function decodeSignedPayload<T>(token: string): Promise<T | null> {
+  const dot = token.lastIndexOf(".");
+  if (dot === -1) return null;
+  const encoded = token.slice(0, dot);
+  const sig = token.slice(dot + 1);
+  const valid = await verify(encoded, sig);
+  if (!valid) return null;
+
+  const padded = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (padded.length % 4)) % 4;
+  return JSON.parse(atob(padded + "=".repeat(padding))) as T;
+}
+
+export async function createSession(
+  familyId: string,
+  extra?: { userId?: string; email?: string; name?: string; passwordChangedAt?: number }
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const payload: SessionPayload = {
+    familyId,
+    userId: extra?.userId,
+    email: extra?.email,
+    name: extra?.name,
+    passwordChangedAt: extra?.passwordChangedAt ?? Math.floor(Date.now() / 1000),
+    issuedAt: now,
+    expiresAt: now + SESSION_MAX_AGE,
+  };
+  return encodeSignedPayload(payload);
+}
+
+export async function createPreAuthChallenge(
+  familyId: string,
+  email: string,
+  userId?: string
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  return encodeSignedPayload({
+    familyId,
+    email: email.toLowerCase().trim(),
+    userId,
+    issuedAt: now,
+    expiresAt: now + PRE_AUTH_CHALLENGE_MAX_AGE,
+  } satisfies PreAuthChallengePayload);
+}
+
+export async function verifyPreAuthChallenge(token: string): Promise<PreAuthChallengePayload | null> {
+  const payload = await decodeSignedPayload<PreAuthChallengePayload>(token);
+  if (!payload) return null;
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.expiresAt < now) return null;
+  return payload;
+}
+
 export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
-    const dot = token.lastIndexOf(".");
-    if (dot === -1) return null;
-    const encoded = token.slice(0, dot);
-    const sig = token.slice(dot + 1);
-
-    const valid = await verify(encoded, sig);
-    if (!valid) return null;
-
-    // Decode payload (add back base64 padding)
-    const padded = encoded.replace(/-/g, "+").replace(/_/g, "/");
-    const padding = (4 - (padded.length % 4)) % 4;
-    const payload: SessionPayload = JSON.parse(atob(padded + "=".repeat(padding)));
+    const payload = await decodeSignedPayload<SessionPayload>(token);
+    if (!payload) return null;
 
     // Check expiry
     const now = Math.floor(Date.now() / 1000);
     if (payload.expiresAt < now) return null;
+
+    const { internalConvexQuery } = await import("@/lib/convex-internal");
+    if (payload.userId) {
+      const user = await internalConvexQuery<{
+        passwordChangedAt?: number;
+      } | null>("ourfable:getOurFableUserById", { userId: payload.userId });
+      if (!user) return null;
+      const currentPasswordChangedAt = Math.floor((user.passwordChangedAt ?? 0) / 1000);
+      if (currentPasswordChangedAt !== payload.passwordChangedAt) return null;
+    } else {
+      const family = await internalConvexQuery<{
+        passwordChangedAt?: number;
+        deletedAt?: number;
+        status?: string;
+      } | null>("ourfable:getOurFableFamilyById", { familyId: payload.familyId });
+      if (!family || family.deletedAt || family.status === "deleted") return null;
+      const currentPasswordChangedAt = Math.floor((family.passwordChangedAt ?? 0) / 1000);
+      if (currentPasswordChangedAt !== payload.passwordChangedAt) return null;
+    }
 
     return payload;
   } catch { return null; }

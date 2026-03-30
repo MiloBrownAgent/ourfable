@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { foundingInviteEmail } from "@/lib/email-templates/founding-invite";
 import { convexQuery } from "@/lib/convex";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? process.env.RESEND_API_KEY ?? "";
 const ADMIN_SECRET = process.env.ADMIN_SECRET ?? "";
@@ -15,22 +16,19 @@ interface WaitlistEntry {
 async function sendEmail(to: string, subject: string, html: string, text: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
       from: "Our Fable <hello@ourfable.ai>",
-      to: [to],
-      subject,
-      html,
-      text,
-      headers: {
-        "List-Unsubscribe": `<https://ourfable.ai/unsubscribe?email=${encodeURIComponent(to)}>`,
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-      },
-    }),
-  });
+        to: [to],
+        subject,
+        html,
+        text,
+        headers: buildUnsubscribeHeaders(to),
+      }),
+    });
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Resend error: ${err}`);
@@ -81,6 +79,7 @@ export async function POST(req: NextRequest) {
             parentName: undefined, // waitlist doesn't store parent name
             childName: entry.childName,
             email: entry.email,
+            unsubscribeUrl: buildUnsubscribeUrl(entry.email),
           });
           await sendEmail(entry.email, subject, html, text);
           results.push({ email: entry.email, success: true });
@@ -105,6 +104,7 @@ export async function POST(req: NextRequest) {
       parentName,
       childName,
       email,
+      unsubscribeUrl: buildUnsubscribeUrl(email),
     });
 
     const info = await sendEmail(email, subject, html, text);

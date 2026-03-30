@@ -1,11 +1,16 @@
+import { escapeHtml } from "./escape-html";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
+
 export function foundingInviteEmail({
   parentName,
   childName,
   email,
+  unsubscribeUrl,
 }: {
   parentName?: string;
   childName?: string;
   email: string;
+  unsubscribeUrl?: string;
 }): { subject: string; html: string; text: string } {
   const name = parentName?.trim()?.split(/\s+/)[0] || "friend";
   const child = childName?.trim()?.split(/\s+/)[0];
@@ -14,6 +19,7 @@ export function foundingInviteEmail({
   const signupParams = new URLSearchParams({ founding: "true", email });
   if (childName) signupParams.set("child", childName.trim());
   const signupUrl = `https://ourfable.ai/signup?${signupParams.toString()}`;
+  const unsubscribeHref = unsubscribeUrl ?? buildUnsubscribeUrl(email);
 
   const ctaLabel = child ? `Create ${child}'s Fable →` : "Create Your Child's Fable →";
 
@@ -49,7 +55,7 @@ export function foundingInviteEmail({
               <!-- Headline -->
               <h1 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:800;line-height:1.15;letter-spacing:-0.02em;color:#1A1A18;">
                 It's time,<br />
-                <em style="color:#4A5E4C;font-style:italic;">${name}.</em>
+                <em style="color:#4A5E4C;font-style:italic;">${escapeHtml(name)}.</em>
               </h1>
 
               <!-- Opening -->
@@ -85,7 +91,7 @@ export function foundingInviteEmail({
               <!-- CTA -->
               <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.75;color:#4A4A45;">
                 ${child
-                  ? `${child}'s vault is waiting. Everything you write, everyone you invite — it all starts now.`
+                  ? `${escapeHtml(child)}'s vault is waiting. Everything you write, everyone you invite — it all starts now.`
                   : "Your child's vault is waiting. Everything you write, everyone you invite — it all starts now."
                 }
               </p>
@@ -94,7 +100,7 @@ export function foundingInviteEmail({
                 <tr>
                   <td style="background:#4A5E4C;border-radius:100px;padding:16px 36px;">
                     <a href="${signupUrl}" style="font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
-                      ${ctaLabel}
+                      ${escapeHtml(ctaLabel)}
                     </a>
                   </td>
                 </tr>
@@ -114,7 +120,7 @@ export function foundingInviteEmail({
               <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#9A9590;">
                 You're receiving this because you joined the Our Fable waitlist at
                 <a href="https://ourfable.ai" style="color:#9A9590;">ourfable.ai</a>.<br />
-                <a href="https://ourfable.ai/unsubscribe?email=${encodeURIComponent(email)}" style="color:#9A9590;text-decoration:underline;">Unsubscribe</a>
+                <a href="${escapeHtml(unsubscribeHref)}" style="color:#9A9590;text-decoration:underline;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -152,7 +158,7 @@ This link is unique to you. Takes about 3 minutes.
 —
 Our Fable · ourfable.ai · Private by design. For families. Not followers.
 You're receiving this because you joined the Our Fable waitlist.
-To unsubscribe: https://ourfable.ai/unsubscribe?email=${encodeURIComponent(email)}`;
+To unsubscribe: ${unsubscribeHref}`;
 
   return { subject, html, text };
 }

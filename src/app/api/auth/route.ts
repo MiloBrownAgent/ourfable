@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { createSession, COOKIE, SESSION_MAX_AGE, checkLoginRateLimit, clearLoginRateLimit, recordLoginFailure } from "@/lib/auth";
+import {
+  createSession,
+  createPreAuthChallenge,
+  COOKIE,
+  SESSION_MAX_AGE,
+  checkLoginRateLimit,
+  clearLoginRateLimit,
+  recordLoginFailure,
+} from "@/lib/auth";
 import { getAccount, verifyPassword, needsHashUpgrade, hashPassword } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
@@ -65,8 +73,9 @@ export async function POST(req: NextRequest) {
         const [payloadB64, sig] = deviceCookie.split(".");
         if (!payloadB64 || !sig) return false;
         const payload = Buffer.from(payloadB64, "base64url").toString();
-        const [devFamilyId, tsStr] = payload.split(":");
+        const [devUserId, devFamilyId, tsStr] = payload.split(":");
         if (devFamilyId !== account.familyId) return false;
+        if (devUserId !== (account.userId ?? "")) return false;
         const ts = parseInt(tsStr);
         if (isNaN(ts) || Date.now() - ts > 30 * 24 * 60 * 60 * 1000) return false;
         const expectedHmac = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
@@ -76,7 +85,17 @@ export async function POST(req: NextRequest) {
     })();
 
     if (!isRemembered) {
-      return NextResponse.json({ requires2fa: true, familyId: account.familyId, email: email.toLowerCase().trim() });
+      const challengeToken = await createPreAuthChallenge(
+        account.familyId,
+        email.toLowerCase().trim(),
+        account.userId
+      );
+      return NextResponse.json({
+        requires2fa: true,
+        familyId: account.familyId,
+        email: email.toLowerCase().trim(),
+        challengeToken,
+      });
     }
   }
 
@@ -153,6 +172,7 @@ export async function POST(req: NextRequest) {
     userId: account.userId,
     email: email.toLowerCase().trim(),
     name: account.userName ?? account.parentNames,
+    passwordChangedAt: Math.floor((account.passwordChangedAt ?? Date.now()) / 1000),
   });
   const redirectPath = `/${account.familyId}`;
 

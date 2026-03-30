@@ -319,7 +319,11 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     return 'letter'
   }
 
-  const uploadMedia = async (blob: Blob, mimeType: string): Promise<string | undefined> => {
+  const uploadMedia = async (
+    blob: Blob,
+    mimeType: string,
+    encryptionKey?: CryptoKey
+  ): Promise<{ storageId: string; iv?: string; tag?: string } | undefined> => {
     try {
       setUploadStatus('Preparing upload…')
       console.log(`[WritingBlock] Uploading ${mimeType}, size: ${(blob.size / 1024).toFixed(0)}KB`)
@@ -331,29 +335,37 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         return undefined
       }
 
-      // 1. Get presigned upload URL from Convex
-      const urlRes = await fetch('/api/ourfable/data', {
+      const encrypted = encryptionKey ? await encryptBlob(blob, encryptionKey) : null
+      const uploadBlob = encrypted ? new Blob([encrypted.data], { type: 'application/octet-stream' }) : blob
+      const uploadMimeType = encrypted ? 'application/octet-stream' : mimeType
+
+      // 1. Get presigned upload URL from dedicated route
+      const urlRes = await fetch('/api/ourfable/upload-media', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: 'ourfable:generateUploadUrl', args: {}, type: 'mutation' }),
+        body: JSON.stringify({}),
       })
       const urlData = await urlRes.json()
-      const uploadUrl = urlData.value as string
+      const uploadUrl = urlData.uploadUrl as string
       if (!uploadUrl) throw new Error('No upload URL')
 
       // 2. Upload file to Convex storage
-      const sizeMB = (blob.size / (1024 * 1024)).toFixed(1)
+      const sizeMB = (uploadBlob.size / (1024 * 1024)).toFixed(1)
       setUploadStatus(`Uploading ${sizeMB}MB…`)
 
       const uploadRes = await fetch(uploadUrl, {
         method: 'POST',
-        headers: { 'Content-Type': mimeType },
-        body: blob,
+        headers: { 'Content-Type': uploadMimeType },
+        body: uploadBlob,
       })
       const uploadData = await uploadRes.json()
       setUploadStatus('Saving…')
       console.log(`[WritingBlock] Upload complete, storageId: ${uploadData.storageId}`)
-      return uploadData.storageId
+      return {
+        storageId: uploadData.storageId,
+        iv: encrypted?.iv,
+        tag: encrypted?.tag,
+      }
     } catch (err) {
       console.error('[WritingBlock] Media upload failed:', err)
       setUploadStatus('')
@@ -375,16 +387,27 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       // Upload media if present
       let mediaStorageId: string | undefined
       let mediaMimeType: string | undefined
+      let mediaEncryptionIv: string | undefined
+      let mediaEncryptionTag: string | undefined
 
       if (videoBlob) {
         mediaMimeType = videoBlob.type || 'video/mp4'
-        mediaStorageId = await uploadMedia(videoBlob, mediaMimeType)
+        const upload = await uploadMedia(videoBlob, mediaMimeType, familyKey ?? undefined)
+        mediaStorageId = upload?.storageId
+        mediaEncryptionIv = upload?.iv
+        mediaEncryptionTag = upload?.tag
       } else if (audioBlob) {
         mediaMimeType = audioBlob.type || 'audio/mp4'
-        mediaStorageId = await uploadMedia(audioBlob, mediaMimeType)
+        const upload = await uploadMedia(audioBlob, mediaMimeType, familyKey ?? undefined)
+        mediaStorageId = upload?.storageId
+        mediaEncryptionIv = upload?.iv
+        mediaEncryptionTag = upload?.tag
       } else if (photos.length > 0 && photoFilesRef.current.length > 0) {
         mediaMimeType = photoFilesRef.current[0].type || 'image/jpeg'
-        mediaStorageId = await uploadMedia(photoFilesRef.current[0], mediaMimeType)
+        const upload = await uploadMedia(photoFilesRef.current[0], mediaMimeType, familyKey ?? undefined)
+        mediaStorageId = upload?.storageId
+        mediaEncryptionIv = upload?.iv
+        mediaEncryptionTag = upload?.tag
       }
 
       const contentType = getContentType()
@@ -414,6 +437,9 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       if (mediaStorageId) {
         entryArgs.mediaStorageId = mediaStorageId
         entryArgs.mediaMimeType = mediaMimeType
+        entryArgs.mediaEncryptionIv = mediaEncryptionIv
+        entryArgs.mediaEncryptionTag = mediaEncryptionTag
+        entryArgs.mediaEncryptionVersion = mediaEncryptionIv && mediaEncryptionTag ? 1 : undefined
       }
 
       const res = await fetch('/api/ourfable/data', {
@@ -465,7 +491,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
 
       if (videoBlob) {
         mediaType = 'video'
-        const storageId = await uploadMedia(videoBlob, videoBlob.type || 'video/mp4')
+        const upload = await uploadMedia(videoBlob, videoBlob.type || 'video/mp4')
+        const storageId = upload?.storageId
         if (storageId) {
           const urlRes = await fetch('/api/ourfable/data', {
             method: 'POST',
@@ -477,7 +504,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         }
       } else if (audioBlob) {
         mediaType = 'voice'
-        const storageId = await uploadMedia(audioBlob, audioBlob.type || 'audio/mp4')
+        const upload = await uploadMedia(audioBlob, audioBlob.type || 'audio/mp4')
+        const storageId = upload?.storageId
         if (storageId) {
           const urlRes = await fetch('/api/ourfable/data', {
             method: 'POST',
@@ -493,7 +521,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         for (let i = 0; i < totalPhotos; i++) {
           const file = photoFilesRef.current[i]
           setUploadStatus(`Uploading photo ${i + 1}/${totalPhotos}…`)
-          const storageId = await uploadMedia(file, file.type || 'image/jpeg')
+          const upload = await uploadMedia(file, file.type || 'image/jpeg')
+          const storageId = upload?.storageId
           if (storageId) {
             const urlRes = await fetch('/api/ourfable/data', {
               method: 'POST',

@@ -5,6 +5,7 @@ import Image from "next/image";
 import {
   importInviteKey,
   encryptText,
+  encryptBlob,
   serializeEncryptedText,
   hashContent,
 } from "@/lib/vault-encryption";
@@ -386,31 +387,37 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       const mediaFile = tab === "photo" ? photoFile : tab === "voice" ? voiceFile : tab === "video" ? videoFile : null;
 
       let storageId: string | undefined;
+      let mediaEncryptionIv: string | undefined;
+      let mediaEncryptionTag: string | undefined;
       if (mediaFile) {
-        // Get upload URL via proxy
-        const urlRes = await fetch(`/api/ourfable/data`, {
+        if (!inviteKey) {
+          throw new Error("Missing invite encryption key");
+        }
+
+        const encrypted = await encryptBlob(mediaFile, inviteKey);
+        const encryptedBlob = new Blob([encrypted.data], { type: "application/octet-stream" });
+
+        const urlRes = await fetch(`/api/ourfable/upload-media`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: "ourfable:generateUploadUrl", args: {}, type: "mutation" }),
+          body: JSON.stringify({ token }),
         });
         const urlData = await urlRes.json();
-        const uploadUrl = urlData.value as string;
+        const uploadUrl = urlData.uploadUrl as string;
 
-        // Upload file directly to Convex storage (upload URLs are pre-signed)
         const uploadRes = await fetch(uploadUrl, {
           method: "POST",
-          headers: { "Content-Type": mediaFile.type },
-          body: mediaFile,
+          headers: { "Content-Type": "application/octet-stream" },
+          body: encryptedBlob,
         });
         const uploadData = await uploadRes.json();
         storageId = uploadData.storageId;
+        mediaEncryptionIv = encrypted.iv;
+        mediaEncryptionTag = encrypted.tag;
       }
 
       const entryArgs: Record<string, unknown> = {
-        familyId: data.familyId,
-        memberId: data.memberId,
         type: tab,
-        submissionToken: token,
       };
       // Encrypt text content if invite key is available
       const plaintext = tab === "write" ? body : (tab === "photo" && caption.trim() ? caption.trim() : "");
@@ -424,16 +431,34 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
           entryArgs.body = plaintext;
         }
       }
-      if (tab === "photo") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = photoFile?.type; }
-      if (tab === "voice") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = voiceFile?.type ?? "audio/mp4"; }
-      if (tab === "video") { entryArgs.mediaStorageId = storageId; entryArgs.mediaMimeType = videoFile?.type ?? "video/mp4"; }
+      if (tab === "photo") {
+        entryArgs.mediaStorageId = storageId;
+        entryArgs.mediaMimeType = photoFile?.type;
+        entryArgs.mediaEncryptionIv = mediaEncryptionIv;
+        entryArgs.mediaEncryptionTag = mediaEncryptionTag;
+        entryArgs.mediaEncryptionVersion = 1;
+      }
+      if (tab === "voice") {
+        entryArgs.mediaStorageId = storageId;
+        entryArgs.mediaMimeType = voiceFile?.type ?? "audio/mp4";
+        entryArgs.mediaEncryptionIv = mediaEncryptionIv;
+        entryArgs.mediaEncryptionTag = mediaEncryptionTag;
+        entryArgs.mediaEncryptionVersion = 1;
+      }
+      if (tab === "video") {
+        entryArgs.mediaStorageId = storageId;
+        entryArgs.mediaMimeType = videoFile?.type ?? "video/mp4";
+        entryArgs.mediaEncryptionIv = mediaEncryptionIv;
+        entryArgs.mediaEncryptionTag = mediaEncryptionTag;
+        entryArgs.mediaEncryptionVersion = 1;
+      }
       if (data.promptUnlocksAtAge) entryArgs.unlocksAtAge = data.promptUnlocksAtAge;
       if (data.promptUnlocksAtEvent) entryArgs.unlocksAtEvent = data.promptUnlocksAtEvent;
 
-      const submitRes = await fetch(`/api/ourfable/data`, {
+      const submitRes = await fetch(`/api/ourfable/submit-entry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:submitVaultEntry", args: entryArgs, type: "mutation" }),
+        body: JSON.stringify({ token, ...entryArgs }),
       });
       const submitData = await submitRes.json();
 

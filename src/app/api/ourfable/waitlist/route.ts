@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { waitlistWelcomeEmail } from "../../../../lib/email-templates/waitlist-welcome";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
+import { escapeHtml } from "@/lib/email-templates/escape-html";
 import { convexMutation } from "@/lib/convex";
 import { appendWaitlistRow, ensureSheetHeaders } from "@/lib/google-sheets";
 import crypto from "crypto";
@@ -133,7 +135,9 @@ export async function POST(req: NextRequest) {
     // 4. Send welcome email
     if (RESEND_API_KEY) {
       const { subject, html, text } = waitlistWelcomeEmail(
-        childName ? String(childName).trim() : undefined
+        childName ? String(childName).trim() : undefined,
+        cleanEmail,
+        buildUnsubscribeUrl(cleanEmail)
       );
       const emailRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -147,10 +151,7 @@ export async function POST(req: NextRequest) {
           subject,
           html,
           text,
-          headers: {
-            "List-Unsubscribe": `<https://ourfable.ai/unsubscribe?email=${encodeURIComponent(cleanEmail)}>`,
-            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-          },
+          headers: buildUnsubscribeHeaders(cleanEmail),
         }),
       });
 
@@ -195,7 +196,7 @@ export async function POST(req: NextRequest) {
           from: "OurFable Alerts <hello@ourfable.ai>",
           to: process.env.ALERT_EMAIL ?? "hello@ourfable.ai",
           subject: `🎉 New waitlist signup: ${cleanEmail}`,
-          html: `<p style="font-family:sans-serif;font-size:15px;"><strong>${cleanEmail}</strong> just reserved a spot${childLabel}.${utmLabel}${referralLabel}</p>`,
+          html: `<p style="font-family:sans-serif;font-size:15px;"><strong>${escapeHtml(cleanEmail)}</strong> just reserved a spot${escapeHtml(childLabel)}.${escapeHtml(utmLabel)}${escapeHtml(referralLabel)}</p>`,
         }),
       }).catch(() => {});
     }

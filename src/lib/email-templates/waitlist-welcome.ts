@@ -1,4 +1,7 @@
-export function waitlistWelcomeEmail(childName?: string): { subject: string; html: string; text: string } {
+import { escapeHtml } from "./escape-html";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
+
+export function waitlistWelcomeEmail(childName?: string, email?: string, unsubscribeUrl?: string): { subject: string; html: string; text: string } {
   const name = childName?.trim()?.split(/\s+/)[0];
   const subject = name
     ? `We're getting ${name}'s vault ready.`
@@ -35,19 +38,19 @@ export function waitlistWelcomeEmail(childName?: string): { subject: string; htm
 
               <!-- Headline -->
               <h1 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:34px;font-weight:800;line-height:1.15;letter-spacing:-0.02em;color:#1A1A18;">
-                ${name ? `${name}'s vault` : "Your vault"}<br />
+                ${name ? `${escapeHtml(name)}'s vault` : "Your vault"}<br />
                 <em style="color:#4A5E4C;font-style:italic;">is waiting.</em>
               </h1>
 
               <!-- Intro -->
               <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">
                 You just did something most parents never think to do —
-                you started building a record of everyone who loves ${name || "your child"},
+                you started building a record of everyone who loves ${escapeHtml(name || "your child")},
                 before ${name ? "they're" : "they're"} old enough to ask.
               </p>
 
               <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">
-                Every month, Our Fable asks the people in ${name ? name + "'s" : "your child's"} circle a question
+                Every month, Our Fable asks the people in ${name ? escapeHtml(name) + "'s" : "your child's"} circle a question
                 tailored to who they are. Grandma gets a different question than the uncle.
                 The old family friend gets a different question than the neighbor.
                 All they have to do is reply.
@@ -131,7 +134,7 @@ export function waitlistWelcomeEmail(childName?: string): { subject: string; htm
               <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.75;color:#4A4A45;">
                 We're opening Our Fable to founding families first — limited to 1,000 families.
                 As a founding member, your rate is locked for life: <strong style="color:#1A1A18;">$79/year</strong> (regular $99/year) for Our Fable, or <strong style="color:#1A1A18;">$99/year</strong> (regular $149/year) for Our Fable+.
-                You're on the list. We'll be in touch when ${name ? name + "'s" : "your"} vault is ready.
+                You're on the list. We'll be in touch when ${name ? escapeHtml(name) + "'s" : "your"} vault is ready.
               </p>
 
               <table cellpadding="0" cellspacing="0">
@@ -154,7 +157,7 @@ export function waitlistWelcomeEmail(childName?: string): { subject: string; htm
               <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#9A9590;">
                 You're receiving this because you joined the Our Fable waitlist at
                 <a href="https://ourfable.ai" style="color:#9A9590;">ourfable.ai</a>.<br />
-                <a href="https://ourfable.ai/unsubscribe" style="color:#9A9590;text-decoration:underline;">Unsubscribe</a>
+                <a href="${escapeHtml(unsubscribeUrl ?? (email ? buildUnsubscribeUrl(email) : "https://ourfable.ai/unsubscribe"))}" style="color:#9A9590;text-decoration:underline;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -190,7 +193,7 @@ Know someone who'd love this? Forward this email or send them to https://ourfabl
 —
 Our Fable · ourfable.ai
 You're receiving this because you joined the Our Fable waitlist.
-To unsubscribe, reply with "unsubscribe."`;
+To unsubscribe: ${unsubscribeUrl ?? (email ? buildUnsubscribeUrl(email) : "https://ourfable.ai/unsubscribe")}`;
 
   return { subject, html, text };
 }

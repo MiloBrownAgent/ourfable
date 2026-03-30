@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 import { hashPassword } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -18,8 +19,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "All fields are required" }, { status: 400 });
   }
 
-  if (password.length < 6) {
-    return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` }, { status: 400 });
   }
 
   // Look up invite

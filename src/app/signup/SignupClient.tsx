@@ -17,6 +17,8 @@ const NORMAL_PRICES: Record<PlanType, Record<BillingPeriod, number>> = {
   plus: { monthly: 19, annual: 149 },
 };
 
+const MIN_PASSWORD_LENGTH = 12;
+
 function StepDot({ n, active, done }: { n: number; active: boolean; done: boolean }) {
   return (
     <div style={{
@@ -99,7 +101,7 @@ export default function SignupClient() {
   const canStep2 = parentNames.trim().length > 1;
   const [tosConsent, setTosConsent] = useState(false);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canStep3 = emailValid && password.length >= 6 && password === passwordConfirm && tosConsent;
+  const canStep3 = emailValid && password.length >= MIN_PASSWORD_LENGTH && password === passwordConfirm && tosConsent;
   const fac1EmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fac1Email.trim());
   const canStep4 = fac1Name.trim().length > 1 && fac1EmailValid && fac1Relationship.trim().length > 0;
 
@@ -109,6 +111,11 @@ export default function SignupClient() {
     setLoading(true);
     setError("");
     try {
+      if (password.length < MIN_PASSWORD_LENGTH) {
+        setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+        setLoading(false);
+        return;
+      }
       // Gift redemption: skip Stripe, create account directly
       if (isGiftRedemption && giftCodeParam) {
         const res = await fetch("/api/auth/create-gifted-account", {

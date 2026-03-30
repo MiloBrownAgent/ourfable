@@ -57,6 +57,7 @@ export interface OurFableUserRecord {
   _id: string;
   email: string;
   passwordHash: string;
+  passwordChangedAt?: number;
   familyId: string;
   name: string;
   role: "owner" | "parent";
@@ -66,7 +67,11 @@ export interface OurFableUserRecord {
  * Look up account by email.
  * Checks ourfable_users first (new dual-parent system), falls back to ourfable_families (legacy).
  */
-export async function getAccount(email: string): Promise<(OurFableAccount & { userId?: string; userName?: string }) | undefined> {
+export async function getAccount(email: string): Promise<(OurFableAccount & {
+  userId?: string;
+  userName?: string;
+  passwordChangedAt?: number;
+}) | undefined> {
   const normalized = email.toLowerCase().trim();
 
   // Try user-based auth first
@@ -87,6 +92,7 @@ export async function getAccount(email: string): Promise<(OurFableAccount & { us
       parentNames: userResult.name,
       userId: userResult._id,
       userName: userResult.name,
+      passwordChangedAt: userResult.passwordChangedAt,
     };
   }
 
@@ -94,6 +100,7 @@ export async function getAccount(email: string): Promise<(OurFableAccount & { us
   const result = await internalConvexQuery<{
     email: string;
     passwordHash: string;
+    passwordChangedAt?: number;
     familyId: string;
     childName: string;
     planType: string;
@@ -108,6 +115,7 @@ export async function getAccount(email: string): Promise<(OurFableAccount & { us
     familyId: result.familyId,
     childName: result.childName,
     parentNames: result.parentNames ?? "",
+    passwordChangedAt: result.passwordChangedAt,
   };
 }
 

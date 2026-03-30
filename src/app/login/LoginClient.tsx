@@ -18,6 +18,7 @@ function LoginForm() {
   const [needs2fa, setNeeds2fa] = useState(false);
   const [familyId2fa, setFamilyId2fa] = useState("");
   const [email2fa, setEmail2fa] = useState("");
+  const [challengeToken, setChallengeToken] = useState("");
   const [totpCode, setTotpCode] = useState("");
   const [rememberDevice, setRememberDevice] = useState(false);
   const [verifying2fa, setVerifying2fa] = useState(false);
@@ -41,6 +42,7 @@ function LoginForm() {
           setNeeds2fa(true);
           setFamilyId2fa(data.familyId);
           setEmail2fa(data.email ?? email.trim().toLowerCase());
+          setChallengeToken(data.challengeToken ?? "");
           setLoading(false);
         } else {
           window.location.href = data.redirect;
@@ -66,7 +68,13 @@ function LoginForm() {
       const res = await fetch("/api/auth/2fa/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ familyId: familyId2fa, email: email2fa, code: totpCode, rememberDevice }),
+        body: JSON.stringify({
+          familyId: familyId2fa,
+          email: email2fa,
+          code: totpCode,
+          rememberDevice,
+          challengeToken,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -136,7 +144,7 @@ function LoginForm() {
 
           <div style={{ marginTop: 24, textAlign: "center" }}>
             <button
-              onClick={() => { setNeeds2fa(false); setTotpCode(""); setTwoFaError(""); }}
+              onClick={() => { setNeeds2fa(false); setTotpCode(""); setTwoFaError(""); setChallengeToken(""); }}
               style={{ background: "none", border: "none", fontSize: 13, color: "var(--text-3)", cursor: "pointer", fontFamily: "inherit" }}
             >
               ← Back to sign in

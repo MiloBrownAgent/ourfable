@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useChildContext } from "@/components/ChildContext";
 import { useVaultKey } from "@/lib/vault-key-context";
-import { decryptText, deserializeEncryptedText, unwrapInviteKey } from "@/lib/vault-encryption";
+import { decryptBlob, decryptText, deserializeEncryptedText, unwrapInviteKey } from "@/lib/vault-encryption";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -22,6 +22,7 @@ interface VaultEntry {
   textContent?: string;
   mediaUrl?: string;
   mediaUrls?: string[];
+  mediaMimeType?: string;
   isSealed: boolean;
   unlockAge?: number;
   createdAt?: number;
@@ -32,6 +33,9 @@ interface VaultEntry {
   contentHash?: string;
   encryptionVersion?: number;
   isEncrypted?: boolean;
+  mediaEncryptionIv?: string;
+  mediaEncryptionTag?: string;
+  mediaEncryptionVersion?: number;
 }
 
 interface Family {
@@ -95,6 +99,26 @@ function computeAgeFromCustomDate(childDob: string, customDate: string): number 
   const target = new Date(customDate + "T00:00:00");
   const diffYears = (target.getTime() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
   return Math.max(0, Math.round(diffYears));
+}
+
+async function decryptMediaUrl(
+  mediaUrl: string,
+  mimeType: string,
+  iv: string,
+  tag: string,
+  key: CryptoKey
+): Promise<string> {
+  const res = await fetch(mediaUrl, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch encrypted media: ${res.status}`);
+  }
+  const encryptedBlob = await res.blob();
+  const decrypted = await decryptBlob(
+    { data: await encryptedBlob.arrayBuffer(), iv, tag },
+    key,
+    mimeType
+  );
+  return URL.createObjectURL(decrypted);
 }
 
 // ─── Existing Card Components ───────────────────────────────────────────────
@@ -939,6 +963,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const { selectedChild } = useChildContext();
   const childId = selectedChild?.childId || selectedChild?._id;
   const { familyKey } = useVaultKey();
+  const objectUrlsRef = useRef<string[]>([]);
   const [entries, setEntries] = useState<VaultEntry[]>([]);
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
@@ -948,6 +973,8 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const load = async () => {
+    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrlsRef.current = [];
     const queryArgs = childId ? { familyId, childId } : { familyId };
     const [entriesRes, ourfableEntriesRes, familyRes, circleRes] = await Promise.all([
       fetch(`/api/ourfable/data`, {
@@ -994,6 +1021,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         contentType: (e.type as string ?? e.contentType as string ?? "text") as VaultEntry["contentType"],
         textContent: sealed ? undefined : (hasEncryptedBody ? undefined : ((e.body as string) ?? (e.content as string) ?? (e.textContent as string))),
         mediaUrl: sealed ? undefined : ((e.photoUrl as string) ?? (e.audioUrl as string) ?? (e.videoUrl as string) ?? (e.mediaUrl as string)),
+        mediaMimeType: e.mediaMimeType as string | undefined,
         isSealed: sealed,
         unlockAge: (e.unlocksAtAge as number) ?? (e.unlockAge as number),
         createdAt: (e.submittedAt as number) ?? (e.createdAt as number),
@@ -1003,6 +1031,9 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         contentHash: e.contentHash as string | undefined,
         encryptionVersion: e.encryptionVersion as number | undefined,
         isEncrypted: hasEncryptedBody,
+        mediaEncryptionIv: e.mediaEncryptionIv as string | undefined,
+        mediaEncryptionTag: e.mediaEncryptionTag as string | undefined,
+        mediaEncryptionVersion: e.mediaEncryptionVersion as number | undefined,
       };
     });
 
@@ -1034,6 +1065,41 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
             entry.textContent = "[Encrypted — unable to decrypt]";
           }
         }
+
+        if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
+          try {
+            try {
+              const objectUrl = await decryptMediaUrl(
+                entry.mediaUrl,
+                entry.mediaMimeType,
+                entry.mediaEncryptionIv,
+                entry.mediaEncryptionTag,
+                familyKey
+              );
+              objectUrlsRef.current.push(objectUrl);
+              entry.mediaUrl = objectUrl;
+            } catch {
+              const wrappedKey = memberInviteKeys[entry.memberId];
+              if (wrappedKey) {
+                if (!inviteKeyCache[entry.memberId]) {
+                  inviteKeyCache[entry.memberId] = await unwrapInviteKey(wrappedKey, familyKey);
+                }
+                const objectUrl = await decryptMediaUrl(
+                  entry.mediaUrl,
+                  entry.mediaMimeType,
+                  entry.mediaEncryptionIv,
+                  entry.mediaEncryptionTag,
+                  inviteKeyCache[entry.memberId]
+                );
+                objectUrlsRef.current.push(objectUrl);
+                entry.mediaUrl = objectUrl;
+              }
+            }
+          } catch (err) {
+            console.error("[vault] Failed to decrypt contribution media:", entry._id, err);
+            entry.mediaUrl = undefined;
+          }
+        }
       }
     }
 
@@ -1059,6 +1125,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         textContent: sealed ? undefined : (hasEncryptedBody ? undefined : (e.content as string | undefined)),
         mediaUrl: sealed ? undefined : (e.mediaUrl as string | undefined),
         mediaUrls: sealed ? undefined : (e.mediaUrls as string[] | undefined),
+        mediaMimeType: e.mediaMimeType as string | undefined,
         isSealed: sealed,
         unlockAge: e.unlockAge as number | undefined,
         createdAt: e.createdAt as number | undefined,
@@ -1068,6 +1135,9 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         contentHash: e.contentHash as string | undefined,
         encryptionVersion: e.encryptionVersion as number | undefined,
         isEncrypted: hasEncryptedBody,
+        mediaEncryptionIv: e.mediaEncryptionIv as string | undefined,
+        mediaEncryptionTag: e.mediaEncryptionTag as string | undefined,
+        mediaEncryptionVersion: e.mediaEncryptionVersion as number | undefined,
       };
     });
 
@@ -1085,6 +1155,22 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
             entry.textContent = "[Encrypted — unable to decrypt]";
           }
         }
+        if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
+          try {
+            const objectUrl = await decryptMediaUrl(
+              entry.mediaUrl,
+              entry.mediaMimeType,
+              entry.mediaEncryptionIv,
+              entry.mediaEncryptionTag,
+              familyKey
+            );
+            objectUrlsRef.current.push(objectUrl);
+            entry.mediaUrl = objectUrl;
+          } catch (err) {
+            console.error("[vault] Failed to decrypt media:", entry._id, err);
+            entry.mediaUrl = undefined;
+          }
+        }
       }
     }
 
@@ -1098,7 +1184,14 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [familyId, childId]);
+  useEffect(() => { load(); }, [familyId, childId, familyKey]);
+
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrlsRef.current = [];
+    };
+  }, []);
 
   const handleUnlock = async (entryId: string) => {
     if (!confirm("Unlock this entry early? This will open the entry for reading.")) return;

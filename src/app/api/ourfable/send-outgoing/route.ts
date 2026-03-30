@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery, convexMutation } from "@/lib/convex";
 import { dispatchEmail } from "@/lib/email-templates/dispatch";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 import crypto from "crypto";
 
 function generateViewToken(): string {
@@ -107,6 +108,7 @@ export async function POST(req: NextRequest) {
           mediaUrls: mediaUrls ?? [],
           mediaType: mediaType ?? "",
           viewUrl: mediaType === "video" ? viewUrl : undefined,
+          unsubscribeUrl: buildUnsubscribeUrl(member.email!),
         });
 
         await sendEmail({
@@ -116,10 +118,7 @@ export async function POST(req: NextRequest) {
           html,
           text,
           replyTo: "hello@ourfable.ai",
-          headers: {
-            "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-          },
+          headers: buildUnsubscribeHeaders(member.email!),
         });
 
         results.push({ name: member.name, success: true });

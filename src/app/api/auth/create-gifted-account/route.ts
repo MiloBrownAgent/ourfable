@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, addAccount } from "@/lib/accounts";
 import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
 // POST /api/auth/create-gifted-account
 // Creates a new OurFable family account using a gift code (no Stripe payment needed)
 export async function POST(req: NextRequest) {
@@ -41,6 +42,10 @@ export async function POST(req: NextRequest) {
 
     if (!email || !password || !childName || !childDob || !parentNames || !giftCode) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` }, { status: 400 });
     }
 
     // 1. Look up and validate the gift

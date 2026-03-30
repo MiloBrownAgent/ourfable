@@ -48,7 +48,7 @@ function ResetPasswordForm() {
   const [unwrappedKeyB64, setUnwrappedKeyB64] = useState<string | null>(null);
   const [confirmLoss, setConfirmLoss] = useState("");
 
-  const canSubmit = password.length >= 6 && password === confirm && !!token;
+  const canSubmit = password.length >= 12 && password === confirm && !!token;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -474,7 +474,7 @@ function ResetPasswordForm() {
           <h1 style={{ fontFamily: "var(--font-playfair)", fontSize: 26, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
             Choose a new password.
           </h1>
-          <p style={{ fontSize: 13, color: "var(--text-3)" }}>Must be at least 6 characters.</p>
+              <p style={{ fontSize: 13, color: "var(--text-3)" }}>Must be at least 12 characters.</p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

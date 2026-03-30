@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -41,10 +42,7 @@ export async function POST(req: NextRequest) {
             from: "Our Fable <hello@ourfable.ai>",
             to: normalized,
             subject: "Reset your Our Fable password",
-            headers: {
-              "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-            },
+            headers: buildUnsubscribeHeaders(normalized),
             html: `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><title>Reset your password</title></head>
 <body style="margin:0;padding:0;background:#F5F2ED;">
@@ -70,7 +68,7 @@ export async function POST(req: NextRequest) {
         </td></tr>
         <tr><td align="center" style="padding-top:24px;">
           <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#A09890;">Our Fable · Made with love</p>
-          <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;"><a href="https://ourfable.ai/unsubscribe" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a></p>
+          <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;"><a href="${buildUnsubscribeUrl(normalized)}" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a></p>
           <p style="margin:4px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;">Our Fable · New York, NY</p>
         </td></tr>
       </table>

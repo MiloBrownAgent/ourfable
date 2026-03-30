@@ -88,9 +88,9 @@ function applySecurityHeaders(res: NextResponse): void {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.facebook.com https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com",
+      "script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.facebook.com https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: blob: https: http:",
+      "img-src 'self' data: blob: https:",
       "font-src 'self' https://fonts.gstatic.com",
       "connect-src 'self' https://rightful-eel-502.convex.cloud https://api.resend.com https://www.facebook.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com https://*.googletagmanager.com",
       "frame-src 'self' https://js.stripe.com https://www.facebook.com",

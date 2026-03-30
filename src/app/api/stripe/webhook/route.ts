@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { addAccount } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { escapeHtml } from "@/lib/email-templates/escape-html";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -22,10 +24,10 @@ async function sendResendEmail(to: string, subject: string, html: string, extraH
     return;
   }
   const headers: Record<string, string> = {
-    "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    ...buildUnsubscribeHeaders(to),
     ...extraHeaders,
   };
+  const personalizedHtml = html.replaceAll("https://ourfable.ai/unsubscribe", buildUnsubscribeUrl(to));
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -36,7 +38,7 @@ async function sendResendEmail(to: string, subject: string, html: string, extraH
       from: "Our Fable <hello@ourfable.ai>",
       to,
       subject,
-      html,
+      html: personalizedHtml,
       headers,
     }),
   });
@@ -134,7 +136,7 @@ export async function POST(req: NextRequest) {
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">We're sorry to see you go</p>
             <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">Your vault is safe — for now</p>
-            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">${childFirst}'s vault content — every letter, photo, and voice memo — will be preserved for 30 days. After that, it may be permanently removed.</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">${escapeHtml(childFirst)}'s vault content — every letter, photo, and voice memo — will be preserved for 30 days. After that, it may be permanently removed.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">The letters don't disappear. But new ones stop coming.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Changed your mind? You can reactivate anytime within 30 days and pick up right where you left off.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
@@ -229,7 +231,7 @@ export async function POST(req: NextRequest) {
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Action needed</p>
             <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">Payment failed</p>
-            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">We weren't able to process your latest payment for Our Fable. Please update your payment method to keep ${family.childName}'s vault active.</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">We weren't able to process your latest payment for Our Fable. Please update your payment method to keep ${escapeHtml(family.childName)}'s vault active.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">If your payment isn't updated within 7 days, your subscription will be paused.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
               <a href="https://ourfable.ai/login" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Update payment →</a>
@@ -278,7 +280,7 @@ export async function POST(req: NextRequest) {
               if (facilitatorEmail) {
                 await sendResendEmail(
                   facilitatorEmail,
-                  `${childFirst}'s Our Fable vault needs attention`,
+                  `${escapeHtml(childFirst)}'s Our Fable vault needs attention`,
                   `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#FDFBF7;">
@@ -294,10 +296,10 @@ export async function POST(req: NextRequest) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Vault Guardian Notice</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${childFirst}'s vault needs attention</p>
-            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Hi ${facilitatorName},</p>
-            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">You were designated as a vault guardian for ${childFirst}'s Our Fable vault. The account's payments have lapsed for an extended period.</p>
-            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">If you'd like to keep ${childFirst}'s vault active — preserving every letter, photo, and voice memo sealed inside — you can take over billing.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${escapeHtml(childFirst)}'s vault needs attention</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Hi ${escapeHtml(facilitatorName)},</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">You were designated as a vault guardian for ${escapeHtml(childFirst)}'s Our Fable vault. The account's payments have lapsed for an extended period.</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">If you'd like to keep ${escapeHtml(childFirst)}'s vault active — preserving every letter, photo, and voice memo sealed inside — you can take over billing.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">There's no pressure. But the vault will be at risk of deactivation if billing isn't resumed.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
               <a href="https://ourfable.ai/facilitator-billing/${family.familyId}" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Take over billing →</a>
@@ -589,10 +591,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Welcome</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${childFirst}'s story starts now.</p>
-            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Welcome to Our Fable. ${childFirst}'s vault is ready — and the people who love them most can start contributing right away.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${escapeHtml(childFirst)}'s story starts now.</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Welcome to Our Fable. ${escapeHtml(childFirst)}'s vault is ready — and the people who love them most can start contributing right away.</p>
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#1A1A18;">Your first step: invite your circle.</p>
-            <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">Add grandparents, aunts, uncles, godparents — anyone whose voice matters. They'll each get monthly prompts to write, record, or photograph something for ${childFirst}.</p>
+            <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">Add grandparents, aunts, uncles, godparents — anyone whose voice matters. They'll each get monthly prompts to write, record, or photograph something for ${escapeHtml(childFirst)}.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
               <a href="https://ourfable.ai/${familyId}" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Go to your dashboard →</a>
             </td></tr></table>
@@ -632,10 +634,6 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const redeemUrl = `https://ourfable.ai/redeem/${giftCode}`;
   const planLabel = planType === "plus" ? "Our Fable+" : "Our Fable";
-  const unsubHeaders = {
-    "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-  };
 
   // 2. Send gift notification email to recipient
   await sendResendEmail(
@@ -655,17 +653,17 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
         <tr><td style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:48px 44px;">
-            <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">A gift from ${gifterName}</p>
+            <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">A gift from ${escapeHtml(gifterName)}</p>
             <p style="margin:0 0 28px;font-family:Georgia,'Playfair Display',serif;font-size:28px;font-weight:700;color:#1A1A18;line-height:1.25;">Someone who loves your family just gave you something extraordinary.</p>
             <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
-              ${gifterName} has given you <strong>${planLabel}</strong> — a private memory vault where the people who love your child leave letters, voice notes, photos, and video, all sealed until your child is old enough to read them.
+              ${escapeHtml(gifterName)} has given you <strong>${escapeHtml(planLabel)}</strong> — a private memory vault where the people who love your child leave letters, voice notes, photos, and video, all sealed until your child is old enough to read them.
             </p>
             ${gifterMessage ? `
             <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
               <tr>
                 <td style="border-left:3px solid #C8D4C9;padding:14px 20px;background:#F8FAF8;border-radius:0 10px 10px 0;">
-                  <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">From ${gifterName}</p>
-                  <p style="margin:0;font-family:Georgia,'Playfair Display',serif;font-size:15px;color:#4A4A48;line-height:1.75;font-style:italic;">"${gifterMessage}"</p>
+                  <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">From ${escapeHtml(gifterName)}</p>
+                  <p style="margin:0;font-family:Georgia,'Playfair Display',serif;font-size:15px;color:#4A4A48;line-height:1.75;font-style:italic;">"${escapeHtml(gifterMessage)}"</p>
                 </td>
               </tr>
             </table>` : ""}
@@ -673,12 +671,12 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
               Our Fable is a sealed vault where the people who love your child leave letters, voice notes, photos, and video — all sealed until your child is old enough to read them.
             </p>
             <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;"><tr><td style="border-radius:100px;background:#4A5E4C;">
-              <a href="${redeemUrl}" style="display:inline-block;padding:15px 32px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">Open your gift →</a>
+              <a href="${escapeHtml(redeemUrl)}" style="display:inline-block;padding:15px 32px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">Open your gift →</a>
             </td></tr></table>
             <div style="background:#F8F5F0;border:1px solid #E8E4DE;border-radius:14px;padding:20px 24px;text-align:center;">
               <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#9A9590;">Your gift code</p>
-              <p style="margin:0;font-family:Georgia,'Playfair Display',serif;font-size:30px;font-weight:700;color:#4A5E4C;letter-spacing:0.08em;">${giftCode}</p>
-              <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#A09890;">Keep this code safe — you can also use it at ourfable.ai/redeem/${giftCode}</p>
+              <p style="margin:0;font-family:Georgia,'Playfair Display',serif;font-size:30px;font-weight:700;color:#4A5E4C;letter-spacing:0.08em;">${escapeHtml(giftCode)}</p>
+              <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#A09890;">Keep this code safe — you can also use it at ourfable.ai/redeem/${escapeHtml(giftCode)}</p>
             </div>
           </td></tr></table>
         </td></tr>
@@ -687,7 +685,6 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
     </td></tr>
   </table>
 </body></html>`,
-    unsubHeaders
   ).catch((err) => {
     console.warn("[webhook] Gift recipient email failed (non-fatal):", err);
   });
@@ -712,23 +709,23 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:48px 44px;">
             <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">Gift confirmation</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;font-weight:700;color:#1A1A18;line-height:1.3;">Your gift is on its way, ${gifterName}.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;font-weight:700;color:#1A1A18;line-height:1.3;">Your gift is on its way, ${escapeHtml(gifterName)}.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
-              You've given someone a beautiful thing. We've sent a gift notification to <strong>${recipientEmail}</strong> with everything they need to get started.
+              You've given someone a beautiful thing. We've sent a gift notification to <strong>${escapeHtml(recipientEmail)}</strong> with everything they need to get started.
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;background:#F8F5F0;border:1px solid #E8E4DE;border-radius:14px;">
               <tr><td style="padding:20px 24px;">
                 <p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#9A9590;">Gift details</p>
                 <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#5A5650;line-height:1.7;">
-                  Plan: <strong style="color:#4A5E4C;">${planLabel}</strong> · Annual<br/>
-                  Recipient: ${recipientEmail}<br/>
-                  Gift code: <strong style="font-family:Georgia,serif;color:#4A5E4C;letter-spacing:0.06em;">${giftCode}</strong>
+                  Plan: <strong style="color:#4A5E4C;">${escapeHtml(planLabel)}</strong> · Annual<br/>
+                  Recipient: ${escapeHtml(recipientEmail)}<br/>
+                  Gift code: <strong style="font-family:Georgia,serif;color:#4A5E4C;letter-spacing:0.06em;">${escapeHtml(giftCode)}</strong>
                 </p>
               </td></tr>
             </table>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#8A8680;line-height:1.7;">
               If they miss the email, you can share this redemption link directly:<br/>
-              <a href="${redeemUrl}" style="color:#4A5E4C;">${redeemUrl}</a>
+              <a href="${escapeHtml(redeemUrl)}" style="color:#4A5E4C;">${escapeHtml(redeemUrl)}</a>
             </p>
           </td></tr></table>
         </td></tr>
@@ -737,7 +734,6 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
     </td></tr>
   </table>
 </body></html>`,
-      unsubHeaders
     ).catch((err) => {
       console.warn("[webhook] Gift confirmation email failed (non-fatal):", err);
     });
@@ -784,7 +780,7 @@ async function handleChildAddonCompleted(session: Stripe.Checkout.Session) {
   if (family?.email) {
     await sendResendEmail(
       family.email,
-      `${childFirst} has been added to your vault`,
+      `${escapeHtml(childFirst)} has been added to your vault`,
       `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#FDFBF7;">
@@ -800,10 +796,10 @@ async function handleChildAddonCompleted(session: Stripe.Checkout.Session) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Child added</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${childFirst}'s vault is ready.</p>
-            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">${childFirst} has been added to your family's Our Fable vault. You can now add circle members for ${childFirst} and start collecting memories.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${escapeHtml(childFirst)}'s vault is ready.</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">${escapeHtml(childFirst)} has been added to your family's Our Fable vault. You can now add circle members for ${escapeHtml(childFirst)} and start collecting memories.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
-              <a href="https://ourfable.ai/${familyId}/children" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Set up ${childFirst}'s circle →</a>
+              <a href="https://ourfable.ai/${escapeHtml(familyId)}/children" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Set up ${escapeHtml(childFirst)}'s circle →</a>
             </td></tr></table>
           </td></tr></table>
         </td></tr>

@@ -1,3 +1,5 @@
+import { escapeHtml } from "./escape-html";
+
 /**
  * dispatch.ts — Email template for Dispatches (parent → circle member)
  *
@@ -15,6 +17,7 @@ interface DispatchEmailOptions {
   mediaUrls?: string[];
   mediaType?: "photo" | "voice" | "video" | string;
   viewUrl?: string; // branded view page URL (used for video)
+  unsubscribeUrl?: string;
 }
 
 function firstWord(name: string): string {
@@ -28,7 +31,7 @@ function formatBody(body: string): string {
     .map(line =>
       line.trim() === ""
         ? "<div style='height:12px;'></div>"
-        : `<p style="margin:0 0 14px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:#3A3A38;line-height:1.8;">${line}</p>`
+        : `<p style="margin:0 0 14px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:#3A3A38;line-height:1.8;">${escapeHtml(line)}</p>`
     )
     .join("");
 }
@@ -41,7 +44,7 @@ function mediaBlock(mediaUrls: string[], mediaType: string, childFirst: string, 
       <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
         <tr>
           <td style="border-radius:14px;overflow:hidden;line-height:0;">
-            <img src="${url}" alt="Photo from ${childFirst}'s family" 
+            <img src="${escapeHtml(url)}" alt="Photo from ${escapeHtml(childFirst)}'s family" 
               style="width:100%;max-width:100%;border-radius:14px;display:block;border:none;" />
           </td>
         </tr>
@@ -53,7 +56,7 @@ function mediaBlock(mediaUrls: string[], mediaType: string, childFirst: string, 
       <table cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
         <tr>
           <td style="background:#F0EDE7;border-radius:12px;border:1px solid #E0DDD7;">
-            <a href="${url}" style="display:inline-flex;align-items:center;gap:10px;padding:14px 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#4A5E4C;text-decoration:none;letter-spacing:-0.01em;">
+            <a href="${escapeHtml(url)}" style="display:inline-flex;align-items:center;gap:10px;padding:14px 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#4A5E4C;text-decoration:none;letter-spacing:-0.01em;">
               <span style="font-size:18px;">🎙</span> Listen to voice message
             </a>
           </td>
@@ -68,7 +71,7 @@ function mediaBlock(mediaUrls: string[], mediaType: string, childFirst: string, 
       <table cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
         <tr>
           <td style="background:#1A1A18;border-radius:12px;overflow:hidden;">
-            <a href="${href}" style="display:inline-flex;align-items:center;gap:10px;padding:16px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
+            <a href="${escapeHtml(href)}" style="display:inline-flex;align-items:center;gap:10px;padding:16px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
               <span style="font-size:18px;">▶</span> Watch video
             </a>
           </td>
@@ -88,6 +91,7 @@ export function dispatchEmail({
   mediaUrls = [],
   mediaType = "",
   viewUrl,
+  unsubscribeUrl = "https://ourfable.ai/unsubscribe",
 }: DispatchEmailOptions): { subject: string; html: string; text: string } {
   const rFirst = firstWord(recipientName);
   const cFirst = firstWord(childName);
@@ -115,7 +119,7 @@ export function dispatchEmail({
 <body style="margin:0;padding:0;background-color:#FDFBF7;-webkit-text-size-adjust:100%;" bgcolor="#FDFBF7">
 
   <!-- Preview text -->
-  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${previewText}&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${escapeHtml(previewText)}&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
   <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#FDFBF7" style="background-color:#FDFBF7;">
     <tr>
@@ -143,12 +147,12 @@ export function dispatchEmail({
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td class="card-pad" style="padding:36px 44px 24px;">
-                    <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">For ${rFirst}</p>
+                    <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">For ${escapeHtml(rFirst)}</p>
                     <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:400;color:#1A1A18;line-height:1.25;">
-                      Hi — it&rsquo;s ${cFirst}.
+                      Hi — it&rsquo;s ${escapeHtml(cFirst)}.
                     </h1>
                     <p style="margin:14px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">
-                      ${sentByName} wanted you to see this.
+                      ${escapeHtml(sentByName)} wanted you to see this.
                     </p>
                   </td>
                 </tr>
@@ -163,7 +167,7 @@ export function dispatchEmail({
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td class="card-pad" style="padding:28px 44px 36px;">
-                    <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:21px;font-weight:400;color:#1A1A18;line-height:1.35;">${subject}</h2>
+                    <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:21px;font-weight:400;color:#1A1A18;line-height:1.35;">${escapeHtml(subject)}</h2>
                     ${formatBody(body)}
                     ${mediaBlock(mediaUrls, mediaType, cFirst, viewUrl)}
                   </td>
@@ -178,7 +182,7 @@ export function dispatchEmail({
                 <tr>
                   <td class="card-pad" style="padding:20px 44px 28px;">
                     <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#9A9590;line-height:1.7;">
-                      This is private — just for ${cFirst}&rsquo;s circle. Not on social media, not shared anywhere else.
+                      This is private — just for ${escapeHtml(cFirst)}&rsquo;s circle. Not on social media, not shared anywhere else.
                     </p>
                   </td>
                 </tr>
@@ -191,10 +195,10 @@ export function dispatchEmail({
           <tr>
             <td align="center" style="padding-top:28px;">
               <p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#A09890;">
-                Sent by ${sentByName} &middot; <a href="https://ourfable.ai" style="color:#A09890;text-decoration:none;">ourfable.ai</a>
+                Sent by ${escapeHtml(sentByName)} &middot; <a href="https://ourfable.ai" style="color:#A09890;text-decoration:none;">ourfable.ai</a>
               </p>
               <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#A09890;">
-                <a href="https://ourfable.ai/unsubscribe" style="color:#A09890;text-decoration:underline;">Unsubscribe</a>
+                <a href="${escapeHtml(unsubscribeUrl)}" style="color:#A09890;text-decoration:underline;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -215,7 +219,7 @@ export function dispatchEmail({
     return "";
   })();
 
-  const text = `Hi ${rFirst} — ${sentByName} shared something from ${cFirst}'s family.\n\n${subject}\n\n${body}${mediaTextBlock}\n\n---\nThis is private — just for ${cFirst}'s circle.\nSent by ${sentByName} via Our Fable · ourfable.ai\nUnsubscribe: https://ourfable.ai/unsubscribe`;
+  const text = `Hi ${rFirst} — ${sentByName} shared something from ${cFirst}'s family.\n\n${subject}\n\n${body}${mediaTextBlock}\n\n---\nThis is private — just for ${cFirst}'s circle.\nSent by ${sentByName} via Our Fable · ourfable.ai\nUnsubscribe: ${unsubscribeUrl}`;
 
   return { subject: emailSubject, html, text };
 }

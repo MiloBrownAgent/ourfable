@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery, convexMutation } from "@/lib/convex";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
+import { escapeHtml } from "@/lib/email-templates/escape-html";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
@@ -20,28 +22,28 @@ function notifyHtml({
   memberName,
   relationship,
   contentType,
-  parentNames,
   vaultUrl,
+  unsubscribeUrl,
 }: {
   childFirst: string;
   memberName: string;
   relationship: string;
   contentType: string;
-  parentNames: string;
   vaultUrl: string;
+  unsubscribeUrl: string;
 }) {
   const typeLabel = contentType === "voice" ? "a voice memo" : contentType === "photo" ? "a photo" : contentType === "video" ? "a video" : "a letter";
   const memberFirst = memberName.split(" ")[0];
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en" style="color-scheme:light;">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>${memberFirst} wrote to ${childFirst}</title>
+  <title>${escapeHtml(memberFirst)} wrote to ${escapeHtml(childFirst)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#FDFBF7;">
-  <div style="display:none;max-height:0;overflow:hidden;">${memberFirst} left something for ${childFirst} today — sealed and waiting.</div>
+  <div style="display:none;max-height:0;overflow:hidden;">${escapeHtml(memberFirst)} left something for ${escapeHtml(childFirst)} today — sealed and waiting.</div>
 
   <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#FDFBF7" style="background-color:#FDFBF7;padding:64px 20px 80px;">
     <tr>
@@ -50,7 +52,7 @@ function notifyHtml({
 
           <tr>
             <td align="center" style="padding-bottom:32px;">
-              <span style="font-family:Georgia,'Times New Roman',serif;font-size:12px;color:#6B7C6E;letter-spacing:0.22em;text-transform:uppercase;">${childFirst}</span>
+              <span style="font-family:Georgia,'Times New Roman',serif;font-size:12px;color:#6B7C6E;letter-spacing:0.22em;text-transform:uppercase;">${escapeHtml(childFirst)}</span>
             </td>
           </tr>
 
@@ -62,17 +64,17 @@ function notifyHtml({
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding:48px 44px 44px;">
-                    <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${memberFirst} wrote to ${childFirst} today.</p>
+                    <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${escapeHtml(memberFirst)} wrote to ${escapeHtml(childFirst)} today.</p>
                     <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">
-                      <strong style="color:#1A1A18;">${memberName}</strong> — ${childFirst}'s ${relationship.toLowerCase()} — left ${typeLabel} for the vault.
+                      <strong style="color:#1A1A18;">${escapeHtml(memberName)}</strong> — ${escapeHtml(childFirst)}'s ${escapeHtml(relationship.toLowerCase())} — left ${escapeHtml(typeLabel)} for the vault.
                     </p>
                     <p style="margin:0 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6A6660;line-height:1.8;font-style:italic;">
-                      It's sealed. ${childFirst} will find it waiting when the time comes.
+                      It's sealed. ${escapeHtml(childFirst)} will find it waiting when the time comes.
                     </p>
                     <table cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="border-radius:100px;background-color:#4A5E4C;">
-                          <a href="${vaultUrl}" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">See the vault →</a>
+                          <a href="${escapeHtml(vaultUrl)}" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">See the vault →</a>
                         </td>
                       </tr>
                     </table>
@@ -85,7 +87,7 @@ function notifyHtml({
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding:20px 44px 28px;">
-                    <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#9A9590;line-height:1.7;">Our Fable is building ${childFirst}'s vault — one contribution at a time.</p>
+                    <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#9A9590;line-height:1.7;">Our Fable is building ${escapeHtml(childFirst)}'s vault — one contribution at a time.</p>
                   </td>
                 </tr>
               </table>
@@ -94,8 +96,8 @@ function notifyHtml({
 
           <tr>
             <td align="center" style="padding-top:28px;">
-              <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#A09890;line-height:1.8;">${childFirst} · ourfable.ai</p>
-              <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;"><a href="https://ourfable.ai/unsubscribe" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a></p>
+              <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#A09890;line-height:1.8;">${escapeHtml(childFirst)} · ourfable.ai</p>
+              <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a></p>
               <p style="margin:4px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;">ourfable.ai</p>
             </td>
           </tr>
@@ -118,7 +120,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { familyId, memberName, relationship, contentType } = body;
+    const { memberName, relationship, contentType } = body;
+    const familyId = session.familyId;
 
     const family = await convexQuery("ourfable:getFamily", { familyId }) as Record<string, unknown> | null;
     if (!family) return NextResponse.json({ error: "Family not found" }, { status: 404 });
@@ -134,7 +137,14 @@ export async function POST(req: NextRequest) {
     const childFirst = family.childName.split(" ")[0];
     const vaultUrl = `https://ourfable.ai/${familyId}/vault`;
 
-    const html = notifyHtml({ childFirst, memberName, relationship: relationship ?? "circle member", contentType: contentType ?? "letter", parentNames: family.parentNames ?? "the family", vaultUrl });
+    const html = notifyHtml({
+      childFirst,
+      memberName,
+      relationship: relationship ?? "circle member",
+      contentType: contentType ?? "letter",
+      vaultUrl,
+      unsubscribeUrl: buildUnsubscribeUrl(parentEmail),
+    });
 
     await sendEmail({
       from: `Our Fable <hello@ourfable.ai>`,
@@ -142,10 +152,7 @@ export async function POST(req: NextRequest) {
       subject: `${memberName.split(" ")[0]} wrote to ${childFirst} today`,
       html,
       replyTo: "hello@ourfable.ai",
-      headers: {
-        "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-      },
+      headers: buildUnsubscribeHeaders(parentEmail),
     });
 
     return NextResponse.json({ success: true });

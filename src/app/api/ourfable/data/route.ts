@@ -24,7 +24,6 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:getShareData",
   "ourfable:getMemberByInviteToken",
   "ourfable:getMemberByShareToken",
-  "ourfable:submitContribution",
   "ourfable:patchFamily",
   "ourfable:unlockEntry",
   "ourfable:listVaultEntries",
@@ -49,8 +48,6 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:createVoiceSubmission",
   "ourfable:listVoiceSubmissions",
   "ourfable:getPromptByToken",
-  "ourfable:generateUploadUrl",
-  "ourfable:submitVaultEntry",
   "ourfable:getDeliveryMilestones",
   "ourfable:setDeliveryMilestone",
   "ourfable:deleteDeliveryMilestone",
@@ -114,14 +111,6 @@ const PUBLIC_QUERIES = new Set([
   "ourfable:getReferralByCode",
 ]);
 
-// Queries that use token-based auth instead of familyId (circle member submissions)
-// These require a valid submission/invite token — not session-based familyId
-const TOKEN_AUTH_QUERIES = new Set([
-  "ourfable:submitContribution",
-  "ourfable:submitVaultEntry",
-  "ourfable:generateUploadUrl",
-]);
-
 export async function POST(req: NextRequest) {
   let body: { path?: string; args?: Record<string, unknown>; type?: string };
   try { body = await req.json(); }
@@ -133,7 +122,7 @@ export async function POST(req: NextRequest) {
 
   // Auth check + IDOR prevention
   let session: SessionPayload | null = null;
-  if (!PUBLIC_QUERIES.has(path) && !TOKEN_AUTH_QUERIES.has(path)) {
+  if (!PUBLIC_QUERIES.has(path)) {
     const token = req.cookies.get(COOKIE)?.value;
     session = token ? await verifySession(token) : null;
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

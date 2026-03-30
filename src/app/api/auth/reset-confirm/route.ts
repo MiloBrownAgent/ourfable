@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { internalConvexMutation } from "@/lib/convex-internal";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
 
 const BCRYPT_ROUNDS = 12;
 
@@ -11,8 +12,8 @@ export async function POST(req: NextRequest) {
     if (!token || typeof token !== "string") {
       return NextResponse.json({ error: "Reset token is required" }, { status: 400 });
     }
-    if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    if (!newPassword || typeof newPassword !== "string" || newPassword.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` }, { status: 400 });
     }
 
     // H5 SECURITY: Atomically consume the token BEFORE updating password (TOCTOU fix).
@@ -26,11 +27,13 @@ export async function POST(req: NextRequest) {
 
     // Hash new password
     const passwordHash = bcrypt.hashSync(newPassword, BCRYPT_ROUNDS);
+    const passwordChangedAt = Date.now();
 
     // Update password in Convex
     await internalConvexMutation("ourfable:updateOurFablePassword", {
       email: resetRecord.email,
       passwordHash,
+      passwordChangedAt,
     });
 
     // Clean up the consumed token

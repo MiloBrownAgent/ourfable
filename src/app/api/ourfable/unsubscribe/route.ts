@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { convexMutation } from "@/lib/convex";
+import { verifyUnsubscribeToken } from "@/lib/unsubscribe-token";
 
 const RESEND_FULL_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID ?? "";
 
-export async function POST(req: NextRequest) {
+async function handleUnsubscribe(req: NextRequest) {
   try {
-    const { email } = await req.json();
-    if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const token = typeof body.token === "string" ? body.token : req.nextUrl.searchParams.get("token") ?? "";
+    if (!token) return NextResponse.json({ error: "Unsubscribe token required" }, { status: 400 });
 
-    const cleanEmail = String(email).toLowerCase().trim();
+    const cleanEmail = verifyUnsubscribeToken(token);
+    if (!cleanEmail) return NextResponse.json({ error: "Invalid unsubscribe token" }, { status: 400 });
 
     // Mark unsubscribed in Resend Audience
     if (RESEND_FULL_KEY && AUDIENCE_ID) {
@@ -28,4 +31,12 @@ export async function POST(req: NextRequest) {
     console.error("Unsubscribe error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
+}
+
+export async function POST(req: NextRequest) {
+  return handleUnsubscribe(req);
+}
+
+export async function GET(req: NextRequest) {
+  return handleUnsubscribe(req);
 }

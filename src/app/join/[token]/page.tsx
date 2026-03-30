@@ -324,7 +324,10 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
   }, [previewingVideo, recordingVideo]);
 
   // ── Upload media helper ──
-  const uploadMedia = async (blob: Blob, mimeType: string): Promise<string | undefined> => {
+  const uploadMedia = async (
+    blob: Blob,
+    _mimeType: string
+  ): Promise<{ storageId: string; iv: string; tag: string } | undefined> => {
     try {
       setUploadStatus("Preparing upload…");
       if (blob.size === 0) {
@@ -332,26 +335,35 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
         setUploadStatus("");
         return undefined;
       }
-      const urlRes = await fetch("/api/ourfable/data", {
+      if (!inviteKey) {
+        setError("This invite is missing its encryption key. Ask the family for a fresh link.");
+        setUploadStatus("");
+        return undefined;
+      }
+
+      const encrypted = await encryptBlob(blob, inviteKey);
+      const encryptedBlob = new Blob([encrypted.data], { type: "application/octet-stream" });
+
+      const urlRes = await fetch("/api/ourfable/upload-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:generateUploadUrl", args: {}, type: "mutation" }),
+        body: JSON.stringify({ token }),
       });
       const urlData = await urlRes.json();
-      const uploadUrl = urlData.value as string;
+      const uploadUrl = urlData.uploadUrl as string;
       if (!uploadUrl) throw new Error("No upload URL");
 
-      const sizeMB = (blob.size / (1024 * 1024)).toFixed(1);
+      const sizeMB = (encryptedBlob.size / (1024 * 1024)).toFixed(1);
       setUploadStatus(`Uploading ${sizeMB}MB…`);
 
       const uploadRes = await fetch(uploadUrl, {
         method: "POST",
-        headers: { "Content-Type": mimeType },
-        body: blob,
+        headers: { "Content-Type": "application/octet-stream" },
+        body: encryptedBlob,
       });
       const uploadData = await uploadRes.json();
       setUploadStatus("Saving…");
-      return uploadData.storageId;
+      return { storageId: uploadData.storageId, iv: encrypted.iv, tag: encrypted.tag };
     } catch {
       setUploadStatus("");
       return undefined;
@@ -375,23 +387,34 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
     try {
       let mediaStorageId: string | undefined;
       let mediaMimeType: string | undefined;
+      let mediaEncryptionIv: string | undefined;
+      let mediaEncryptionTag: string | undefined;
       let contentType = "letter";
 
       if (tab === "voice" && audioBlob) {
         contentType = "voice";
         mediaMimeType = audioBlob.type || "audio/mp4";
-        mediaStorageId = await uploadMedia(audioBlob, mediaMimeType);
+        const upload = await uploadMedia(audioBlob, mediaMimeType);
+        mediaStorageId = upload?.storageId;
+        mediaEncryptionIv = upload?.iv;
+        mediaEncryptionTag = upload?.tag;
         if (!mediaStorageId) { setSubmitting(false); return; }
       } else if (tab === "video" && (videoBlob || videoFile)) {
         contentType = "video";
         const blob = videoBlob || videoFile!;
         mediaMimeType = blob.type || "video/mp4";
-        mediaStorageId = await uploadMedia(blob, mediaMimeType);
+        const upload = await uploadMedia(blob, mediaMimeType);
+        mediaStorageId = upload?.storageId;
+        mediaEncryptionIv = upload?.iv;
+        mediaEncryptionTag = upload?.tag;
         if (!mediaStorageId) { setSubmitting(false); return; }
       } else if (tab === "photo" && photoFile) {
         contentType = "photo";
         mediaMimeType = photoFile.type || "image/jpeg";
-        mediaStorageId = await uploadMedia(photoFile, mediaMimeType);
+        const upload = await uploadMedia(photoFile, mediaMimeType);
+        mediaStorageId = upload?.storageId;
+        mediaEncryptionIv = upload?.iv;
+        mediaEncryptionTag = upload?.tag;
         if (!mediaStorageId) { setSubmitting(false); return; }
       }
 
@@ -422,15 +445,15 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
       if (mediaStorageId) {
         entryArgs.mediaStorageId = mediaStorageId;
         entryArgs.mediaMimeType = mediaMimeType;
+        entryArgs.mediaEncryptionIv = mediaEncryptionIv;
+        entryArgs.mediaEncryptionTag = mediaEncryptionTag;
+        entryArgs.mediaEncryptionVersion = 1;
       }
 
-      await fetch(`/api/ourfable/data`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          path: "ourfable:submitContribution",
-          type: "mutation",
-          args: entryArgs,
-        }),
+      await fetch(`/api/ourfable/submit-entry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, ...entryArgs }),
       });
       setSubmitted(true);
     } catch {

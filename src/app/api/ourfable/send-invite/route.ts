@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery } from "@/lib/convex";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
+import { escapeHtml } from "@/lib/email-templates/escape-html";
 
 
 // Resend API for sending emails from hello@ourfable.ai
@@ -46,6 +48,7 @@ function ourfableInviteHtml({
   childDob,
   parentNames,
   inviteUrl,
+  unsubscribeUrl,
   isTest,
 }: {
   recipientName: string;
@@ -54,6 +57,7 @@ function ourfableInviteHtml({
   childDob: string;
   parentNames: string;
   inviteUrl: string;
+  unsubscribeUrl: string;
   isTest?: boolean;
 }) {
   const childFirst = childFirstName(childName);
@@ -83,10 +87,10 @@ function ourfableInviteHtml({
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#FDFBF7;-webkit-text-size-adjust:100%;">
-  <div style="display:none;max-height:0;overflow:hidden;">${childFirst} wants you in their circle — ${parentNames} set this up for them.</div>
+  <div style="display:none;max-height:0;overflow:hidden;">${escapeHtml(childFirst)} wants you in their circle — ${escapeHtml(parentNames)} set this up for them.</div>
   <div style="display:none;max-height:0;overflow:hidden;">&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
 
-  ${isTest ? `<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#2C2C2C;"><tr><td align="center" style="padding:10px 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#F5F2ED;">TEST — preview of ${recipientFirst.toUpperCase()}'s invite</td></tr></table>` : ""}
+  ${isTest ? `<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#2C2C2C;"><tr><td align="center" style="padding:10px 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#F5F2ED;">TEST — preview of ${escapeHtml(recipientFirst.toUpperCase())}'s invite</td></tr></table>` : ""}
 
   <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#FDFBF7" style="background-color:#FDFBF7;padding:48px 20px 56px;">
     <tr>
@@ -96,7 +100,7 @@ function ourfableInviteHtml({
           <!-- Child name wordmark -->
           <tr>
             <td align="center" style="padding-bottom:28px;">
-              <span style="font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:400;color:#6B7C6E;letter-spacing:0.2em;text-transform:uppercase;">${childFirst}</span>
+              <span style="font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:400;color:#6B7C6E;letter-spacing:0.2em;text-transform:uppercase;">${escapeHtml(childFirst)}</span>
             </td>
           </tr>
 
@@ -115,13 +119,13 @@ function ourfableInviteHtml({
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding:40px 40px 32px;">
-                    <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#8A9E8C;">For ${recipientFirst}</p>
-                    <p style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:400;color:#1A1A18;line-height:1.3;">Hi — it's ${childFirst}.</p>
+                    <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#8A9E8C;">For ${escapeHtml(recipientFirst)}</p>
+                    <p style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:400;color:#1A1A18;line-height:1.3;">Hi — it's ${escapeHtml(childFirst)}.</p>
                     <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.75;">
-                      ${intro}
+                      ${escapeHtml(intro)}
                     </p>
                     <p style="margin:0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.75;">
-                      As my <strong style="color:#1A1A18;">${relationship.toLowerCase()}</strong>, there's something waiting for you.
+                      As my <strong style="color:#1A1A18;">${escapeHtml(relationship.toLowerCase())}</strong>, there's something waiting for you.
                     </p>
                   </td>
                 </tr>
@@ -141,7 +145,7 @@ function ourfableInviteHtml({
                     <table cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="border-radius:100px;background-color:#4A5E4C;">
-                          <a href="${inviteUrl}" style="display:inline-block;padding:13px 26px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">Write to ${childFirst} &rarr;</a>
+                          <a href="${escapeHtml(inviteUrl)}" style="display:inline-block;padding:13px 26px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">Write to ${escapeHtml(childFirst)} &rarr;</a>
                         </td>
                       </tr>
                     </table>
@@ -158,7 +162,7 @@ function ourfableInviteHtml({
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding:24px 40px 32px;">
-                    <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#9A9590;line-height:1.7;">These links are yours alone. Nothing here is on social media. This is private — just the people ${childFirst}'s parents trust with their story.</p>
+                    <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#9A9590;line-height:1.7;">These links are yours alone. Nothing here is on social media. This is private — just the people ${escapeHtml(childFirst)}'s parents trust with their story.</p>
                   </td>
                 </tr>
               </table>
@@ -170,10 +174,10 @@ function ourfableInviteHtml({
           <tr>
             <td align="center" style="padding-top:24px;">
               <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#A09890;line-height:1.8;">
-                ${childFirst} &middot; ourfable.ai<br/>
-                Set up by ${parentNames} &mdash; not on social, not public, just family.
+                ${escapeHtml(childFirst)} &middot; ourfable.ai<br/>
+                Set up by ${escapeHtml(parentNames)} &mdash; not on social, not public, just family.
               </p>
-              <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;"><a href="https://ourfable.ai/unsubscribe" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a></p>
+              <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a></p>
               <p style="margin:4px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;">ourfable.ai</p>
             </td>
           </tr>
@@ -233,6 +237,7 @@ export async function POST(req: NextRequest) {
       childDob: family.childDob,
       parentNames,
       inviteUrl,
+      unsubscribeUrl: buildUnsubscribeUrl(toEmail),
       isTest,
     });
 
@@ -242,11 +247,8 @@ export async function POST(req: NextRequest) {
       subject: `${isTest ? "[TEST] " : ""}Hi — it's ${childFirst}`,
       html,
       replyTo: `hello@ourfable.ai`,
-      headers: {
-        "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-      },
-    });
+        headers: buildUnsubscribeHeaders(toEmail),
+      });
 
     return NextResponse.json({ success: true, messageId: info.id, sentTo: toEmail, member: member.name });
 
