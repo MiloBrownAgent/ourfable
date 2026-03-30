@@ -671,9 +671,9 @@ export const getCircleMembersForDelivery = internalQuery({
     // Try vault circle first, then ourfable circle
     const vaultCircle = await ctx.db.query("ourfable_vault_circle").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
     if (vaultCircle.length > 0) {
-      return childId ? vaultCircle.filter((member) => !member.childId || member.childId === childId) : vaultCircle;
+      return childId ? vaultCircle.filter((member) => !(member as any).childId || (member as any).childId === childId) : vaultCircle;
     }
     const circle = await ctx.db.query("ourfable_circle_members").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
-    return childId ? circle.filter((member) => !member.childId || member.childId === childId) : circle;
+    return childId ? circle.filter((member) => !(member as any).childId || (member as any).childId === childId) : circle;
   },
 });
