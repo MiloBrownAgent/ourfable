@@ -2231,14 +2231,30 @@ export const addOurFableVaultEntry = internalMutation({
     type: v.string(),
     content: v.optional(v.string()),
     mediaUrl: v.optional(v.string()),
+    mediaStorageId: v.optional(v.string()),
+    mediaMimeType: v.optional(v.string()),
+    mediaEncryptionIv: v.optional(v.string()),
+    mediaEncryptionTag: v.optional(v.string()),
+    mediaEncryptionVersion: v.optional(v.number()),
     authorEmail: v.string(),
     authorName: v.string(),
     isSealed: v.boolean(),
     unlockAge: v.optional(v.number()),
+    encryptedBody: v.optional(v.string()),
+    contentHash: v.optional(v.string()),
+    encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    let mediaUrl = args.mediaUrl;
+    if (!mediaUrl && args.mediaStorageId) {
+      const resolvedUrl = await ctx.storage.getUrl(args.mediaStorageId);
+      mediaUrl = resolvedUrl ?? undefined;
+    }
+
     return await ctx.db.insert("ourfable_vault_entries", {
       ...args,
+      content: args.encryptedBody ? undefined : args.content,
+      mediaUrl,
       createdAt: Date.now(),
     });
   },

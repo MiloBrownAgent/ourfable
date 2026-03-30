@@ -893,16 +893,16 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
               {!voiceReady && !previewingVideo && !isRecordingVoice && !isRecordingVideo && !uploadingRecording && (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <button
-                    onClick={prepareVoiceRecording}
-                    style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
-                  >
-                    <Mic size={15} strokeWidth={1.5} color="var(--sage)" /> Record voice
-                  </button>
-                  <button
                     onClick={openVideoPreview}
                     style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
                   >
                     <Video size={15} strokeWidth={1.5} color="var(--sage)" /> Record video
+                  </button>
+                  <button
+                    onClick={prepareVoiceRecording}
+                    style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
+                  >
+                    <Mic size={15} strokeWidth={1.5} color="var(--sage)" /> Record voice
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}

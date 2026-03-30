@@ -8,7 +8,16 @@ import {
 } from "lucide-react";
 import { useChildContext } from "@/components/ChildContext";
 import { useVaultKey } from "@/lib/vault-key-context";
-import { decryptBlob, decryptText, deserializeEncryptedText, unwrapInviteKey } from "@/lib/vault-encryption";
+import {
+  decryptBlob,
+  decryptText,
+  deserializeEncryptedText,
+  encryptBlob,
+  encryptText,
+  hashContent,
+  serializeEncryptedText,
+  unwrapInviteKey,
+} from "@/lib/vault-encryption";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -364,11 +373,15 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
 interface UploadState {
   file: File;
   preview?: string;
-  status: "pending" | "uploading" | "done" | "error";
+  status: "ready" | "uploading" | "done" | "error";
   progress: number;
   error?: string;
-  r2Url?: string;
+  storageId?: string;
   mediaType?: string;
+  mediaMimeType?: string;
+  mediaEncryptionIv?: string;
+  mediaEncryptionTag?: string;
+  mediaEncryptionVersion?: number;
 }
 
 function QuickAddModal({
@@ -377,13 +390,16 @@ function QuickAddModal({
   childFirst,
   onClose,
   onSuccess,
+  parentName,
 }: {
   familyId: string;
   childDob: string;
   childFirst: string;
   onClose: () => void;
   onSuccess: () => void;
+  parentName: string;
 }) {
+  const { familyKey, isEncryptionEnabled } = useVaultKey();
   const [addType, setAddType] = useState<QuickAddType>("note");
   const [noteText, setNoteText] = useState("");
   const [caption, setCaption] = useState("");
@@ -392,6 +408,7 @@ function QuickAddModal({
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [uploadState, setUploadState] = useState<UploadState | null>(null);
+  const [submitError, setSubmitError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -399,52 +416,18 @@ function QuickAddModal({
 
   // ── File handling ────────────────────────────────────────────────────────
 
-  const handleFile = useCallback(async (file: File) => {
+  const handleFile = useCallback((file: File) => {
     const preview = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
-    setUploadState({ file, preview, status: "uploading", progress: 5 });
-
-    try {
-      const metaRes = await fetch("/api/ourfable/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-          familyId,
-          contributionType: "quick-add",
-        }),
-      });
-
-      if (!metaRes.ok) {
-        const err = await metaRes.json().catch(() => ({ error: "Upload failed" }));
-        throw new Error(err.error ?? "Upload failed");
-      }
-
-      const { uploadUrl, r2Url, mediaType } = await metaRes.json();
-      setUploadState(prev => prev ? { ...prev, progress: 20 } : prev);
-
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = 20 + Math.round((e.loaded / e.total) * 75);
-            setUploadState(prev => prev ? { ...prev, progress: pct } : prev);
-          }
-        };
-        xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`));
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
-      });
-
-      setUploadState(prev => prev ? { ...prev, status: "done", progress: 100, r2Url, mediaType } : prev);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Upload failed";
-      setUploadState(prev => prev ? { ...prev, status: "error", error: msg } : prev);
-    }
-  }, [familyId]);
+    setUploadState({
+      file,
+      preview,
+      status: "ready",
+      progress: 0,
+      mediaType: addType,
+      mediaMimeType: file.type || "application/octet-stream",
+    });
+    setSubmitError("");
+  }, [addType]);
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -464,14 +447,65 @@ function QuickAddModal({
     setUploadState(null);
   };
 
+  useEffect(() => {
+    return () => {
+      if (uploadState?.preview) URL.revokeObjectURL(uploadState.preview);
+    };
+  }, [uploadState?.preview]);
+
+  const uploadEncryptedMedia = useCallback(async (
+    file: File,
+    encryptionKey: CryptoKey
+  ): Promise<{ storageId: string; iv: string; tag: string }> => {
+    const encrypted = await encryptBlob(file, encryptionKey);
+    const uploadBlob = new Blob([encrypted.data], { type: "application/octet-stream" });
+
+    const uploadUrlRes = await fetch("/api/ourfable/upload-media", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const uploadUrlData = await uploadUrlRes.json().catch(() => ({}));
+    if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {
+      const err = uploadUrlData as { error?: string };
+      throw new Error(err.error ?? "Upload failed");
+    }
+
+    setUploadState(prev => prev ? { ...prev, status: "uploading", progress: 25 } : prev);
+
+    const uploadRes = await fetch(uploadUrlData.uploadUrl as string, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: uploadBlob,
+    });
+    const uploadData = await uploadRes.json().catch(() => ({}));
+    if (!uploadRes.ok || !uploadData.storageId) {
+      const err = uploadData as { error?: string };
+      throw new Error(err.error ?? "Upload failed");
+    }
+
+    setUploadState(prev => prev ? { ...prev, progress: 100 } : prev);
+
+    return {
+      storageId: uploadData.storageId as string,
+      iv: encrypted.iv,
+      tag: encrypted.tag,
+    };
+  }, []);
+
   // ── Submit ───────────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
     if (submitting) return;
+    setSubmitError("");
 
     // Validate
     if (addType === "note" && !noteText.trim()) return;
-    if (addType !== "note" && uploadState?.status !== "done") return;
+    if (addType !== "note" && !uploadState?.file) return;
+    if (!isEncryptionEnabled || !familyKey) {
+      setSubmitError("Unlock vault encryption before adding anything to the Vault.");
+      return;
+    }
 
     setSubmitting(true);
 
@@ -501,19 +535,41 @@ function QuickAddModal({
         familyId,
         type: typeMap[addType],
         authorEmail: "parent@family",
-        authorName: "Parent",
+        authorName: parentName || "Parent",
         isSealed,
         unlockAge: unlockAge ?? null,
       };
 
-      if (addType === "note") {
-        args.content = noteText.trim();
-      } else {
-        args.mediaUrl = uploadState?.r2Url ?? null;
-        if (caption.trim()) args.content = caption.trim();
+      const textBody = addType === "note" ? noteText.trim() : caption.trim();
+      if (textBody) {
+        const encrypted = await encryptText(textBody, familyKey);
+        const hash = await hashContent(textBody);
+        args.encryptedBody = serializeEncryptedText(encrypted);
+        args.contentHash = hash;
+        args.encryptionVersion = 1;
       }
 
-      await fetch("/api/ourfable/data", {
+      if (addType !== "note" && uploadState?.file) {
+        const mediaMimeType = uploadState.file.type || "application/octet-stream";
+        const upload = await uploadEncryptedMedia(uploadState.file, familyKey);
+        args.mediaStorageId = upload.storageId;
+        args.mediaMimeType = mediaMimeType;
+        args.mediaEncryptionIv = upload.iv;
+        args.mediaEncryptionTag = upload.tag;
+        args.mediaEncryptionVersion = 1;
+        setUploadState(prev => prev ? {
+          ...prev,
+          status: "done",
+          progress: 100,
+          storageId: upload.storageId,
+          mediaMimeType,
+          mediaEncryptionIv: upload.iv,
+          mediaEncryptionTag: upload.tag,
+          mediaEncryptionVersion: 1,
+        } : prev);
+      }
+
+      const res = await fetch("/api/ourfable/data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -522,13 +578,22 @@ function QuickAddModal({
           type: "mutation",
         }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = data as { error?: string };
+        throw new Error(err.error ?? "Failed to save entry");
+      }
 
       setSuccess(true);
       setTimeout(() => {
         onSuccess();
         onClose();
       }, 1500);
-    } catch {
+    } catch (err) {
+      setUploadState(prev => prev?.status === "uploading"
+        ? { ...prev, status: "error", error: err instanceof Error ? err.message : "Upload failed" }
+        : prev);
+      setSubmitError(err instanceof Error ? err.message : "Failed to save entry");
       setSubmitting(false);
     }
   };
@@ -537,14 +602,14 @@ function QuickAddModal({
 
   const canSubmit =
     addType === "note"
-      ? noteText.trim().length > 0
-      : uploadState?.status === "done";
+      ? noteText.trim().length > 0 && !!familyKey
+      : !!uploadState?.file && !!familyKey;
 
   // ── Success state ────────────────────────────────────────────────────────
 
   if (success) {
     return (
-      <>
+      <div>
         <div className="qa-overlay" onClick={onClose} />
         <div className="qa-modal">
           <div style={{ padding: "64px 24px", textAlign: "center" }}>
@@ -570,64 +635,80 @@ function QuickAddModal({
           </div>
         </div>
         <style>{quickAddStyles}</style>
-      </>
+      </div>
     );
   }
 
   // ── Main modal ───────────────────────────────────────────────────────────
 
   return (
-    <>
+    <div>
       <div className="qa-overlay" onClick={onClose} />
       <div className="qa-modal">
-        {/* Drag handle */}
-        <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 4px" }}>
-          <div style={{
-            width: 36, height: 4, borderRadius: 2,
-            background: "var(--border-dark)", opacity: 0.5,
-          }} />
-        </div>
+        <div className="qa-shell">
+          <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
+            <div style={{
+              width: 36, height: 4, borderRadius: 999,
+              background: "rgba(26,26,24,0.14)",
+            }} />
+          </div>
 
-        {/* Header */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "8px 20px 16px",
-        }}>
-          <h3 style={{
-            fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 300, color: "var(--text)",
-          }}>
-            Add to Vault
-          </h3>
-          <button
-            onClick={onClose}
-            style={{
-              width: 44, height: 44, borderRadius: "50%",
-              background: "var(--surface)", border: "1px solid var(--border)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "var(--text-3)",
-            }}
-          >
-            <X size={18} strokeWidth={1.5} />
-          </button>
-        </div>
+          <div className="qa-head">
+            <div>
+              <p style={{
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "rgba(74,94,76,0.7)",
+                fontWeight: 600,
+                marginBottom: 8,
+              }}>
+                Add to Vault
+              </p>
+              <h3 style={{
+                fontFamily: "var(--font-cormorant)", fontSize: 32, fontWeight: 400, color: "var(--text)",
+                lineHeight: 1.05, marginBottom: 6,
+              }}>
+                A note for {childFirst}
+              </h3>
+              <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.6 }}>
+                Write it now, seal it for later.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "#FFFFFF", border: "1px solid rgba(26,26,24,0.08)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "var(--text-3)", flexShrink: 0,
+              }}
+            >
+              <X size={18} strokeWidth={1.5} />
+            </button>
+          </div>
 
-        {/* Scrollable content */}
-        <div style={{ overflowY: "auto", flex: 1, padding: "0 20px 20px" }}>
-
-          {/* Type selector */}
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 24,
-          }}>
+          <div className="qa-body">
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: 8,
+              marginBottom: 20,
+            }}>
             {QUICK_ADD_TYPES.map(t => (
               <button
                 key={t.key}
-                onClick={() => { setAddType(t.key); clearUpload(); }}
+                onClick={() => {
+                  setAddType(t.key);
+                  setSubmitError("");
+                  clearUpload();
+                }}
                 style={{
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                  padding: "14px 8px", borderRadius: 12, cursor: "pointer",
+                  padding: "12px 8px", borderRadius: 999, cursor: "pointer",
                   minHeight: 44,
-                  background: addType === t.key ? "var(--green-light)" : "var(--surface)",
-                  border: `1.5px solid ${addType === t.key ? "var(--green)" : "var(--border)"}`,
+                  background: addType === t.key ? "rgba(74,94,76,0.12)" : "rgba(255,255,255,0.86)",
+                  border: `1px solid ${addType === t.key ? "rgba(74,94,76,0.3)" : "rgba(26,26,24,0.08)"}`,
                   color: addType === t.key ? "var(--green)" : "var(--text-3)",
                   transition: "all 160ms",
                 }}
@@ -638,30 +719,50 @@ function QuickAddModal({
                 </span>
               </button>
             ))}
-          </div>
+            </div>
 
-          {/* Content area */}
-          {addType === "note" ? (
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, display: "block" }}>
-                Your note
-              </label>
+            {addType === "note" ? (
+              <div className="qa-card" style={{ marginBottom: 18 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <FileText size={15} strokeWidth={1.7} color="var(--green)" />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-2)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    Letter
+                  </span>
+                </div>
               <textarea
                 value={noteText}
                 onChange={e => setNoteText(e.target.value)}
                 placeholder={`A thought, a memory, a wish for ${childFirst}...`}
-                rows={5}
+                rows={8}
                 style={{
-                  width: "100%", padding: "14px 16px", borderRadius: 12,
-                  border: "1.5px solid var(--border)", background: "var(--surface)",
-                  fontSize: 15, lineHeight: 1.7, color: "var(--text)",
-                  fontFamily: "inherit", resize: "vertical", minHeight: 120,
+                  width: "100%", padding: 0, borderRadius: 0,
+                  border: "none", background: "transparent",
+                  fontSize: 16, lineHeight: 1.9, color: "var(--text)",
+                  fontFamily: "var(--font-body)", resize: "vertical", minHeight: 220,
+                  outline: "none",
                 }}
               />
-            </div>
-          ) : (
-            <div style={{ marginBottom: 24 }}>
-              {/* Upload zone */}
+              </div>
+            ) : (
+              <div className="qa-card" style={{ marginBottom: 18 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-2)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+                      {addType === "photo" ? "Photo" : addType === "voice" ? "Voice Memo" : "Video"}
+                    </p>
+                    <p style={{ fontSize: 13, color: "var(--text-3)" }}>
+                      {addType === "photo"
+                        ? "Add a single image from your camera roll or camera."
+                        : addType === "voice"
+                          ? "Attach one voice memo file."
+                          : "Attach one video clip."}
+                    </p>
+                  </div>
+                  {uploadState?.status === "done" && (
+                    <CheckCircle size={18} color="var(--green)" />
+                  )}
+                </div>
+
               {!uploadState ? (
                 <div
                   onClick={() => fileInputRef.current?.click()}
@@ -669,10 +770,10 @@ function QuickAddModal({
                   onDragLeave={e => { e.preventDefault(); setIsDragging(false); }}
                   onDrop={onDrop}
                   style={{
-                    border: `2px dashed ${isDragging ? "var(--green)" : "var(--border)"}`,
-                    borderRadius: 12, padding: "36px 24px", textAlign: "center",
+                    border: `1.5px dashed ${isDragging ? "var(--green)" : "rgba(26,26,24,0.12)"}`,
+                    borderRadius: 18, padding: "36px 24px", textAlign: "center",
                     cursor: "pointer", minHeight: 44,
-                    background: isDragging ? "var(--green-light)" : "var(--surface)",
+                    background: isDragging ? "rgba(74,94,76,0.06)" : "rgba(247,243,236,0.72)",
                     transition: "all 200ms", marginBottom: 16,
                   }}
                 >
@@ -691,14 +792,15 @@ function QuickAddModal({
                     ref={fileInputRef}
                     type="file"
                     accept={currentTypeConfig.accept}
+                    capture={addType === "photo" ? "environment" : undefined}
                     onChange={onFileInput}
                     style={{ display: "none" }}
                   />
                 </div>
               ) : (
                 <div style={{
-                  borderRadius: 12, padding: "14px 16px", marginBottom: 16,
-                  background: "var(--surface)", border: `1.5px solid ${uploadState.status === "error" ? "#E07070" : "var(--border)"}`,
+                  borderRadius: 16, padding: "14px 16px", marginBottom: 18,
+                  background: "#FFFFFF", border: `1.5px solid ${uploadState.status === "error" ? "#E07070" : "rgba(26,26,24,0.08)"}`,
                   display: "flex", alignItems: "center", gap: 12,
                 }}>
                   {/* Preview */}
@@ -754,26 +856,23 @@ function QuickAddModal({
                 </div>
               )}
 
-              {/* Caption */}
-              <label style={{ fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, display: "block" }}>
-                Caption <span style={{ textTransform: "none", letterSpacing: 0 }}>(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={caption}
-                onChange={e => setCaption(e.target.value)}
-                placeholder={`Add a note about this ${addType}...`}
-                style={{
-                  width: "100%", padding: "12px 16px", borderRadius: 10,
-                  border: "1.5px solid var(--border)", background: "var(--surface)",
-                  fontSize: 14, color: "var(--text)", minHeight: 44,
-                }}
-              />
-            </div>
-          )}
+                <textarea
+                  value={caption}
+                  onChange={e => setCaption(e.target.value)}
+                  placeholder={`Add a note about this ${addType}...`}
+                  rows={4}
+                  style={{
+                    width: "100%", padding: 0,
+                    border: "none", background: "transparent",
+                    fontSize: 15, lineHeight: 1.8, color: "var(--text)",
+                    minHeight: 88, outline: "none", resize: "vertical",
+                    fontFamily: "var(--font-body)",
+                  }}
+                />
+              </div>
+            )}
 
-          {/* Seal date picker */}
-          <div style={{ marginBottom: 24 }}>
+            <div className="qa-card" style={{ marginBottom: 18 }}>
             <label style={{
               fontSize: 11, color: "var(--text-3)", textTransform: "uppercase",
               letterSpacing: "0.1em", marginBottom: 10, display: "block",
@@ -781,23 +880,21 @@ function QuickAddModal({
               <Lock size={11} strokeWidth={2} style={{ marginRight: 4, verticalAlign: "middle" }} />
               Seal until
             </label>
-            <div style={{
-              display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
-            }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {SEAL_PRESETS.map(p => (
                 <button
                   key={p.key}
                   onClick={() => setSealPreset(p.key)}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                    padding: "12px 6px", borderRadius: 10, cursor: "pointer",
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "10px 14px", borderRadius: 999, cursor: "pointer",
                     minHeight: 44,
                     background: sealPreset === p.key
-                      ? (p.key === "none" ? "var(--sage-dim)" : "var(--gold-dim)")
-                      : "var(--surface)",
-                    border: `1.5px solid ${sealPreset === p.key
-                      ? (p.key === "none" ? "var(--sage-border)" : "var(--gold-border)")
-                      : "var(--border)"}`,
+                      ? (p.key === "none" ? "rgba(107,143,111,0.14)" : "rgba(200,168,122,0.14)")
+                      : "#FFFFFF",
+                    border: `1px solid ${sealPreset === p.key
+                      ? (p.key === "none" ? "rgba(107,143,111,0.28)" : "rgba(200,168,122,0.32)")
+                      : "rgba(26,26,24,0.08)"}`,
                     color: sealPreset === p.key
                       ? (p.key === "none" ? "var(--sage)" : "var(--gold)")
                       : "var(--text-3)",
@@ -805,7 +902,7 @@ function QuickAddModal({
                   }}
                 >
                   {p.icon}
-                  <span style={{ fontSize: 10, fontWeight: 500, lineHeight: 1.2, textAlign: "center" }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, lineHeight: 1.2, textAlign: "center" }}>
                     {p.label}
                   </span>
                 </button>
@@ -821,8 +918,8 @@ function QuickAddModal({
                   onChange={e => setCustomDate(e.target.value)}
                   min={new Date().toISOString().slice(0, 10)}
                   style={{
-                    width: "100%", padding: "12px 16px", borderRadius: 10,
-                    border: "1.5px solid var(--gold-border)", background: "var(--gold-dim)",
+                    width: "100%", padding: "12px 16px", borderRadius: 14,
+                    border: "1px solid rgba(200,168,122,0.32)", background: "rgba(200,168,122,0.08)",
                     fontSize: 14, color: "var(--text)", minHeight: 44,
                   }}
                 />
@@ -833,38 +930,60 @@ function QuickAddModal({
                 )}
               </div>
             )}
+
+            {submitError && (
+              <p style={{ fontSize: 12, color: "#B44C4C", lineHeight: 1.5 }}>{submitError}</p>
+            )}
+          </div>
           </div>
 
-          {/* Submit button */}
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit || submitting}
-            style={{
-              width: "100%", padding: "16px", borderRadius: 12,
-              background: canSubmit && !submitting ? "var(--green)" : "var(--border)",
-              color: canSubmit && !submitting ? "#fff" : "var(--text-3)",
-              border: "none", fontSize: 15, fontWeight: 600,
-              cursor: canSubmit && !submitting ? "pointer" : "default",
-              transition: "all 200ms", minHeight: 52,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            {submitting ? (
-              <>
-                <Clock size={16} className="qa-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Plus size={16} strokeWidth={2} />
-                Add to {childFirst}&apos;s Vault
-              </>
-            )}
-          </button>
+          <div className="qa-foot">
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 4 }}>
+                {!familyKey
+                  ? "Unlock vault encryption to save securely."
+                  : sealPreset === "none"
+                    ? "This will be visible right away."
+                    : `This will be sealed for ${childFirst}.`}
+              </p>
+              <p style={{ fontSize: 11, color: "rgba(26,26,24,0.45)" }}>
+                {addType === "note" ? "Letter" : addType === "photo" ? "Photo" : addType === "voice" ? "Voice memo" : "Video"} ready
+                {addType === "note"
+                  ? noteText.trim() ? " to save." : " when you add your words."
+                  : uploadState?.file ? " to encrypt and save." : " when you choose a file."}
+              </p>
+            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={!canSubmit || submitting}
+              style={{
+                minWidth: 180, padding: "16px 20px", borderRadius: 999,
+                background: canSubmit && !submitting ? "var(--green)" : "rgba(26,26,24,0.12)",
+                color: canSubmit && !submitting ? "#fff" : "rgba(26,26,24,0.38)",
+                border: "none", fontSize: 15, fontWeight: 600,
+                cursor: canSubmit && !submitting ? "pointer" : "default",
+                transition: "all 200ms", minHeight: 52,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              {submitting ? (
+                <>
+                  <Clock size={16} className="qa-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Plus size={16} strokeWidth={2} />
+                  Add to Vault
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
       <style>{quickAddStyles}</style>
-    </>
+    </div>
   );
 }
 
@@ -885,14 +1004,53 @@ const quickAddStyles = `
     bottom: 0;
     left: 0;
     right: 0;
-    max-height: 85vh;
-    background: var(--bg);
+    max-height: min(92vh, 880px);
+    background: linear-gradient(180deg, #FDFBF7 0%, #F6F1E8 100%);
     border-radius: 20px 20px 0 0;
     z-index: 1000;
+    animation: qa-slideUp 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.18);
+    overflow: hidden;
+  }
+
+  .qa-shell {
     display: flex;
     flex-direction: column;
-    animation: qa-slideUp 300ms cubic-bezier(0.32, 0.72, 0, 1);
-    box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
+    max-height: inherit;
+  }
+
+  .qa-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 20px 18px;
+    border-bottom: 1px solid rgba(26,26,24,0.06);
+  }
+
+  .qa-body {
+    overflow-y: auto;
+    flex: 1;
+    padding: 20px;
+  }
+
+  .qa-card {
+    background: rgba(255,255,255,0.76);
+    border: 1px solid rgba(26,26,24,0.08);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+  }
+
+  .qa-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(26,26,24,0.06);
+    background: rgba(253,251,247,0.94);
+    backdrop-filter: blur(12px);
   }
 
   @media (min-width: 640px) {
@@ -901,11 +1059,18 @@ const quickAddStyles = `
       right: auto;
       bottom: 50%;
       transform: translate(-50%, 50%);
-      max-width: 480px;
+      max-width: 640px;
       width: 100%;
       border-radius: 20px;
-      max-height: 85vh;
+      max-height: min(88vh, 900px);
       animation: qa-fadeScale 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+  }
+
+  @media (max-width: 639px) {
+    .qa-foot {
+      flex-direction: column;
+      align-items: stretch;
     }
   }
 
@@ -1128,7 +1293,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         promptText: undefined,
         contentType: (e.type as string ?? "text") as VaultEntry["contentType"],
         textContent: sealed ? undefined : (hasEncryptedBody ? undefined : (e.content as string | undefined)),
-        mediaUrl: sealed ? undefined : (e.mediaUrl as string | undefined),
+        mediaUrl: sealed ? undefined : ((e.photoUrl as string) ?? (e.audioUrl as string) ?? (e.videoUrl as string) ?? (e.mediaUrl as string)),
         mediaUrls: sealed ? undefined : (e.mediaUrls as string[] | undefined),
         mediaMimeType: e.mediaMimeType as string | undefined,
         isSealed: sealed,
@@ -1471,6 +1636,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
           familyId={familyId}
           childDob={family.childDob}
           childFirst={childFirst}
+          parentName={family.parentNames ?? "Parent"}
           onClose={() => setShowQuickAdd(false)}
           onSuccess={() => load()}
         />

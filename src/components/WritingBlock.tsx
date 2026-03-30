@@ -813,9 +813,9 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         borderTop: '0.5px solid var(--border)',
       }}>
         {[
+          { label: 'Video', icon: <VideoIcon size={13} strokeWidth={1.5} />, onClick: () => videoBlob ? undefined : openVideoPreview() },
           { label: 'Voice', icon: <Mic size={13} strokeWidth={1.5} />, onClick: () => audioBlob ? undefined : startRecording() },
           { label: 'Photo', icon: <ImageIcon size={13} strokeWidth={1.5} />, onClick: () => photoRef.current?.click() },
-          { label: 'Video', icon: <VideoIcon size={13} strokeWidth={1.5} />, onClick: () => videoBlob ? undefined : openVideoPreview() },
         ].map(btn => (
           <button key={btn.label} onClick={btn.onClick} style={{
             display: 'inline-flex',
