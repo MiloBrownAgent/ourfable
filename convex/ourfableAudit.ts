@@ -25,7 +25,7 @@ import {
   internalAction,
   internalQuery,
 } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYER 1: Audit Log
@@ -137,12 +137,12 @@ export const runCanary = internalAction({
 
       // 2. Submit a test entry
       const testToken = `canary-${Date.now()}`;
-      const entryId = await ctx.runMutation(internal.ourfableAudit.submitCanaryEntry, {
+      const entryId = await ctx.runMutation(api.ourfableAudit.submitCanaryEntry, {
         token: testToken,
       });
 
       // 3. Read it back immediately
-      const readBack = await ctx.runQuery(internal.ourfableAudit.getCanaryEntry, { entryId });
+      const readBack = await ctx.runQuery(api.ourfableAudit.getCanaryEntry, { entryId });
 
       if (!readBack) {
         throw new Error("Canary entry submitted but read-back returned null");
@@ -153,12 +153,12 @@ export const runCanary = internalAction({
       }
 
       // 4. Clean up — delete the test entry
-      await ctx.runMutation(internal.ourfableAudit.deleteCanaryEntry, { entryId });
+      await ctx.runMutation(api.ourfableAudit.deleteCanaryEntry, { entryId });
 
       const durationMs = Date.now() - startTime;
 
       // 5. Log success
-      await ctx.runMutation(internal.ourfableAudit.logCanaryResult, {
+      await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
         testType: "write",
         status: "pass",
         durationMs,
@@ -169,7 +169,7 @@ export const runCanary = internalAction({
       const durationMs = Date.now() - startTime;
       const errorMsg = err instanceof Error ? err.message : String(err);
 
-      await ctx.runMutation(internal.ourfableAudit.logCanaryResult, {
+      await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
         testType: "write",
         status: "fail",
         durationMs,
@@ -184,8 +184,9 @@ export const runCanary = internalAction({
   },
 });
 
-// Used by external canary (Cloudflare Worker) — needs to be public query
-export const getCanaryMember = internalQuery({
+// Used by external canary (Cloudflare Worker) — must be public query (not internal)
+// so the Cloudflare Worker can call it via /api/query
+export const getCanaryMember = query({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
     return await ctx.db
@@ -240,7 +241,7 @@ export const seedCanaryFamily = internalMutation({
 
 // Public versions for external canary (Cloudflare Worker)
 // Security: only operates on CANARY_FAMILY_ID, rejects all other familyIds
-export const submitCanaryEntry = internalMutation({
+export const submitCanaryEntry = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const member = await ctx.db
@@ -260,14 +261,14 @@ export const submitCanaryEntry = internalMutation({
   },
 });
 
-export const getCanaryEntry = internalQuery({
+export const getCanaryEntry = query({
   args: { entryId: v.id("ourfable_vault_contributions") },
   handler: async (ctx, { entryId }) => {
     return await ctx.db.get(entryId);
   },
 });
 
-export const deleteCanaryEntry = internalMutation({
+export const deleteCanaryEntry = mutation({
   args: { entryId: v.id("ourfable_vault_contributions") },
   handler: async (ctx, { entryId }) => {
     // Safety: only allow deleting canary entries
@@ -279,7 +280,7 @@ export const deleteCanaryEntry = internalMutation({
   },
 });
 
-export const logCanaryResult = internalMutation({
+export const logCanaryResult = mutation({
   args: {
     testType: v.string(),
     status: v.string(),
