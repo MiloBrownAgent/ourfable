@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/soren-mn657o1b/', '/join/', '/respond/', '/welcome', '/redeem/'],
+        disallow: ['/api/', '/join/', '/respond/', '/welcome', '/redeem/'],
       },
     ],
     sitemap: 'https://ourfable.ai/sitemap.xml',

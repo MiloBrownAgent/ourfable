@@ -267,17 +267,12 @@ export async function POST(req: NextRequest) {
               let facilitatorEmail: string | undefined;
               let facilitatorName: string | undefined;
 
-              if (lastNotified === 0 || (now - lastNotified) < THIRTY_DAYS_MS) {
-                // First notification or within 30-day window: notify Facilitator #1
-                if (lastNotified === 0 && family.facilitator1Email) {
-                  facilitatorEmail = family.facilitator1Email;
-                  facilitatorName = family.facilitator1Name ?? "Vault Guardian";
-                }
-                // If 30+ days since Facilitator #1 was notified, notify Facilitator #2
-                else if (lastNotified > 0 && (now - lastNotified) >= THIRTY_DAYS_MS && family.facilitator2Email) {
-                  facilitatorEmail = family.facilitator2Email;
-                  facilitatorName = family.facilitator2Name ?? "Vault Guardian";
-                }
+              if (lastNotified === 0 && family.facilitator1Email) {
+                facilitatorEmail = family.facilitator1Email;
+                facilitatorName = family.facilitator1Name ?? "Vault Guardian";
+              } else if (lastNotified > 0 && (now - lastNotified) >= THIRTY_DAYS_MS && family.facilitator2Email) {
+                facilitatorEmail = family.facilitator2Email;
+                facilitatorName = family.facilitator2Name ?? "Vault Guardian";
               }
 
               if (facilitatorEmail) {

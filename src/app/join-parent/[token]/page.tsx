@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2, Shield } from "lucide-react";
+import { deriveKeyEncryptionKey, generateSalt, unwrapFamilyKey, wrapFamilyKey } from "@/lib/vault-encryption";
 
 export default function JoinParentPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -13,6 +14,8 @@ export default function JoinParentPage({ params }: { params: Promise<{ token: st
     invitedByName: string;
     childName: string;
     familyId: string;
+    encryptedFamilyKeyForInvite?: string | null;
+    inviteKeySalt?: string | null;
   } | null>(null);
   const [error, setError] = useState("");
 
@@ -51,6 +54,24 @@ export default function JoinParentPage({ params }: { params: Promise<{ token: st
     setSubmitting(true);
 
     try {
+      let encryptedFamilyKey: string | undefined;
+      let keySalt: string | undefined;
+
+      if (inviteData?.encryptedFamilyKeyForInvite && inviteData.inviteKeySalt) {
+        const inviterPassword = sessionStorage.getItem(`ourfable-pwd-${inviteData.familyId}`);
+        if (!inviterPassword) {
+          setSubmitError("Ask the inviting parent to sign in again before you accept this invite. Their vault key needs to be shared securely.");
+          setSubmitting(false);
+          return;
+        }
+
+        const inviterKek = await deriveKeyEncryptionKey(inviterPassword, inviteData.inviteKeySalt);
+        const familyKey = await unwrapFamilyKey(JSON.parse(inviteData.encryptedFamilyKeyForInvite), inviterKek);
+        keySalt = generateSalt();
+        const newUserKek = await deriveKeyEncryptionKey(password, keySalt);
+        encryptedFamilyKey = JSON.stringify(await wrapFamilyKey(familyKey, newUserKek));
+      }
+
       const res = await fetch("/api/ourfable/join-parent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,6 +80,8 @@ export default function JoinParentPage({ params }: { params: Promise<{ token: st
           name: name.trim(),
           email: inviteData?.email,
           password,
+          encryptedFamilyKey,
+          keySalt,
         }),
       });
       const data = await res.json();

@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "This invite has expired. Ask the other parent to send a new one." }, { status: 400 });
   }
 
+  if (invite.encryptedFamilyKeyForInvite && (!encryptedFamilyKey || !keySalt)) {
+    return NextResponse.json({ error: "Missing encrypted vault key. Ask the inviting parent to sign in again and resend the invite." }, { status: 400 });
+  }
+
   // Check email matches
   if (email.toLowerCase() !== invite.email.toLowerCase()) {
     return NextResponse.json({ error: "Email doesn't match the invite" }, { status: 400 });
@@ -137,5 +141,7 @@ export async function GET(req: NextRequest) {
     childName: family?.childName ?? "",
     familyId: invite.familyId,
     hasEncryptedKey: !!invite.encryptedFamilyKeyForInvite,
+    encryptedFamilyKeyForInvite: invite.encryptedFamilyKeyForInvite ?? null,
+    inviteKeySalt: invite.inviteKeySalt ?? null,
   });
 }

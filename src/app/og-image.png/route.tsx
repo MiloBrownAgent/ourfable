@@ -105,7 +105,7 @@ export async function GET() {
             display: "flex",
             fontFamily: "Playfair",
           }}>
-            🌿  Founding families · ourfable.ai
+            Founding families · ourfable.ai
           </div>
         </div>
 

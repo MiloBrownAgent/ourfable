@@ -67,6 +67,9 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:getOurFableFacilitators",
   "ourfable:getOurFable2FAStatusPublic",
   "ourfable:listOurFableDeliveryMilestones",
+  "ourfable:listChildren",
+  "ourfable:getLegacySettings",
+  "ourfable:listOurFableUsersByFamily",
   "ourfable:updateOurFableFacilitators",
   "ourfable:updateOurFableLapseNotification",
   // SERVER_ONLY — NEVER add these to ALLOWED_QUERIES:
@@ -96,27 +99,6 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:isRecoverySetupComplete",
   "ourfable:getRecoveryCodeStatus",
   "ourfable:getGuardianKeyShares",
-  // Recovery/encryption operations that are internal — routed via INTERNAL_ALLOWED set
-  "ourfable:storeRecoveryCodeHashes",
-  "ourfable:verifyAndConsumeRecoveryCode",
-  "ourfable:markRecoverySetupComplete",
-  "ourfable:updateEncryptedFamilyKey",
-  "ourfable:storeGuardianKeyShare",
-  "ourfable:getFamilyEncryptionKeys",
-  "ourfable:setupFamilyEncryption",
-]);
-
-// INTERNAL_ALLOWED: Functions that are Convex internalQuery/internalMutation
-// and must be called through the authenticated HTTP action gateway, NOT the public API.
-// These are allowed in ALLOWED_QUERIES above but routed differently.
-const INTERNAL_ALLOWED = new Set([
-  "ourfable:storeRecoveryCodeHashes",
-  "ourfable:verifyAndConsumeRecoveryCode",
-  "ourfable:markRecoverySetupComplete",
-  "ourfable:updateEncryptedFamilyKey",
-  "ourfable:storeGuardianKeyShare",
-  "ourfable:getFamilyEncryptionKeys",
-  "ourfable:setupFamilyEncryption",
 ]);
 
 // Public — no session required (join/share flows)

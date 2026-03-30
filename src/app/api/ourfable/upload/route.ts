@@ -5,13 +5,26 @@ import { verifySession, COOKIE } from "@/lib/auth";
 import { checkStorageWarnings } from "@/lib/storage-warnings";
 import { internalConvexQuery as convexQuery, internalConvexMutation as convexMutation } from "@/lib/convex-internal";
 // ── R2 client configuration ────────────────────────────────────────────────────
-// All credentials are placeholders — Dave fills these in via Vercel env vars.
+// Missing or placeholder credentials are treated as a startup misconfiguration.
 
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID ?? "your-cloudflare-account-id";
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID ?? "placeholder";
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY ?? "placeholder";
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 const R2_BUCKET = process.env.R2_BUCKET ?? "ourfable-media";
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL ?? "https://media.ourfable.ai";
+
+if (
+  !R2_ACCOUNT_ID ||
+  !R2_ACCESS_KEY_ID ||
+  !R2_SECRET_ACCESS_KEY ||
+  R2_ACCOUNT_ID === "your-cloudflare-account-id" ||
+  R2_ACCESS_KEY_ID === "placeholder" ||
+  R2_SECRET_ACCESS_KEY === "placeholder"
+) {
+  if (process.env.NEXT_PHASE !== "phase-production-build") {
+    throw new Error("R2 upload route requires real R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY environment variables.");
+  }
+}
 
 const r2 = new S3Client({
   region: "auto",

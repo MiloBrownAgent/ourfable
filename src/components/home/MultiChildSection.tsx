@@ -1,5 +1,6 @@
 "use client";
 import { Reveal } from "./Reveal";
+import { Lock } from "lucide-react";
 
 export function MultiChildSection() {
   return (
@@ -109,7 +110,7 @@ export function MultiChildSection() {
                     fontSize: 20,
                   }}
                 >
-                  🔒
+                  <Lock size={20} color={child.active ? "#C8A87A" : "rgba(245,242,237,0.7)"} strokeWidth={1.75} />
                 </div>
 
                 <p

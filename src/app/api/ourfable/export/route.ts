@@ -16,10 +16,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [contributions, letters, snapshots] = await Promise.all([
+    const [contributions, letters, snapshots, vaultEntries, dispatches, deliveryMilestones] = await Promise.all([
       convexQuery<unknown[]>("ourfable:listContributionsByFamily", { familyId }).catch(() => []),
       convexQuery<unknown[]>("ourfable:listLettersByFamily", { familyId }).catch(() => []),
       convexQuery<unknown[]>("ourfable:listSnapshotsByFamily", { familyId }).catch(() => []),
+      convexQuery<unknown[]>("ourfable:listOurFableVaultEntries", { familyId }).catch(() => []),
+      convexQuery<unknown[]>("ourfable:listOurFableDispatches", { familyId }).catch(() => []),
+      convexQuery<unknown[]>("ourfable:listOurFableDeliveryMilestones", { familyId }).catch(() => []),
     ]);
 
     const exportData = {
@@ -29,10 +32,16 @@ export async function GET(req: NextRequest) {
         contributions: contributions.length,
         letters: letters.length,
         snapshots: snapshots.length,
+        vaultEntries: vaultEntries.length,
+        dispatches: dispatches.length,
+        deliveryMilestones: deliveryMilestones.length,
       },
       contributions,
       letters,
       snapshots,
+      vaultEntries,
+      dispatches,
+      deliveryMilestones,
     };
 
     return new NextResponse(JSON.stringify(exportData, null, 2), {

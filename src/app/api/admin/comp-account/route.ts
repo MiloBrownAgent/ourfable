@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { hashPassword, addAccount } from "@/lib/accounts";
-import { internalConvexQuery } from "@/lib/convex-internal";
+import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/admin/comp-account
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     const passwordHash = hashPassword(password);
 
     // 1. Create family in Convex — no stripeCustomerId (comped)
-    await convexMutation("ourfable:createFamily", {
+    await internalConvexMutation("ourfable:createFamily", {
       familyId,
       childName,
       childDob,
@@ -78,9 +78,9 @@ export async function POST(req: NextRequest) {
     });
 
     // 2. Seed default content
-    await convexMutation("ourfable:seedCircle", { familyId }).catch(() => {});
-    await convexMutation("ourfable:seedMilestones", { familyId }).catch(() => {});
-    await convexMutation("ourfable:seedFirstLetter", { familyId }).catch(() => {});
+    await internalConvexMutation("ourfable:seedCircle", { familyId }).catch(() => {});
+    await internalConvexMutation("ourfable:seedMilestones", { familyId }).catch(() => {});
+    await internalConvexMutation("ourfable:seedFirstLetter", { familyId }).catch(() => {});
 
     // 3. Create account record — no Stripe IDs
     await addAccount({
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Create delivery milestones if DOB provided
     if (childDob) {
-      await convexMutation("ourfable:createOurFableDeliveryMilestones", {
+      await internalConvexMutation("ourfable:createOurFableDeliveryMilestones", {
         familyId,
         childDob,
       }).catch(() => {});

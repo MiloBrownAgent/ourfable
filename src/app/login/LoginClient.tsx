@@ -17,6 +17,7 @@ function LoginForm() {
   // 2FA state
   const [needs2fa, setNeeds2fa] = useState(false);
   const [familyId2fa, setFamilyId2fa] = useState("");
+  const [email2fa, setEmail2fa] = useState("");
   const [totpCode, setTotpCode] = useState("");
   const [rememberDevice, setRememberDevice] = useState(false);
   const [verifying2fa, setVerifying2fa] = useState(false);
@@ -39,6 +40,7 @@ function LoginForm() {
         if (data.requires2fa) {
           setNeeds2fa(true);
           setFamilyId2fa(data.familyId);
+          setEmail2fa(data.email ?? email.trim().toLowerCase());
           setLoading(false);
         } else {
           window.location.href = data.redirect;
@@ -64,7 +66,7 @@ function LoginForm() {
       const res = await fetch("/api/auth/2fa/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ familyId: familyId2fa, code: totpCode, rememberDevice }),
+        body: JSON.stringify({ familyId: familyId2fa, email: email2fa, code: totpCode, rememberDevice }),
       });
       const data = await res.json();
       if (res.ok) {

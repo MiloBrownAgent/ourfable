@@ -1382,6 +1382,8 @@ const PROMPT_LIBRARY: Record<string, PromptDef[]> = {
 export const createOutgoing = internalMutation({
   args: {
     familyId: v.string(),
+    childId: v.optional(v.string()),
+    dispatchTarget: v.optional(v.string()),
     subject: v.string(),
     body: v.string(),
     mediaUrls: v.optional(v.array(v.string())),
@@ -1411,12 +1413,14 @@ export const createOutgoing = internalMutation({
       authorEmail: family?.email ?? "parent@ourfable.ai",
       authorName: args.sentByName,
       isSealed: false,
+      childId: args.childId,
       createdAt: Date.now(),
     });
 
     // Schedule email delivery to circle members
     await ctx.scheduler.runAfter(0, internal.ourfableDelivery.sendDispatchEmails, {
       familyId: args.familyId,
+      childId: args.childId,
       body: args.body,
       mediaUrls: args.mediaUrls,
       mediaType: args.mediaType,
@@ -2317,6 +2321,7 @@ export const listOurFableMilestones = internalQuery({
 export const createOurFableDispatch = internalMutation({
   args: {
     familyId: v.string(),
+    childId: v.optional(v.string()),
     type: v.string(),
     content: v.string(),             // subject
     body: v.optional(v.string()),

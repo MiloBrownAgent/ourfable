@@ -14,20 +14,28 @@ import {
 } from "@/lib/vault-encryption";
 
 async function convexFetch(queryPath: string, args: Record<string, unknown>) {
-  const res = await fetch("/api/ourfable/data", {
+  const isRecoveryAction = queryPath === "ourfable:getFamilyEncryptionKeys";
+  const res = await fetch(isRecoveryAction ? "/api/ourfable/recovery" : "/api/ourfable/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: queryPath, args }),
+    body: JSON.stringify(isRecoveryAction ? { action: queryPath, args } : { path: queryPath, args }),
   });
   const data = await res.json();
   return data.value ?? data;
 }
 
 async function convexMutate(mutPath: string, args: Record<string, unknown>) {
-  const res = await fetch("/api/ourfable/data", {
+  const isRecoveryAction = new Set([
+    "ourfable:storeRecoveryCodeHashes",
+    "ourfable:markRecoverySetupComplete",
+    "ourfable:storeGuardianKeyShare",
+    "ourfable:setupFamilyEncryption",
+    "ourfable:updateEncryptedFamilyKey",
+  ]).has(mutPath);
+  const res = await fetch(isRecoveryAction ? "/api/ourfable/recovery" : "/api/ourfable/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: mutPath, args, type: "mutation" }),
+    body: JSON.stringify(isRecoveryAction ? { action: mutPath, args } : { path: mutPath, args, type: "mutation" }),
   });
   const data = await res.json();
   return data.value ?? data;

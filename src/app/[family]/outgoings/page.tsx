@@ -215,9 +215,9 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
         body: JSON.stringify({ familyId, fileName: file.name, fileType: file.type, contributionType: "dispatch" }),
       });
       if (!presignRes.ok) throw new Error("Upload failed");
-      const { uploadUrl, r2Key, publicUrl } = await presignRes.json();
+      const { uploadUrl, r2Key, r2Url } = await presignRes.json();
       await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      setAttachedFiles(prev => [...prev, { fileName: file.name, r2Key, r2Url: publicUrl, mediaType: type, fileType: file.type, fileSize: file.size }]);
+      setAttachedFiles(prev => [...prev, { fileName: file.name, r2Key, r2Url, mediaType: type, fileType: file.type, fileSize: file.size }]);
     } catch { alert("Upload failed. Please try again."); }
     finally { setUploadingRecording(false); }
   };
@@ -267,6 +267,9 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
 
   const withEmail = circle.filter(m => m.email);
   const recipientCount = sentToAll ? withEmail.length : Array.from(selectedIds).filter(id => circle.find(m => m._id === id && m.email)).length;
+  const selectedChildId = dispatchTarget !== "family"
+    ? (dispatchTarget === "selected" ? selectedChild?.childId || selectedChild?._id : dispatchTarget)
+    : undefined;
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) return;
@@ -284,7 +287,19 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           path: "ourfable:createOutgoing",
-          args: { familyId, subject, body, sentToAll, sentToMemberIds: memberIds, sentByName: parentNames || "Your family", recipientCount, mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined, mediaType },
+          args: {
+            familyId,
+            childId: selectedChildId,
+            dispatchTarget,
+            subject,
+            body,
+            sentToAll,
+            sentToMemberIds: memberIds,
+            sentByName: parentNames || "Your family",
+            recipientCount,
+            mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+            mediaType,
+          },
           type: "mutation",
         }),
       });
@@ -293,7 +308,18 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
       const res = await fetch(`/api/ourfable/send-outgoing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ familyId, subject, messageBody: body, sentToAll, memberIds, sentByName: parentNames || "Your family", mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined, mediaType }),
+        body: JSON.stringify({
+          familyId,
+          childId: selectedChildId,
+          dispatchTarget,
+          subject,
+          messageBody: body,
+          sentToAll,
+          memberIds,
+          sentByName: parentNames || "Your family",
+          mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+          mediaType,
+        }),
       });
       const data = await res.json();
 

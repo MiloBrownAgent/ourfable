@@ -1,21 +1,16 @@
+import type { CSSProperties } from "react";
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { MetaPixel } from "../components/MetaPixel";
 import { GoogleAnalytics } from "../components/GoogleAnalytics";
 import { CookieBanner } from "../components/CookieBanner";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const playfair = localFont({
+  src: "../../public/playfair-800.ttf",
   variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  style: ["normal", "italic"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "800",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -27,9 +22,6 @@ export const metadata: Metadata = {
   description:
     "Record letters, voice memos, and photos for your child — sealed until they turn 13, 18, or 21. Our Fable automatically asks the people who love them every month.",
   robots: { index: true, follow: true },
-  alternates: {
-    canonical: "https://ourfable.ai",
-  },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Our Fable" },
   openGraph: {
     type: "website",
@@ -136,64 +128,12 @@ const softwareApplicationSchema = {
   ],
 };
 
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "What is Our Fable?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Our Fable is a private platform where parents set up a vault for their child. Each month, Our Fable sends personalized prompts to grandparents, family members, and loved ones — asking them to record a letter, voice memo, photo, or video. Everything is sealed inside the vault until the child reaches a milestone age (13, 18, 21, graduation, or wedding day).",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How does message delivery work?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Parents choose milestone ages when setting up the vault (for example, age 13 or age 18). Each piece of content — a letter from grandma, a voice memo from a godparent, a photo from a friend — is locked inside the vault until that milestone date arrives. When your child is ready, they unlock the vault and experience all of it at once.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Who can contribute to the vault?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Anyone the parent invites — grandparents, aunts, uncles, godparents, family friends, neighbors, old college friends. Each person receives a personal invitation link. No account or app is required. They simply receive a prompt and respond with text, a photo, a voice recording, or a short video.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "What does Our Fable cost?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Our Fable has two tiers. Our Fable is $99/year ($79/year founding member rate) — it includes the vault, up to 10 circle members, monthly prompts, and 5 GB of storage. Our Fable+ is $149/year ($99/year founding member rate) — it includes everything in Our Fable plus Dispatches, unlimited circle members, voice messages, one additional child included, and 25 GB of storage. Founding member pricing is locked for life — limited to the first 1,000 families.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Is my family's data private?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes. Our Fable is private by design. The vault is accessible only to the parents who created it. No content is shared publicly or with third parties. You can export everything — every letter, photo, voice memo, and video — at any time.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "What milestone ages can I choose?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Parents can choose any milestone: age 13, 16, 18, 21, graduation day, or wedding day. Different pieces of content can be locked to different milestones — for example, a letter from grandma might open at 13, while a voice memo from a godparent opens at 18.",
-      },
-    },
-  ],
-};
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const bodyStyle = {
+    "--font-inter": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  } as CSSProperties;
 
   return (
     <html lang="en">
@@ -207,14 +147,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
 
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={`${playfair.variable} ${inter.variable}`}>
+      <body className={playfair.variable} style={bodyStyle}>
         <a href="#main-content" className="sr-only focus:not-sr-only">Skip to content</a>
         <div id="main-content">
         {children}

@@ -13,20 +13,33 @@ import {
 } from "@/lib/vault-encryption";
 
 async function convexFetch(queryPath: string, args: Record<string, unknown>) {
-  const res = await fetch("/api/ourfable/data", {
+  const isRecoveryAction = new Set([
+    "ourfable:getFamilyEncryptionKeys",
+    "ourfable:getRecoveryCodeStatus",
+    "ourfable:isRecoverySetupComplete",
+    "ourfable:getGuardianKeyShares",
+  ]).has(queryPath);
+  const res = await fetch(isRecoveryAction ? "/api/ourfable/recovery" : "/api/ourfable/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: queryPath, args }),
+    body: JSON.stringify(isRecoveryAction ? { action: queryPath, args } : { path: queryPath, args }),
   });
   const data = await res.json();
   return data.value ?? data;
 }
 
 async function convexMutate(mutPath: string, args: Record<string, unknown>) {
-  const res = await fetch("/api/ourfable/data", {
+  const isRecoveryAction = new Set([
+    "ourfable:storeRecoveryCodeHashes",
+    "ourfable:markRecoverySetupComplete",
+    "ourfable:storeGuardianKeyShare",
+    "ourfable:setupFamilyEncryption",
+    "ourfable:updateEncryptedFamilyKey",
+  ]).has(mutPath);
+  const res = await fetch(isRecoveryAction ? "/api/ourfable/recovery" : "/api/ourfable/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: mutPath, args, type: "mutation" }),
+    body: JSON.stringify(isRecoveryAction ? { action: mutPath, args } : { path: mutPath, args, type: "mutation" }),
   });
   const data = await res.json();
   return data.value ?? data;
@@ -250,7 +263,7 @@ export default function RecoveryCodesPage({ params }: { params: Promise<{ family
             </button>
             {regenerating && (
               <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 8 }}>
-                ⚠️ This will invalidate all existing recovery codes.
+                Warning: this will invalidate all existing recovery codes.
               </p>
             )}
           </div>

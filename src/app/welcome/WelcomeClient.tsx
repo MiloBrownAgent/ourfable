@@ -496,7 +496,7 @@ export default function WelcomeClient() {
                 fontFamily: "var(--font-playfair), Georgia, serif", fontSize: 22, fontWeight: 300,
                 fontStyle: "italic", color: "#FDFBF7", lineHeight: 1.4,
               }}>
-                🔒 {entries.length} memories from {uniquePeopleCount} people who love {childFirst}.
+                Sealed: {entries.length} memories from {uniquePeopleCount} people who love {childFirst}.
               </p>
               <p style={{
                 fontFamily: "var(--font-playfair), Georgia, serif", fontSize: 18, fontWeight: 300,

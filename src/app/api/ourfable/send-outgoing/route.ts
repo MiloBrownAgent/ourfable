@@ -1,4 +1,4 @@
-import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { internalConvexQuery } from "@/lib/convex-internal";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery, convexMutation } from "@/lib/convex";
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { subject, messageBody, mediaUrls, mediaType, memberIds, sentToAll } = body;
+    const { subject, messageBody, mediaUrls, mediaType, memberIds, sentToAll, childId, dispatchTarget } = body;
     const familyId = session.familyId;
     const sentByName = body.sentByName;
 
@@ -62,7 +62,10 @@ export async function POST(req: NextRequest) {
     // ── Fetch circle ──────────────────────────────────────────────────────────
     const allMembers = await convexQuery<Array<{
       _id: string; name: string; email?: string; isInnerRing?: boolean;
-    }>>("ourfable:listCircle", { familyId }).catch(() => []);
+    }>>(
+      childId && dispatchTarget !== "family" ? "ourfable:listOurFableCircleMembersForChild" : "ourfable:listCircle",
+      childId && dispatchTarget !== "family" ? { familyId, childId } : { familyId }
+    ).catch(() => []);
 
     // ── Tier gating ───────────────────────────────────────────────────────────
     // Base plan: inner ring members only
@@ -128,11 +131,12 @@ export async function POST(req: NextRequest) {
     // ── Record dispatch in Convex ─────────────────────────────────────────────
     await convexMutation("ourfable:createOurFableDispatch", {
       familyId,
+      childId: childId ?? undefined,
       type: mediaType || "text",
       content: subject,
       body: messageBody ?? "",
       mediaUrls: mediaUrls ?? [],
-      sentTo: sentToAll ? "all" : "selected",
+      sentTo: dispatchTarget === "family" ? "family" : sentToAll ? "all" : "selected",
       sentByName,
       recipientCount: results.filter(r => r.success).length,
       viewToken,

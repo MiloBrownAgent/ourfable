@@ -39,6 +39,7 @@ function verifyDeviceToken(token: string, expectedFamilyId: string): boolean {
 
 export async function POST(req: NextRequest) {
   const { familyId, code, rememberDevice, email: loginEmail } = await req.json();
+  const normalizedLoginEmail = typeof loginEmail === "string" ? loginEmail.toLowerCase().trim() : undefined;
 
   if (!familyId || !code) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -64,15 +65,16 @@ export async function POST(req: NextRequest) {
   let userName: string | undefined;
   let userEmail: string | undefined;
 
-  if (loginEmail) {
+  if (normalizedLoginEmail) {
     const user = await internalConvexQuery<{
       _id: string;
+      familyId: string;
       totpSecret?: string;
       totpEnabled?: boolean;
       name: string;
       email: string;
-    } | null>("ourfable:getOurFableUserByEmail", { email: loginEmail });
-    if (user && user.totpEnabled && user.totpSecret) {
+    } | null>("ourfable:getOurFableUserByEmail", { email: normalizedLoginEmail });
+    if (user && user.familyId === familyId && user.totpEnabled && user.totpSecret) {
       twoFA = { totpSecret: user.totpSecret, totpEnabled: true };
       userId = user._id;
       userName = user.name;
@@ -133,7 +135,7 @@ export async function POST(req: NextRequest) {
   // Issue session with userId
   const sessionToken = await createSession(familyId, {
     userId,
-    email: userEmail ?? loginEmail,
+    email: userEmail ?? normalizedLoginEmail,
     name: userName,
   });
   const redirectPath = `/${familyId}`;

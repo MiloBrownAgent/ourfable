@@ -81,6 +81,8 @@ export default defineSchema({
 
   ourfable_vault_outgoings: defineTable({
     familyId: v.string(),
+    childId: v.optional(v.string()),
+    dispatchTarget: v.optional(v.string()),
     subject: v.string(),
     body: v.string(),
     mediaUrls: v.optional(v.array(v.string())),

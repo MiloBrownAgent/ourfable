@@ -49,7 +49,7 @@ export function WaitlistForm({ compact = false }: WaitlistFormProps) {
 
     return (
       <div style={{ padding: compact ? "20px 24px" : "28px 32px", background: "var(--green-light)", border: "1.5px solid var(--green-border)", borderRadius: 16, textAlign: "center", animation: "fadeIn 0.4s ease both" }}>
-        <p style={{ fontSize: 20, marginBottom: 6 }}>🌿</p>
+        <p style={{ fontSize: 20, marginBottom: 6 }}>Founding families</p>
         <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: compact ? 16 : 18, color: "var(--green)", marginBottom: 6 }}>
           You&apos;re on the list.
         </p>

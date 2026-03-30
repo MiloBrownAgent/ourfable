@@ -584,6 +584,7 @@ export const sendDeletionReminders = internalAction({
 export const sendDispatchEmails = internalAction({
   args: {
     familyId: v.string(),
+    childId: v.optional(v.string()),
     body: v.string(),
     mediaUrls: v.optional(v.array(v.string())),
     mediaType: v.optional(v.string()),
@@ -603,7 +604,10 @@ export const sendDispatchEmails = internalAction({
     const parentNames = family.parentNames ?? args.sentByName;
 
     // Get circle members
-    const members = await ctx.runQuery(internal.ourfableDelivery.getCircleMembersForDelivery, { familyId: args.familyId });
+    const members = await ctx.runQuery(internal.ourfableDelivery.getCircleMembersForDelivery, {
+      familyId: args.familyId,
+      childId: args.childId,
+    });
     if (!members || members.length === 0) { console.log("[dispatch-email] No circle members"); return; }
 
     // Filter to selected members if not sentToAll
@@ -662,11 +666,14 @@ export const getFamilyForDelivery = internalQuery({
 });
 
 export const getCircleMembersForDelivery = internalQuery({
-  args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
+  args: { familyId: v.string(), childId: v.optional(v.string()) },
+  handler: async (ctx, { familyId, childId }) => {
     // Try vault circle first, then ourfable circle
     const vaultCircle = await ctx.db.query("ourfable_vault_circle").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
-    if (vaultCircle.length > 0) return vaultCircle;
-    return await ctx.db.query("ourfable_circle_members").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
+    if (vaultCircle.length > 0) {
+      return childId ? vaultCircle.filter((member) => !member.childId || member.childId === childId) : vaultCircle;
+    }
+    const circle = await ctx.db.query("ourfable_circle_members").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
+    return childId ? circle.filter((member) => !member.childId || member.childId === childId) : circle;
   },
 });

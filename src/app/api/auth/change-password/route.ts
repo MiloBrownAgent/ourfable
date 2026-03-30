@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "New password must be at least 8 characters" }, { status: 400 });
   }
 
-  // Get the family account by familyId
   const family = await internalConvexQuery<{
     email: string;
     passwordHash: string;
@@ -35,8 +34,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
 
-  // Verify current password
-  if (!verifyPassword(currentPassword, family.passwordHash)) {
+  const user = session.userId
+    ? await internalConvexQuery<{
+        email: string;
+        passwordHash: string;
+      } | null>("ourfable:getOurFableUserById", { userId: session.userId })
+    : null;
+
+  const matchesUser = user ? verifyPassword(currentPassword, user.passwordHash) : false;
+  const matchesFamily = verifyPassword(currentPassword, family.passwordHash);
+  if ((user && !matchesUser && !matchesFamily) || (!user && !matchesFamily)) {
     return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
   }
 
@@ -46,6 +53,12 @@ export async function POST(req: NextRequest) {
     email: family.email,
     passwordHash: newHash,
   });
+  if (user) {
+    await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
+      email: user.email,
+      passwordHash: newHash,
+    });
+  }
 
   return NextResponse.json({ success: true });
 }
