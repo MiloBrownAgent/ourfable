@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
     if (!token || !type) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+    if (pickString(body.body) || pickString(body.subject)) {
+      return NextResponse.json({ error: "Plaintext vault content is not permitted" }, { status: 400 });
+    }
 
     const inviteMember = await internalConvexQuery<InviteMemberRecord | null>(
       "ourfable:getMemberByInviteToken",
@@ -70,8 +73,6 @@ export async function POST(req: NextRequest) {
         familyId: inviteMember.familyId,
         memberId: inviteMember._id,
         type,
-        subject: pickString(body.subject),
-        body: pickString(body.body),
         encryptedBody: pickString(body.encryptedBody),
         contentHash: pickString(body.contentHash),
         encryptionVersion: body.encryptionVersion,
@@ -111,7 +112,6 @@ export async function POST(req: NextRequest) {
       familyId,
       memberId,
       type,
-      body: pickString(body.body),
       encryptedBody: pickString(body.encryptedBody),
       contentHash: pickString(body.contentHash),
       encryptionVersion: body.encryptionVersion,

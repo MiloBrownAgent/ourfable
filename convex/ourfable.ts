@@ -521,6 +521,19 @@ export const submitContribution = internalMutation({
     encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    if (args.body || args.subject) {
+      throw new Error("Plaintext vault content is not permitted.");
+    }
+    if (args.encryptedBody && (!args.contentHash || args.encryptionVersion !== 1)) {
+      throw new Error("Encrypted vault content must use AES-256-GCM.");
+    }
+    if ((args.type === "write" || args.type === "letter") && !args.encryptedBody) {
+      throw new Error("Encrypted vault content is required for text submissions.");
+    }
+    if (args.mediaStorageId && (!args.mediaEncryptionIv || !args.mediaEncryptionTag || args.mediaEncryptionVersion !== 1)) {
+      throw new Error("Encrypted media metadata is required for vault media.");
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const isOpen = !args.openOn || args.openOn <= today;
 
@@ -799,6 +812,19 @@ export const submitVaultEntry = internalMutation({
     encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    if (args.body || args.subject) {
+      throw new Error("Plaintext vault content is not permitted.");
+    }
+    if (args.encryptedBody && (!args.contentHash || args.encryptionVersion !== 1)) {
+      throw new Error("Encrypted vault content must use AES-256-GCM.");
+    }
+    if (args.type === "write" && !args.encryptedBody) {
+      throw new Error("Encrypted vault content is required for text submissions.");
+    }
+    if (args.mediaStorageId && (!args.mediaEncryptionIv || !args.mediaEncryptionTag || args.mediaEncryptionVersion !== 1)) {
+      throw new Error("Encrypted media metadata is required for vault media.");
+    }
+
     // Calculate isOpen based on unlock criteria
     const today = new Date().toISOString().slice(0, 10);
     let isOpen = false;
@@ -923,6 +949,16 @@ export const sealParentLetter = internalMutation({
     encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    if (args.body) {
+      throw new Error("Plaintext vault content is not permitted.");
+    }
+    if (!args.encryptedBody || !args.contentHash || args.encryptionVersion !== 1) {
+      throw new Error("Encrypted vault content is required.");
+    }
+    if (args.mediaStorageId && (!args.mediaEncryptionIv || !args.mediaEncryptionTag || args.mediaEncryptionVersion !== 1)) {
+      throw new Error("Encrypted media metadata is required for vault media.");
+    }
+
     const family = await ctx.db
       .query("ourfable_vault_families")
       .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
@@ -2288,6 +2324,19 @@ export const addOurFableVaultEntry = internalMutation({
     encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    if (args.content) {
+      throw new Error("Plaintext vault content is not permitted.");
+    }
+    if ((args.type === "text" || args.type === "letter") && (!args.encryptedBody || !args.contentHash || args.encryptionVersion !== 1)) {
+      throw new Error("Encrypted vault content is required for text entries.");
+    }
+    if (args.encryptedBody && (!args.contentHash || args.encryptionVersion !== 1)) {
+      throw new Error("Encrypted vault content must use AES-256-GCM.");
+    }
+    if (args.mediaStorageId && (!args.mediaEncryptionIv || !args.mediaEncryptionTag || args.mediaEncryptionVersion !== 1)) {
+      throw new Error("Encrypted media metadata is required for vault media.");
+    }
+
     let mediaUrl = args.mediaUrl;
     if (!mediaUrl && args.mediaStorageId) {
       const resolvedUrl = await ctx.storage.getUrl(args.mediaStorageId);
