@@ -230,18 +230,8 @@ export const createOrUpdateChronicle = internalMutation({
     milestoneReached: v.optional(v.string()),
     isBackfilled: v.optional(v.boolean()),
   },
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("ourfable_vault_chronicle")
-      .withIndex("by_familyId_date", (q) =>
-        q.eq("familyId", args.familyId).eq("date", args.date)
-      )
-      .first();
-    if (existing) {
-      await ctx.db.patch(existing._id, args);
-      return existing._id;
-    }
-    return await ctx.db.insert("ourfable_vault_chronicle", args);
+  handler: async () => {
+    throw new Error("Chronicle writes are disabled until they are migrated to the encrypted vault path.");
   },
 });
 
@@ -278,8 +268,8 @@ export const addMilestone = internalMutation({
     note: v.optional(v.string()),
     isCustom: v.optional(v.boolean()),
   },
-  handler: async (ctx, args) => {
-    return await ctx.db.insert("ourfable_vault_milestones", args);
+  handler: async () => {
+    throw new Error("Milestone writes are disabled until they are migrated to the encrypted vault path.");
   },
 });
 
@@ -289,35 +279,16 @@ export const markMilestoneReached = internalMutation({
     reachedAt: v.optional(v.number()),
     note: v.optional(v.string()),
   },
-  handler: async (ctx, { milestoneId, reachedAt, note }) => {
-    await ctx.db.patch(milestoneId, {
-      reachedAt: reachedAt ?? Date.now(),
-      ...(note !== undefined ? { note } : {}),
-    });
+  handler: async () => {
+    throw new Error("Milestone writes are disabled until they are migrated to the encrypted vault path.");
   },
 });
 
 export const seedMilestones = internalMutation({
   args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
-    const existing = await ctx.db
-      .query("ourfable_vault_milestones")
-      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
-      .first();
-    if (existing) return;
-    const milestones = [
-      { familyId, name: "First smile", category: "social", expectedAgeMonths: 2, reachedAt: Date.now() - 1000 * 60 * 60 * 24 * 210 },
-      { familyId, name: "Laughed for the first time", category: "social", expectedAgeMonths: 4, reachedAt: Date.now() - 1000 * 60 * 60 * 24 * 150 },
-      { familyId, name: "Rolled over", category: "motor", expectedAgeMonths: 5, reachedAt: Date.now() - 1000 * 60 * 60 * 24 * 100 },
-      { familyId, name: "Sat without support", category: "motor", expectedAgeMonths: 6 },
-      { familyId, name: "Pulled himself up to stand", category: "motor", expectedAgeMonths: 9, reachedAt: new Date("2026-02-24").getTime(), note: "Grabbed the edge of the couch and just stood there like he'd been doing it for years" },
-      { familyId, name: "First word", category: "language", expectedAgeMonths: 12 },
-      { familyId, name: "First steps", category: "motor", expectedAgeMonths: 12 },
-      { familyId, name: "Waves bye-bye", category: "social", expectedAgeMonths: 9 },
-    ];
-    for (const m of milestones) {
-      await ctx.db.insert("ourfable_vault_milestones", m);
-    }
+  handler: async () => {
+    // Disabled until milestones are migrated to the encrypted vault path.
+    return null;
   },
 });
 
