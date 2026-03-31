@@ -124,6 +124,8 @@ export const markVerified = internalMutation({
 
 const CANARY_FAMILY_ID = "canary-test-family";
 const CANARY_OPEN_ON = "2045-01-01";
+const CANARY_ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+const HEALTHCHECK_ALERT_COOLDOWN_MS = 60 * 60 * 1000;
 
 function bytesToBase64(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("base64");
@@ -132,6 +134,24 @@ function bytesToBase64(bytes: Uint8Array): string {
 async function hashContent(content: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
   return bytesToBase64(new Uint8Array(digest));
+}
+
+type AlertSeverity = "critical" | "warning" | "recovered";
+type AlertChannel = "canary" | "healthcheck" | "storage";
+
+function formatAlertMessage({
+  severity,
+  title,
+  channel,
+  lines,
+}: {
+  severity: AlertSeverity;
+  title: string;
+  channel: AlertChannel;
+  lines: string[];
+}) {
+  const prefix = severity === "critical" ? "🚨 CRITICAL" : severity === "warning" ? "⚠️ WARNING" : "✅ RECOVERED";
+  return `${prefix} — ${title}\n\nChannel: ${channel}\n${lines.join("\n")}`;
 }
 
 async function encryptCanaryText(content: string) {
@@ -212,10 +232,36 @@ export const runCanary = internalAction({
         durationMs,
       });
 
+      const priorFailure = await ctx.runQuery(internal.ourfableAudit.getLatestCanaryResultByStatus, {
+        status: "fail",
+      });
+      const priorSuccess = await ctx.runQuery(internal.ourfableAudit.getLatestCanaryResultByStatus, {
+        status: "pass",
+      });
+      if (priorFailure && (!priorSuccess || priorSuccess.timestamp < priorFailure.timestamp)) {
+        await sendAlert(
+          formatAlertMessage({
+            severity: "recovered",
+            title: "VAULT CANARY RECOVERED",
+            channel: "canary",
+            lines: [
+              "The internal encrypted canary is passing again.",
+              `Recovered after failure: ${priorFailure.errorMessage ?? "unknown error"}`,
+              `Duration: ${durationMs}ms`,
+              `Time: ${new Date().toISOString()}`,
+            ],
+          })
+        );
+      }
+
       console.log(`[canary] Vault write test passed in ${durationMs}ms`);
     } catch (err) {
       const durationMs = Date.now() - startTime;
       const errorMsg = err instanceof Error ? err.message : String(err);
+      const latestFailureAlert = await ctx.runQuery(internal.ourfableAudit.getLatestCanaryResultByStatus, {
+        status: "fail",
+      });
+      const shouldAlert = !latestFailureAlert || (startTime - latestFailureAlert.timestamp) >= CANARY_ALERT_COOLDOWN_MS;
 
       await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
         testType: "write",
@@ -224,10 +270,22 @@ export const runCanary = internalAction({
         errorMessage: errorMsg,
       });
 
-      // IMMEDIATE alert — canary failures are always critical
-      await sendAlert(
-        `🚨 CANARY FAILURE — VAULT IS BROKEN\n\nThe daily vault write test failed.\n\nError: ${errorMsg}\nDuration: ${durationMs}ms\nTime: ${new Date().toISOString()}\n\nThis means the vault submission pipeline may be broken for all users. Investigate immediately.`
-      );
+      if (shouldAlert) {
+        await sendAlert(
+          formatAlertMessage({
+            severity: "critical",
+            title: "VAULT CANARY FAILURE",
+            channel: "canary",
+            lines: [
+              "The internal encrypted canary failed.",
+              `Error: ${errorMsg}`,
+              `Duration: ${durationMs}ms`,
+              `Time: ${new Date().toISOString()}`,
+              "Impact: vault submissions may be broken for all users. Investigate immediately.",
+            ],
+          })
+        );
+      }
     }
   },
 });
@@ -375,6 +433,18 @@ export const logCanaryResult = mutation({
   },
 });
 
+export const getLatestCanaryResultByStatus = internalQuery({
+  args: { status: v.string() },
+  handler: async (ctx, { status }) => {
+    const results = await ctx.db
+      .query("ourfable_vault_canary")
+      .withIndex("by_timestamp")
+      .order("desc")
+      .collect();
+    return results.find((result) => result.status === status) ?? null;
+  },
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYER 3: Hourly Health Check
 // Aggregates audit log, alerts on anomalies
@@ -401,11 +471,36 @@ export const hourlyHealthCheck = internalAction({
     const failRate = total > 0 ? (failCount / total * 100).toFixed(1) : "0";
     const firstFailure = failures[0];
 
-    const severity = parseFloat(failRate) > 5 ? "🚨 CRITICAL" : "⚠️ WARNING";
+    const latestWarning = await ctx.runQuery(internal.ourfableAudit.getLatestCanaryResultByStatus, {
+      status: "healthcheck_alert",
+    }).catch(() => null);
+    if (latestWarning && (Date.now() - latestWarning.timestamp) < HEALTHCHECK_ALERT_COOLDOWN_MS) {
+      return;
+    }
+
+    const severity: AlertSeverity = parseFloat(failRate) > 5 ? "critical" : "warning";
 
     await sendAlert(
-      `${severity} — VAULT HEALTH CHECK\n\n${failCount} failed submission${failCount !== 1 ? "s" : ""} in the last hour (${failRate}% failure rate)\nTotal submissions: ${total}\n\nFirst failure:\n• ${firstFailure?.memberName ?? "Unknown"}'s ${firstFailure?.contentType ?? "?"} for ${firstFailure?.childName ?? "?"}\n• Error: ${firstFailure?.errorMessage ?? "none"}\n• Time: ${new Date(firstFailure?.timestamp ?? 0).toISOString()}`
+      formatAlertMessage({
+        severity,
+        title: "VAULT HEALTH CHECK",
+        channel: "healthcheck",
+        lines: [
+          `${failCount} failed submission${failCount !== 1 ? "s" : ""} in the last hour (${failRate}% failure rate)`,
+          `Total submissions: ${total}`,
+          `First failure: ${firstFailure?.memberName ?? "Unknown"}'s ${firstFailure?.contentType ?? "?"} for ${firstFailure?.childName ?? "?"}`,
+          `Error: ${firstFailure?.errorMessage ?? "none"}`,
+          `Time: ${new Date(firstFailure?.timestamp ?? 0).toISOString()}`,
+        ],
+      })
     );
+
+    await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
+      testType: "healthcheck",
+      status: "healthcheck_alert",
+      durationMs: 0,
+      errorMessage: `${failCount} failures / ${failRate}% in last hour`,
+    });
   },
 });
 
@@ -488,11 +583,8 @@ async function sendAlert(message: string) {
 
   if (RESEND_KEY) {
     try {
-      // Strip HTML tags for plain text email subject
-      const plainText = message.replace(/<[^>]*>/g, "").replace(/\n+/g, " ").slice(0, 100);
-      const severity = message.includes("CRITICAL") || message.includes("CANARY FAILURE")
-        ? "🚨 CRITICAL"
-        : "⚠️ WARNING";
+      const firstLine = message.split("\n")[0] ?? "OurFable Vault Alert";
+      const subject = firstLine.length > 110 ? `${firstLine.slice(0, 107)}...` : firstLine;
 
       await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -503,7 +595,7 @@ async function sendAlert(message: string) {
         body: JSON.stringify({
           from: "OurFable Alerts <hello@ourfable.ai>",
           to: ALERT_EMAIL,
-          subject: `${severity} — OurFable Vault Alert`,
+          subject,
           html: `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap;">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`,
         }),
       });
