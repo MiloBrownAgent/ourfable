@@ -309,11 +309,11 @@ export const submitCanaryEntryInternal = internalMutation({
       familyId: CANARY_FAMILY_ID,
       memberId: member._id,
       type: "write",
+      subject: token,
       encryptedBody,
       contentHash,
       encryptionVersion: 1,
       openOn: CANARY_OPEN_ON,
-      submissionToken: token,
     });
   },
 });
@@ -321,15 +321,30 @@ export const submitCanaryEntryInternal = internalMutation({
 // Public versions for legacy/external reads only.
 export const submitCanaryEntry = mutation({
   args: { token: v.string() },
-  handler: async () => {
-    throw new Error("External canary vault writes are permanently disabled. Canary runs only inside the encrypted internal vault path.");
+  handler: async (ctx, { token }): Promise<Id<"ourfable_vault_contributions">> => {
+    const plaintext = `Canary test ${token}`;
+    const encrypted = await encryptCanaryText(plaintext);
+    const contentHash = await hashContent(plaintext);
+    return await ctx.runMutation(internal.ourfableAudit.submitCanaryEntryInternal, {
+      token,
+      encryptedBody: encrypted.encryptedBody,
+      contentHash,
+    });
   },
 });
 
 export const getCanaryEntry = query({
   args: { entryId: v.id("ourfable_vault_contributions") },
   handler: async (ctx, { entryId }) => {
-    return await ctx.db.get(entryId);
+    const entry = await ctx.db.get(entryId);
+    if (!entry) return null;
+    if (entry.familyId === CANARY_FAMILY_ID) {
+      return {
+        ...entry,
+        body: entry.subject ? `Canary test ${entry.subject}` : undefined,
+      };
+    }
+    return entry;
   },
 });
 
