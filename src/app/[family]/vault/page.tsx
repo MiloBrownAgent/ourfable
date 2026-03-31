@@ -303,7 +303,7 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
                       key={idx}
                       src={url}
                       alt={`Photo ${idx + 1} from ${entry.memberName}`}
-                      style={{ height: 200, width: "auto", borderRadius: 10, flexShrink: 0, display: "block" }}
+                      style={{ height: 200, width: "auto", maxWidth: "none", objectFit: "contain", borderRadius: 10, flexShrink: 0, display: "block" }}
                     />
                   ))}
                 </div>
@@ -312,7 +312,7 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
                 <img
                   src={entry.mediaUrl}
                   alt={`Photo from ${entry.memberName}`}
-                  style={{ maxWidth: "100%", borderRadius: 10, marginTop: 6, display: "block" }}
+                  style={{ maxWidth: "100%", width: "auto", height: "auto", objectFit: "contain", borderRadius: 10, marginTop: 6, display: "block" }}
                 />
               ) : null)}
 
