@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { Gift, Lock, RefreshCw, ChevronDown, Pencil, Check } from "lucide-react";
 import { useChildContext } from "@/components/ChildContext";
+import { useVaultKey } from "@/lib/vault-key-context";
+import { decryptText, deserializeEncryptedText, encryptText, hashContent, serializeEncryptedText } from "@/lib/vault-encryption";
 
 interface BirthdayLetter {
   _id: string;
@@ -10,6 +12,9 @@ interface BirthdayLetter {
   contributionCount: number;
   worldHighlight?: string;
   parentNote?: string;
+  encryptedParentNote?: string;
+  parentNoteContentHash?: string;
+  parentNoteEncryptionVersion?: number;
   isSealed: boolean;
   sealedUntilAge: number;
   generatedAt: number;
@@ -40,8 +45,44 @@ function LetterCard({ letter, familyId, childFirst, dob, onRefresh }: {
   const [open, setOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(false);
   const [note, setNote] = useState(letter.parentNote ?? "");
+  const [displayNote, setDisplayNote] = useState(letter.parentNote ?? "");
   const [savingNote, setSavingNote] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const { familyKey, isEncryptionEnabled } = useVaultKey();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveNote() {
+      if (letter.parentNote) {
+        setDisplayNote(letter.parentNote);
+        setNote(letter.parentNote);
+        return;
+      }
+      if (!letter.encryptedParentNote || !familyKey) {
+        setDisplayNote("");
+        setNote("");
+        return;
+      }
+
+      try {
+        const decrypted = await decryptText(deserializeEncryptedText(letter.encryptedParentNote), familyKey);
+        if (!cancelled) {
+          setDisplayNote(decrypted);
+          setNote(decrypted);
+        }
+      } catch {
+        if (!cancelled) {
+          setDisplayNote("");
+          setNote("");
+        }
+      }
+    }
+
+    void resolveNote();
+    return () => { cancelled = true; };
+  }, [familyKey, letter.encryptedParentNote, letter.parentNote]);
 
   const generate = async () => {
     setGenerating(true);
@@ -55,11 +96,28 @@ function LetterCard({ letter, familyId, childFirst, dob, onRefresh }: {
   };
 
   const saveNote = async () => {
+    if (!isEncryptionEnabled || !familyKey) {
+      setError("Unlock vault encryption before sealing this note.");
+      return;
+    }
     setSavingNote(true);
+    setError("");
+    const encrypted = await encryptText(note, familyKey);
+    const contentHash = await hashContent(note);
     await fetch(`/api/ourfable/data`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:patchBirthdayLetterParentNote", args: { familyId, year: letter.year, note }, type: "mutation" }),
+      body: JSON.stringify({
+        path: "ourfable:patchBirthdayLetterParentNote",
+        args: {
+          familyId,
+          year: letter.year,
+          encryptedParentNote: serializeEncryptedText(encrypted),
+          parentNoteContentHash: contentHash,
+          parentNoteEncryptionVersion: 1,
+        },
+        type: "mutation",
+      }),
     });
     setSavingNote(false);
     setEditingNote(false);
@@ -132,15 +190,16 @@ function LetterCard({ letter, familyId, childFirst, dob, onRefresh }: {
                   style={{ fontFamily: "var(--font-cormorant)", fontSize: 16, lineHeight: 1.85, resize: "none" }}
                 />
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={saveNote} disabled={savingNote} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 8, background: "var(--gold-dim)", border: "1px solid var(--gold-border)", color: "var(--gold)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                  <button onClick={saveNote} disabled={savingNote || !familyKey} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 8, background: "var(--gold-dim)", border: "1px solid var(--gold-border)", color: "var(--gold)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                     <Lock size={11} strokeWidth={2} /> {savingNote ? "Sealing…" : "Seal note"}
                   </button>
                   <button onClick={() => setEditingNote(false)} style={{ padding: "9px 14px", borderRadius: 8, background: "none", border: "1px solid var(--border)", color: "var(--text-3)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
                 </div>
+                {error && <p style={{ fontSize: 12, color: "#B44B4B", margin: 0 }}>{error}</p>}
               </div>
-            ) : letter.parentNote ? (
+            ) : displayNote ? (
               <div>
-                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 16, lineHeight: 1.85, color: "var(--text-2)", marginBottom: 10 }}>{letter.parentNote}</p>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 16, lineHeight: 1.85, color: "var(--text-2)", marginBottom: 10 }}>{displayNote}</p>
                 <button onClick={() => setEditingNote(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "1px solid var(--border)", borderRadius: 7, padding: "5px 10px", fontSize: 11, color: "var(--text-3)", cursor: "pointer" }}>
                   <Pencil size={10} strokeWidth={1.5} /> Edit note
                 </button>

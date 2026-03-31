@@ -2,12 +2,17 @@
 import { use, useEffect, useState, useRef } from "react";
 import { Heart, Lock, ChevronDown, ChevronUp } from "lucide-react";
 import { useChildContext } from "@/components/ChildContext";
+import { useVaultKey } from "@/lib/vault-key-context";
+import { decryptText, deserializeEncryptedText, encryptText, hashContent, serializeEncryptedText } from "@/lib/vault-encryption";
 
 interface Prompt {
   _id: string;
   promptKey: string;
   displayPrompt: string;
   answer?: string;
+  encryptedAnswer?: string;
+  answerContentHash?: string;
+  answerEncryptionVersion?: number;
   answeredAt?: number;
   sortOrder: number;
   sealedUntilAge: number;
@@ -16,19 +21,72 @@ interface Prompt {
 function PromptCard({ prompt, familyId, onAnswered }: { prompt: Prompt; familyId: string; onAnswered: () => void }) {
   const [open, setOpen] = useState(false);
   const [answer, setAnswer] = useState(prompt.answer ?? "");
+  const [displayAnswer, setDisplayAnswer] = useState(prompt.answer ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [error, setError] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const answered = !!prompt.answer;
+  const { familyKey, isEncryptionEnabled } = useVaultKey();
+  const answered = !!(prompt.answer || prompt.encryptedAnswer);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveAnswer() {
+      if (prompt.answer) {
+        setDisplayAnswer(prompt.answer);
+        setAnswer(prompt.answer);
+        return;
+      }
+      if (!prompt.encryptedAnswer || !familyKey) {
+        setDisplayAnswer("");
+        setAnswer("");
+        return;
+      }
+
+      try {
+        const decrypted = await decryptText(deserializeEncryptedText(prompt.encryptedAnswer), familyKey);
+        if (!cancelled) {
+          setDisplayAnswer(decrypted);
+          setAnswer(decrypted);
+        }
+      } catch {
+        if (!cancelled) {
+          setDisplayAnswer("");
+          setAnswer("");
+        }
+      }
+    }
+
+    void resolveAnswer();
+    return () => { cancelled = true; };
+  }, [familyKey, prompt.answer, prompt.encryptedAnswer]);
 
   const save = async () => {
     if (!answer.trim()) return;
+    if (!isEncryptionEnabled || !familyKey) {
+      setError("Unlock vault encryption before sealing this answer.");
+      return;
+    }
     setSaving(true);
+    setError("");
+    const encrypted = await encryptText(answer.trim(), familyKey);
+    const contentHash = await hashContent(answer.trim());
     await fetch(`/api/ourfable/data`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "ourfable:answerBeforeBorn", args: { familyId, promptKey: prompt.promptKey, answer: answer.trim() }, type: "mutation" }),
+      body: JSON.stringify({
+        path: "ourfable:answerBeforeBorn",
+        args: {
+          familyId,
+          promptKey: prompt.promptKey,
+          encryptedAnswer: serializeEncryptedText(encrypted),
+          answerContentHash: contentHash,
+          answerEncryptionVersion: 1,
+        },
+        type: "mutation",
+      }),
     });
     setSaving(false);
     setSaved(true);
@@ -74,7 +132,7 @@ function PromptCard({ prompt, familyId, onAnswered }: { prompt: Prompt; familyId
                     userSelect: revealed ? "text" : "none",
                     transition: "filter 300ms",
                   }}>
-                    {prompt.answer}
+                    {displayAnswer || "Unlock vault encryption to preview this answer."}
                   </div>
                   {!revealed && (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -103,7 +161,7 @@ function PromptCard({ prompt, familyId, onAnswered }: { prompt: Prompt; familyId
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     onClick={save}
-                    disabled={saving || !answer.trim()}
+                    disabled={saving || !answer.trim() || !familyKey}
                     style={{
                       display: "flex", alignItems: "center", gap: 8, padding: "12px 24px", borderRadius: 10,
                       background: saved ? "var(--sage-dim)" : "var(--gold-dim)",
@@ -118,6 +176,7 @@ function PromptCard({ prompt, familyId, onAnswered }: { prompt: Prompt; familyId
                   </button>
                   <p style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic" }}>Opens at age {prompt.sealedUntilAge}</p>
                 </div>
+                {error && <p style={{ fontSize: 12, color: "#B44B4B", margin: 0 }}>{error}</p>}
               </div>
             )}
           </div>

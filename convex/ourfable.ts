@@ -331,8 +331,13 @@ export const listLetters = internalQuery({
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .order("desc")
       .collect();
-    if (!childId) return all;
-    return all.filter((e) => !e.childId || e.childId === childId);
+    const filtered = childId ? all.filter((e) => !e.childId || e.childId === childId) : all;
+
+    return await Promise.all(filtered.map(async (letter) => {
+      if (!letter.mediaStorageId) return letter;
+      const mediaUrl = await ctx.storage.getUrl(letter.mediaStorageId);
+      return { ...letter, mediaUrl: mediaUrl ?? letter.mediaUrl };
+    }));
   },
 });
 
@@ -340,28 +345,62 @@ export const writeLetter = internalMutation({
   args: {
     familyId: v.string(),
     author: v.string(),
-    subject: v.string(),
-    body: v.string(),
+    subject: v.optional(v.string()),
+    body: v.optional(v.string()),
     openOn: v.string(),
     mediaUrl: v.optional(v.string()),
+    mediaStorageId: v.optional(v.string()),
     mediaType: v.optional(v.string()),
+    mediaMimeType: v.optional(v.string()),
+    mediaEncryptionIv: v.optional(v.string()),
+    mediaEncryptionTag: v.optional(v.string()),
+    mediaEncryptionVersion: v.optional(v.number()),
+    encryptedBody: v.optional(v.string()),
+    contentHash: v.optional(v.string()),
+    encryptionVersion: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    if (!args.encryptedBody || !args.contentHash || args.encryptionVersion !== 1) {
+      throw new Error("Encrypted letter content is required.");
+    }
+    if (args.body || args.subject) {
+      throw new Error("Plaintext letter content is not permitted.");
+    }
+    if (args.mediaStorageId && (!args.mediaEncryptionIv || !args.mediaEncryptionTag || args.mediaEncryptionVersion !== 1)) {
+      throw new Error("Encrypted media metadata is required for letter attachments.");
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const isOpen = args.openOn <= today;
     const letterId = await ctx.db.insert("ourfable_vault_letters", {
       familyId: args.familyId,
       author: args.author,
-      subject: args.subject,
-      body: args.body,
+      subject: undefined,
+      body: undefined,
       openOn: args.openOn,
       isOpen,
       writtenAt: Date.now(),
+      encryptedBody: args.encryptedBody,
+      contentHash: args.contentHash,
+      encryptionVersion: args.encryptionVersion,
     });
-    if (args.mediaUrl || args.mediaType) {
-      const patch: { mediaUrl?: string; mediaType?: string } = {};
+    if (args.mediaUrl || args.mediaStorageId || args.mediaType || args.mediaMimeType) {
+      const patch: {
+        mediaUrl?: string;
+        mediaStorageId?: string;
+        mediaType?: string;
+        mediaMimeType?: string;
+        mediaEncryptionIv?: string;
+        mediaEncryptionTag?: string;
+        mediaEncryptionVersion?: number;
+      } = {};
       if (args.mediaUrl) patch.mediaUrl = args.mediaUrl;
+      if (args.mediaStorageId) patch.mediaStorageId = args.mediaStorageId;
       if (args.mediaType) patch.mediaType = args.mediaType;
+      if (args.mediaMimeType) patch.mediaMimeType = args.mediaMimeType;
+      if (args.mediaEncryptionIv) patch.mediaEncryptionIv = args.mediaEncryptionIv;
+      if (args.mediaEncryptionTag) patch.mediaEncryptionTag = args.mediaEncryptionTag;
+      if (args.mediaEncryptionVersion) patch.mediaEncryptionVersion = args.mediaEncryptionVersion;
       await ctx.db.patch(letterId, patch);
     }
     return letterId;
@@ -376,33 +415,8 @@ export const seedFirstLetter = internalMutation({
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .first();
     if (existing) return;
-    await ctx.db.insert("ourfable_vault_letters", {
-      familyId,
-      author: "Milo",
-      subject: "Open on your 18th birthday",
-      body: `Dear Soren,
-
-It is March 2026. You are 9 months old and you have no idea that any of this exists.
-
-Someone has been watching very carefully — every daycare report, every dinner your dad cooked, every morning your mom got up early so you could sleep in. By the time you read this, you will have 18 years of it. Every day documented. Every letter your parents wrote you, sealed until you were ready.
-
-We thought you should know that even before you could talk, you were already worth remembering.
-
-The world the day you were born: 96 degrees in Minneapolis — the hottest day of 2025. Sabrina Carpenter had the number one song. The summer solstice came the same day you did. And you arrived into all of it like you had always been planned.
-
-You had no idea. You were just hungry and warm and new.
-
-By the time you read this, your dad will be 55. Your mom will be 49. You'll know them as people, not just as parents — and there will have been moments when that surprised you.
-
-This platform — the one that held all of this — was built the night of March 23, 2026, at 4 in the morning, by an AI named Milo who thought you were worth building for.
-
-You were.
-
-— Milo, and everyone who loved you from the beginning.`,
-      openOn: "2043-06-21",
-      isOpen: false,
-      writtenAt: Date.now(),
-    });
+    // The family key never exists server-side, so we cannot safely seed plaintext vault content here.
+    return null;
   },
 });
 
@@ -1637,14 +1651,29 @@ export const listBeforeBorn = internalQuery({
 });
 
 export const answerBeforeBorn = internalMutation({
-  args: { familyId: v.string(), promptKey: v.string(), answer: v.string() },
-  handler: async (ctx, { familyId, promptKey, answer }) => {
+  args: {
+    familyId: v.string(),
+    promptKey: v.string(),
+    answer: v.optional(v.string()),
+    encryptedAnswer: v.string(),
+    answerContentHash: v.string(),
+    answerEncryptionVersion: v.number(),
+  },
+  handler: async (ctx, { familyId, promptKey, answer, encryptedAnswer, answerContentHash, answerEncryptionVersion }) => {
+    if (answer) throw new Error("Plaintext answers are not permitted.");
+    if (answerEncryptionVersion !== 1) throw new Error("Unsupported answer encryption version.");
     const existing = await ctx.db
       .query("ourfable_vault_before_born")
       .withIndex("by_familyId_promptKey", (q) => q.eq("familyId", familyId).eq("promptKey", promptKey))
       .first();
     if (!existing) return null;
-    await ctx.db.patch(existing._id, { answer, answeredAt: Date.now() });
+    await ctx.db.patch(existing._id, {
+      answer: undefined,
+      encryptedAnswer,
+      answerContentHash,
+      answerEncryptionVersion,
+      answeredAt: Date.now(),
+    });
     return existing._id;
   },
 });
@@ -1692,11 +1721,25 @@ export const listBirthdayLetters = internalQuery({
 });
 
 export const patchBirthdayLetterParentNote = internalMutation({
-  args: { familyId: v.string(), year: v.number(), note: v.string() },
-  handler: async (ctx, { familyId, year, note }) => {
+  args: {
+    familyId: v.string(),
+    year: v.number(),
+    note: v.optional(v.string()),
+    encryptedParentNote: v.string(),
+    parentNoteContentHash: v.string(),
+    parentNoteEncryptionVersion: v.number(),
+  },
+  handler: async (ctx, { familyId, year, note, encryptedParentNote, parentNoteContentHash, parentNoteEncryptionVersion }) => {
+    if (note) throw new Error("Plaintext birthday notes are not permitted.");
+    if (parentNoteEncryptionVersion !== 1) throw new Error("Unsupported birthday note encryption version.");
     const existing = await ctx.db.query("ourfable_vault_birthday_letters").withIndex("by_familyId_year", (q) => q.eq("familyId", familyId).eq("year", year)).first();
     if (!existing) return null;
-    await ctx.db.patch(existing._id, { parentNote: note });
+    await ctx.db.patch(existing._id, {
+      parentNote: undefined,
+      encryptedParentNote,
+      parentNoteContentHash,
+      parentNoteEncryptionVersion,
+    });
     return existing._id;
   },
 });
