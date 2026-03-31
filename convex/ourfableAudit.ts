@@ -612,6 +612,26 @@ async function sendAlert(message: string) {
 // Admin: Query audit stats
 // ─────────────────────────────────────────────────────────────────────────────
 
+export const sendTestAlert = action({
+  args: { note: v.optional(v.string()) },
+  handler: async (_ctx, { note }) => {
+    const timestamp = new Date().toISOString();
+    await sendAlert(
+      formatAlertMessage({
+        severity: "warning",
+        title: "VAULT ALERT TEST",
+        channel: "canary",
+        lines: [
+          "This is a manual test of the internal canary alert path.",
+          `Time: ${timestamp}`,
+          ...(note ? [`Note: ${note}`] : []),
+        ],
+      })
+    );
+    return { ok: true, timestamp };
+  },
+});
+
 export const getAuditStats = internalQuery({
   args: { hours: v.optional(v.number()) },
   handler: async (ctx, { hours = 24 }) => {
