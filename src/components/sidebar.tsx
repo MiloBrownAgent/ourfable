@@ -311,25 +311,27 @@ function SidebarContent({
         borderBottom: "0.5px solid var(--border)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <div>
-          <span style={{
-            fontFamily: "var(--font-playfair)",
-            fontSize: 20, fontWeight: 700,
-            color: "var(--green)",
-            letterSpacing: "0.02em",
-          }}>
-            Our Fable
-          </span>
-          {familyDisplayName && (
-            <p style={{
-              fontSize: 10, color: "var(--text-3)",
-              letterSpacing: "0.12em", textTransform: "uppercase",
-              marginTop: 3,
+        <Link href={`/${familyId}`} style={{ textDecoration: "none" }}>
+          <div>
+            <span style={{
+              fontFamily: "var(--font-playfair)",
+              fontSize: 20, fontWeight: 700,
+              color: "var(--green)",
+              letterSpacing: "0.02em",
             }}>
-              {familyDisplayName}
-            </p>
-          )}
-        </div>
+              Our Fable
+            </span>
+            {familyDisplayName && (
+              <p style={{
+                fontSize: 10, color: "var(--text-3)",
+                letterSpacing: "0.12em", textTransform: "uppercase",
+                marginTop: 3,
+              }}>
+                {familyDisplayName}
+              </p>
+            )}
+          </div>
+        </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button onClick={markRead} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", padding: 4 }}>
             <Bell size={15} strokeWidth={1.5} />
@@ -445,12 +447,12 @@ export function Sidebar({ familyId, familyDisplayName, childFirst }: { familyId:
         >
           {open ? <X size={18} strokeWidth={1.5} /> : <Menu size={18} strokeWidth={1.5} />}
         </button>
-        <span style={{
+        <Link href={`/${familyId}`} style={{
           fontFamily: "var(--font-playfair)", fontSize: 20, fontWeight: 700,
-          color: "var(--green)", letterSpacing: "0.02em",
+          color: "var(--green)", letterSpacing: "0.02em", textDecoration: "none",
         }}>
           Our Fable
-        </span>
+        </Link>
       </div>
 
       {/* Mobile overlay */}

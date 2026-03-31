@@ -367,13 +367,14 @@ function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: (
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { setErr("Name required"); return; }
+    if (!email.trim()) { setErr("Email required"); return; }
     setSaving(true); setErr("");
     try {
       const relObj = REL_OPTIONS.find(r => r.label === rel);
       const res = await fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:addCircleMember", args: { familyId, name: name.trim(), relationship: rel, relationshipKey: relObj?.key ?? "other", ...(email.trim() ? { email: email.trim() } : {}), ...(city.trim() ? { city: city.trim() } : {}) }, type: "mutation" }),
+        body: JSON.stringify({ path: "ourfable:addCircleMember", args: { familyId, name: name.trim(), relationship: rel, relationshipKey: relObj?.key ?? "other", email: email.trim(), ...(city.trim() ? { city: city.trim() } : {}) }, type: "mutation" }),
       });
       const d = await res.json();
       if (d.value) {
@@ -410,8 +411,8 @@ function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: (
         </div>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {[
-            { label: "Name *", value: name, set: setName, placeholder: "e.g. Grandma Cammie", type: "text", id: "circle-name" },
-            { label: "Email (optional)", value: email, set: setEmail, placeholder: "for invite emails", type: "email", id: "circle-email" },
+            { label: "Name *", value: name, set: setName, placeholder: "e.g. Aunt Lisa", type: "text", id: "circle-name" },
+            { label: "Email *", value: email, set: setEmail, placeholder: "required for invites", type: "email", id: "circle-email" },
             { label: "City (optional)", value: city, set: setCity, placeholder: "e.g. Greensboro, NC", type: "text", id: "circle-city" },
           ].map(f => (
             <div key={f.label}>

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { parentInviteEmail } from "@/lib/email-templates/parent-invite";
+import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? process.env.RESEND_API_KEY;
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://ourfable.ai";
 
 export async function POST(req: NextRequest) {
@@ -70,6 +72,13 @@ export async function POST(req: NextRequest) {
   const joinUrl = `${BASE_URL}/join-parent/${inviteToken}`;
   try {
     if (RESEND_API_KEY) {
+      const { subject, html, text } = parentInviteEmail({
+        inviterName,
+        childName: family?.childName ?? childFirst,
+        joinUrl,
+        unsubscribeUrl: buildUnsubscribeUrl(email.toLowerCase()),
+      });
+
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -79,23 +88,11 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           from: "Our Fable <hello@ourfable.ai>",
           to: [email.toLowerCase()],
-          subject: `${inviterName} invited you to co-manage ${childFirst}'s Fable`,
-          html: `
-            <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; color: #1A1A18;">
-              <h1 style="color: #4A5E4C; font-size: 24px;">${inviterName} invited you to join ${childFirst}'s Fable</h1>
-              <p style="font-size: 16px; line-height: 1.7; color: #444;">
-                You've been invited to co-manage ${childFirst}'s memory vault on Our Fable. 
-                You'll have your own login and can write letters, send dispatches, and manage the circle — 
-                all while sharing the same vault.
-              </p>
-              <a href="${joinUrl}" style="display: inline-block; padding: 14px 32px; background: #4A5E4C; color: #fff; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 15px; margin: 20px 0;">
-                Accept invite
-              </a>
-              <p style="font-size: 13px; color: #888; margin-top: 24px;">
-                This invite expires in 7 days. If you didn't expect this, you can safely ignore it.
-              </p>
-            </div>
-          `,
+          subject,
+          html,
+          text,
+          reply_to: "hello@ourfable.ai",
+          headers: buildUnsubscribeHeaders(email.toLowerCase()),
         }),
       });
     }

@@ -165,6 +165,20 @@ export default function VaultProtectionModal({ familyId, onComplete }: Props) {
         familyId,
         guardianEmail: guardianEmail.trim().toLowerCase(),
         encryptedFamilyKey: "", // Will be encrypted when guardian accepts
+        guardianName: guardianName.trim(),
+      });
+
+      await fetch("/api/ourfable/guardian-assigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guardians: [{
+            name: guardianName.trim(),
+            email: guardianEmail.trim().toLowerCase(),
+          }],
+        }),
+      }).catch((err) => {
+        console.warn("[guardian] Failed to send guardian assignment email", err);
       });
 
       await convexMutate("ourfable:markRecoverySetupComplete", { familyId });
@@ -429,8 +443,11 @@ export default function VaultProtectionModal({ familyId, onComplete }: Props) {
             <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
               Add a vault guardian
             </h2>
-            <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 24 }}>
+            <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 12 }}>
               A vault guardian is a trusted person who can help you recover access to your encrypted memories.
+            </p>
+            <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 24 }}>
+              Once you add them, we&apos;ll send them an email explaining the role and what it means.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 24 }}>
