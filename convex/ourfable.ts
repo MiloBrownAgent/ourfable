@@ -1661,8 +1661,87 @@ export const answerBeforeBorn = internalMutation({
 
 export const generateBirthdayLetter = internalMutation({
   args: { familyId: v.string(), year: v.number() },
-  handler: async () => {
-    throw new Error("Birthday letter generation is disabled until it is migrated to the encrypted vault path.");
+  handler: async (ctx, { familyId, year }) => {
+    const family = await ctx.db
+      .query("ourfable_vault_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+    if (!family?.childDob) {
+      throw new Error("Family not found.");
+    }
+
+    const born = new Date(`${family.childDob}T12:00:00`);
+    if (Number.isNaN(born.getTime())) {
+      throw new Error("Child birthday is invalid.");
+    }
+
+    const start = new Date(born);
+    start.setFullYear(born.getFullYear() + year - 1);
+    const end = new Date(born);
+    end.setFullYear(born.getFullYear() + year);
+
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+
+    const [milestones, contributions, snapshots] = await Promise.all([
+      ctx.db.query("ourfable_vault_milestones").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect(),
+      ctx.db.query("ourfable_vault_contributions").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect(),
+      ctx.db.query("ourfable_vault_snapshots").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect(),
+    ]);
+
+    const yearMilestones = milestones
+      .filter((m) => {
+        if (!m.reachedAt) return false;
+        return m.reachedAt >= startMs && m.reachedAt < endMs;
+      })
+      .sort((a, b) => (a.reachedAt ?? 0) - (b.reachedAt ?? 0));
+
+    const milestonesText = yearMilestones.length > 0
+      ? yearMilestones
+          .map((m) => m.note?.trim() ? `${m.name} — ${m.note.trim()}` : m.name)
+          .join(" • ")
+      : undefined;
+
+    const contributionCount = contributions.filter((entry) => entry.submittedAt >= startMs && entry.submittedAt < endMs).length;
+
+    const yearSnapshots = snapshots
+      .filter((snapshot) => {
+        const snapshotDate = new Date(snapshot.year, snapshot.month - 1, 1).getTime();
+        return snapshotDate >= startMs && snapshotDate < endMs;
+      })
+      .sort((a, b) => (b.year - a.year) || (b.month - a.month));
+
+    const latestSnapshot = yearSnapshots[0];
+    const worldHighlight = latestSnapshot
+      ? [latestSnapshot.topHeadline, latestSnapshot.topSong, latestSnapshot.funFact]
+          .filter((value): value is string => !!value && value.trim().length > 0)
+          .join(" • ") || undefined
+      : undefined;
+
+    const existing = await ctx.db
+      .query("ourfable_vault_birthday_letters")
+      .withIndex("by_familyId_year", (q) => q.eq("familyId", familyId).eq("year", year))
+      .first();
+
+    const payload = {
+      milestonesText,
+      contributionCount,
+      worldHighlight,
+      isSealed: true,
+      sealedUntilAge: 18,
+      generatedAt: Date.now(),
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+      return existing._id;
+    }
+
+    return await ctx.db.insert("ourfable_vault_birthday_letters", {
+      familyId,
+      year,
+      ...payload,
+    });
   },
 });
 

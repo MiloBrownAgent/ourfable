@@ -26,6 +26,7 @@ import {
   internalQuery,
 } from "./_generated/server";
 import { api, internal } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYER 1: Audit Log
@@ -122,6 +123,44 @@ export const markVerified = internalMutation({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CANARY_FAMILY_ID = "canary-test-family";
+const CANARY_OPEN_ON = "2045-01-01";
+
+function bytesToBase64(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString("base64");
+}
+
+async function hashContent(content: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
+  return bytesToBase64(new Uint8Array(digest));
+}
+
+async function encryptCanaryText(content: string) {
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, new TextEncoder().encode(content));
+  const encryptedBytes = new Uint8Array(encrypted);
+  const ciphertextBytes = encryptedBytes.slice(0, encryptedBytes.length - 16);
+  const tagBytes = encryptedBytes.slice(encryptedBytes.length - 16);
+
+  return {
+    encryptedBody: JSON.stringify({
+      ciphertext: bytesToBase64(ciphertextBytes),
+      iv: bytesToBase64(iv),
+      tag: bytesToBase64(tagBytes),
+    }),
+    async decrypt(): Promise<string> {
+      const combined = new Uint8Array(ciphertextBytes.length + tagBytes.length);
+      combined.set(ciphertextBytes, 0);
+      combined.set(tagBytes, ciphertextBytes.length);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv, tagLength: 128 },
+        key,
+        combined,
+      );
+      return new TextDecoder().decode(decrypted);
+    },
+  };
+}
 
 export const runCanary = internalAction({
   args: {},
@@ -135,21 +174,30 @@ export const runCanary = internalAction({
         await ctx.runMutation(internal.ourfableAudit.seedCanaryFamily);
       }
 
-      // 2. Submit a test entry
+      // 2. Submit a test entry through the encrypted internal vault path
       const testToken = `canary-${Date.now()}`;
-      const entryId = await ctx.runMutation(api.ourfableAudit.submitCanaryEntry, {
+      const plaintext = `Canary test ${testToken}`;
+      const encrypted = await encryptCanaryText(plaintext);
+      const contentHash = await hashContent(plaintext);
+      const entryId = await ctx.runMutation(internal.ourfableAudit.submitCanaryEntryInternal, {
         token: testToken,
+        encryptedBody: encrypted.encryptedBody,
+        contentHash,
       });
 
-      // 3. Read it back immediately
+      // 3. Read it back immediately and verify ciphertext + decryptability
       const readBack = await ctx.runQuery(api.ourfableAudit.getCanaryEntry, { entryId });
 
       if (!readBack) {
         throw new Error("Canary entry submitted but read-back returned null");
       }
+      if (!readBack.encryptedBody || readBack.contentHash !== contentHash || readBack.encryptionVersion !== 1) {
+        throw new Error("Canary entry did not persist the encrypted payload correctly");
+      }
 
-      if (readBack.body !== `Canary test ${testToken}`) {
-        throw new Error(`Canary read-back mismatch: expected "Canary test ${testToken}" got "${readBack.body}"`);
+      const decrypted = await encrypted.decrypt();
+      if (decrypted !== plaintext) {
+        throw new Error(`Canary decrypt mismatch: expected "${plaintext}" got "${decrypted}"`);
       }
 
       // 4. Clean up — delete the test entry
@@ -239,12 +287,42 @@ export const seedCanaryFamily = internalMutation({
   },
 });
 
-// Public versions for external canary (Cloudflare Worker)
-// Security: only operates on CANARY_FAMILY_ID, rejects all other familyIds
+// Internal encrypted canary writer.
+// Security: only operates on CANARY_FAMILY_ID and only writes sealed encrypted payloads.
+export const submitCanaryEntryInternal = internalMutation({
+  args: {
+    token: v.string(),
+    encryptedBody: v.string(),
+    contentHash: v.string(),
+  },
+  handler: async (ctx, { token, encryptedBody, contentHash }): Promise<Id<"ourfable_vault_contributions">> => {
+    const member = await ctx.db
+      .query("ourfable_vault_circle")
+      .withIndex("by_familyId", (q) => q.eq("familyId", CANARY_FAMILY_ID))
+      .first();
+
+    if (!member) {
+      throw new Error("Canary member missing");
+    }
+
+    return await ctx.runMutation(internal.ourfable.submitVaultEntry, {
+      familyId: CANARY_FAMILY_ID,
+      memberId: member._id,
+      type: "write",
+      encryptedBody,
+      contentHash,
+      encryptionVersion: 1,
+      openOn: CANARY_OPEN_ON,
+      submissionToken: token,
+    });
+  },
+});
+
+// Public versions for legacy/external reads only.
 export const submitCanaryEntry = mutation({
   args: { token: v.string() },
   handler: async () => {
-    throw new Error("External canary vault writes are disabled until they are migrated to the encrypted vault path.");
+    throw new Error("External canary vault writes are permanently disabled. Canary runs only inside the encrypted internal vault path.");
   },
 });
 
@@ -296,7 +374,7 @@ export const hourlyHealthCheck = internalAction({
       since: oneHourAgo,
     });
 
-    const failures = recent.filter((e) => e.status !== "success");
+    const failures = recent.filter((e: Doc<"ourfable_vault_audit_log">) => e.status !== "success");
     const total = recent.length;
     const failCount = failures.length;
 
