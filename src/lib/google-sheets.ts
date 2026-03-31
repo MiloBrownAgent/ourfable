@@ -57,6 +57,12 @@ export interface WaitlistSheetRow {
   foundingMember?: string;
 }
 
+export interface GoogleSheetWriteResult {
+  ok: boolean;
+  skipped?: boolean;
+  reason?: string;
+}
+
 function escapeCSV(val: string): string {
   if (val.includes(",") || val.includes('"') || val.includes("\n")) {
     return '"' + val.replace(/"/g, '""') + '"';
@@ -85,57 +91,65 @@ const HEADERS = "Timestamp,Email,Child Name,Child Birthday,Source,UTM Source,UTM
 /**
  * Append a waitlist signup row to the Google Sheet.
  * Uses Drive API: downloads existing CSV, appends row, re-uploads.
- * Silently no-ops if env vars are not configured.
+ *
+ * This is a best-effort fallback because the project is using Drive export/upload
+ * rather than the Sheets append API, which means concurrent writes are not atomic.
+ * We log explicit skip/failure reasons so reserve submissions never disappear silently.
  */
-export async function appendWaitlistRow(row: WaitlistSheetRow): Promise<void> {
+export async function appendWaitlistRow(row: WaitlistSheetRow): Promise<GoogleSheetWriteResult> {
   const sheetId = process.env.GOOGLE_SHEET_ID;
 
   if (!sheetId || !process.env.GOOGLE_OAUTH_REFRESH_TOKEN) {
-    return;
+    return {
+      ok: false,
+      skipped: true,
+      reason: "Google Sheets not configured: missing GOOGLE_SHEET_ID or GOOGLE_OAUTH_REFRESH_TOKEN",
+    };
   }
 
-  try {
-    const token = await getAccessToken();
+  const token = await getAccessToken();
 
-    // Download existing content as CSV
-    const exportRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${sheetId}/export?mimeType=text/csv`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  // Download existing content as CSV
+  const exportRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${sheetId}/export?mimeType=text/csv`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
-    let existingCSV = "";
-    if (exportRes.ok) {
-      existingCSV = await exportRes.text();
-    }
-
-    // If empty or no headers, start fresh
-    if (!existingCSV || !existingCSV.includes("Timestamp")) {
-      existingCSV = HEADERS;
-    }
-
-    // Append new row
-    const newCSV = existingCSV.trimEnd() + "\n" + rowToCSV(row);
-
-    // Upload updated CSV back to the sheet
-    const updateRes = await fetch(
-      `https://www.googleapis.com/upload/drive/v3/files/${sheetId}?uploadType=media`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "text/csv",
-        },
-        body: newCSV,
-      }
-    );
-
-    if (!updateRes.ok) {
-      const text = await updateRes.text();
-      console.error("Google Sheets update error:", text);
-    }
-  } catch (err) {
-    console.error("Google Sheets integration error:", err);
+  let existingCSV = "";
+  if (exportRes.ok) {
+    existingCSV = await exportRes.text();
+  } else if (exportRes.status !== 404) {
+    const text = await exportRes.text();
+    throw new Error(`Google Sheets export failed: ${exportRes.status} ${text}`);
   }
+
+  // If empty or no headers, start fresh
+  if (!existingCSV || !existingCSV.includes("Timestamp")) {
+    existingCSV = HEADERS;
+  }
+
+  // Append new row
+  const newCSV = existingCSV.trimEnd() + "\n" + rowToCSV(row);
+
+  // Upload updated CSV back to the sheet
+  const updateRes = await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files/${sheetId}?uploadType=media`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "text/csv",
+      },
+      body: newCSV,
+    }
+  );
+
+  if (!updateRes.ok) {
+    const text = await updateRes.text();
+    throw new Error(`Google Sheets update failed: ${updateRes.status} ${text}`);
+  }
+
+  return { ok: true };
 }
 
 /**

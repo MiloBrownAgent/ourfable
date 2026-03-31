@@ -136,6 +136,8 @@ function ReservePageInner() {
           childName: `Gift for ${recipientEmail.trim().toLowerCase()}`,
           source: "gift-waitlist",
           eventId: eid,
+          referralCode: searchParams.get("ref") ?? undefined,
+          requestedPlanType: selectedTier,
           ...utms,
         }),
       });

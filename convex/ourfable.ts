@@ -1959,6 +1959,13 @@ export const addWaitlistEntry = internalMutation({
     referredBy: v.optional(v.string()),
     childName: v.optional(v.string()),
     childBirthday: v.optional(v.string()),
+    requestedPlanType: v.optional(v.string()),
+    foundingMember: v.optional(v.boolean()),
+    foundingPriceLockedAt: v.optional(v.number()),
+    foundingStandardAnnualPrice: v.optional(v.number()),
+    foundingStandardAnnualCompareAt: v.optional(v.number()),
+    foundingPlusAnnualPrice: v.optional(v.number()),
+    foundingPlusAnnualCompareAt: v.optional(v.number()),
     // UTM attribution
     utm_source: v.optional(v.string()),
     utm_medium: v.optional(v.string()),
@@ -1967,10 +1974,40 @@ export const addWaitlistEntry = internalMutation({
     utm_term: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Deduplicate by email
-    const existing = await ctx.db.query("ourfable_waitlist").withIndex("by_email", (q) => q.eq("email", args.email)).first();
-    if (existing) return existing._id;
-    return await ctx.db.insert("ourfable_waitlist", { ...args, createdAt: Date.now() });
+    const normalizedEmail = args.email.toLowerCase().trim();
+    const submittedAt = Date.now();
+    const existing = await ctx.db
+      .query("ourfable_waitlist")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .first();
+    if (existing) {
+      const patch = Object.fromEntries(
+        Object.entries({
+          ...args,
+          email: normalizedEmail,
+          lastSubmittedAt: submittedAt,
+        }).filter(([, value]) => value !== undefined)
+      );
+      await ctx.db.patch(existing._id, patch);
+      return existing._id;
+    }
+
+    return await ctx.db.insert("ourfable_waitlist", {
+      ...args,
+      email: normalizedEmail,
+      createdAt: submittedAt,
+      lastSubmittedAt: submittedAt,
+    });
+  },
+});
+
+export const getWaitlistEntryByEmail = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    return await ctx.db
+      .query("ourfable_waitlist")
+      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase().trim()))
+      .first();
   },
 });
 
@@ -3398,6 +3435,34 @@ export const updateOurFableLapseNotification = internalMutation({
   },
 });
 
+export const setOurFableFoundingOffer = internalMutation({
+  args: {
+    familyId: v.string(),
+    foundingMember: v.boolean(),
+    foundingPriceLockedAt: v.number(),
+    foundingSource: v.optional(v.string()),
+    foundingRequestedPlanType: v.optional(v.string()),
+    foundingStandardAnnualPrice: v.optional(v.number()),
+    foundingPlusAnnualPrice: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+    if (!family) return null;
+    await ctx.db.patch(family._id, {
+      foundingMember: args.foundingMember,
+      foundingPriceLockedAt: args.foundingPriceLockedAt,
+      foundingSource: args.foundingSource,
+      foundingRequestedPlanType: args.foundingRequestedPlanType,
+      foundingStandardAnnualPrice: args.foundingStandardAnnualPrice,
+      foundingPlusAnnualPrice: args.foundingPlusAnnualPrice,
+    });
+    return family._id;
+  },
+});
+
 // Count recent delivery tokens for rate limiting
 export const countRecentDeliveries = internalQuery({
   args: { familyId: v.string(), since: v.number() },
@@ -3866,6 +3931,12 @@ export const patchOurFableFamily = internalMutation({
     planType: v.optional(v.string()),
     subscriptionStatus: v.optional(v.string()),
     lapseNotificationSent: v.optional(v.boolean()),
+    foundingMember: v.optional(v.boolean()),
+    foundingPriceLockedAt: v.optional(v.number()),
+    foundingSource: v.optional(v.string()),
+    foundingRequestedPlanType: v.optional(v.string()),
+    foundingStandardAnnualPrice: v.optional(v.number()),
+    foundingPlusAnnualPrice: v.optional(v.number()),
   },
   handler: async (ctx, { familyId, ...patch }) => {
     const family = await ctx.db

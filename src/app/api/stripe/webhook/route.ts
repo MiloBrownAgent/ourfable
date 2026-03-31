@@ -498,7 +498,21 @@ async function handleUpgradeCompleted(session: Stripe.Checkout.Session) {
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const meta = session.metadata ?? {};
-  const { email, childName, childDob, parentNames, plan, planType: metaPlanType, billingPeriod } = meta;
+  const {
+    email,
+    childName,
+    childDob,
+    parentNames,
+    plan,
+    planType: metaPlanType,
+    billingPeriod,
+    founding,
+    foundingPriceLockedAt,
+    foundingSource,
+    foundingRequestedPlanType,
+    foundingStandardAnnualPrice,
+    foundingPlusAnnualPrice,
+  } = meta;
   const planType = metaPlanType ?? "standard";
   const resolvedPlan = billingPeriod ?? plan ?? "annual";
   const normalizedEmail = email?.toLowerCase().trim();
@@ -631,7 +645,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   console.log(`[webhook] ✅ Family created: familyId=${familyId} email=${normalizedEmail} planType=${planType} billing=${resolvedPlan}`);
 
-  // 3. Seed default content after the account is ready.
+  // 3. Persist founding-offer lock-in on the family record.
+  if (founding === "true") {
+    await convexMutation("ourfable:setOurFableFoundingOffer", {
+      familyId,
+      foundingMember: true,
+      foundingPriceLockedAt: Number(foundingPriceLockedAt || Date.now()),
+      foundingSource: foundingSource || undefined,
+      foundingRequestedPlanType: foundingRequestedPlanType || planType,
+      foundingStandardAnnualPrice: Number(foundingStandardAnnualPrice || 79),
+      foundingPlusAnnualPrice: Number(foundingPlusAnnualPrice || 99),
+    }).catch((err) => {
+      console.warn("[webhook] setOurFableFoundingOffer failed (non-fatal):", err);
+    });
+  }
+
+  // 4. Seed default content after the account is ready.
   await convexMutation("ourfable:seedCircle", { familyId }).catch((err) => {
     console.warn("[webhook] seedCircle failed (non-fatal):", err);
   });
@@ -642,7 +671,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.warn("[webhook] seedFirstLetter failed (non-fatal):", err);
   });
 
-  // 4. Save facilitator info + dead man's switch preference
+  // 5. Save facilitator info + dead man's switch preference
   const {
     facilitator1Name, facilitator1Email, facilitator1Relationship,
     facilitator2Name, facilitator2Email, facilitator2Relationship,
@@ -673,7 +702,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.warn("[webhook] updateOurFableLapseNotification failed (non-fatal):", err);
   });
 
-  // 5. Create delivery milestones
+  // 6. Create delivery milestones
   if (childDob) {
     await convexMutation("ourfable:createOurFableDeliveryMilestones", {
       familyId,
@@ -683,7 +712,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
   }
 
-  // 6. Send welcome email
+  // 7. Send welcome email
   const childFirst = childName.split(" ")[0];
   if (requiresPasswordSetupEmail) {
     await sendPasswordSetupEmail(normalizedEmail).catch((err) => {

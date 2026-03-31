@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import crypto from "node:crypto";
 import { hashPassword } from "@/lib/accounts";
-import { internalConvexMutation } from "@/lib/convex-internal";
+import { internalConvexMutation, internalConvexQuery } from "@/lib/convex-internal";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -30,6 +30,11 @@ const FOUNDING_ANNUAL_COUPON_MAP: Record<PlanType, string | undefined> = {
   standard: process.env.STRIPE_COUPON_FOUNDING_STANDARD_ANNUAL,
   plus: process.env.STRIPE_COUPON_FOUNDING_PLUS_ANNUAL,
 };
+
+const FOUNDING_OFFER = {
+  standardAnnualPrice: 79,
+  plusAnnualPrice: 99,
+} as const;
 
 function getCheckoutDiscounts(
   planType: PlanType,
@@ -98,6 +103,24 @@ export async function POST(req: NextRequest) {
 
     const priceId = PRICE_MAP[resolvedPlanType][resolvedBilling];
     const discounts = getCheckoutDiscounts(resolvedPlanType, resolvedBilling, isFoundingMember);
+    const waitlistEntry = isFoundingMember
+      ? await internalConvexQuery<Record<string, unknown> | null>("ourfable:getWaitlistEntryByEmail", {
+          email: email.toLowerCase().trim(),
+        }).catch((err) => {
+          console.warn("[stripe/checkout] Failed to load waitlist entry for founding metadata:", err);
+          return null;
+        })
+      : null;
+    const foundingPriceLockedAt = isFoundingMember
+      ? String(
+          typeof waitlistEntry?.foundingPriceLockedAt === "number"
+            ? waitlistEntry.foundingPriceLockedAt
+            : Date.now()
+        )
+      : undefined;
+    const foundingSource = isFoundingMember
+      ? String(typeof waitlistEntry?.source === "string" ? waitlistEntry.source : "signup")
+      : undefined;
     const cancelUrl = new URL("/signup", BASE_URL);
     if (isFoundingMember) {
       cancelUrl.searchParams.set("founding", "true");
@@ -119,6 +142,11 @@ export async function POST(req: NextRequest) {
         childDob,
         parentNames,
         founding: isFoundingMember ? "true" : "false",
+        ...(foundingPriceLockedAt ? { foundingPriceLockedAt } : {}),
+        ...(foundingSource ? { foundingSource } : {}),
+        ...(isFoundingMember ? { foundingRequestedPlanType: resolvedPlanType } : {}),
+        ...(isFoundingMember ? { foundingStandardAnnualPrice: String(FOUNDING_OFFER.standardAnnualPrice) } : {}),
+        ...(isFoundingMember ? { foundingPlusAnnualPrice: String(FOUNDING_OFFER.plusAnnualPrice) } : {}),
         planType: resolvedPlanType,
         billingPeriod: resolvedBilling,
         plan: resolvedBilling, // legacy compat
