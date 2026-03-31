@@ -1529,44 +1529,16 @@ export const upsertSnapshot = internalMutation({
     funFact: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, { familyId, year, month, ...data }) => {
-    const existing = await ctx.db
-      .query("ourfable_vault_snapshots")
-      .withIndex("by_familyId_year_month", (q) => q.eq("familyId", familyId).eq("year", year).eq("month", month))
-      .first();
-    if (existing) {
-      await ctx.db.patch(existing._id, data);
-      return existing._id;
-    }
-    return await ctx.db.insert("ourfable_vault_snapshots", { familyId, year, month, ...data });
+  handler: async () => {
+    throw new Error("Snapshot writes are disabled until they are migrated to the encrypted vault path.");
   },
 });
 
 export const seedSnapshots = internalMutation({
   args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
-    const snapshots = [
-      { year: 2025, month: 6, topHeadline: "The summer solstice arrived — the longest day of the year, full of heat, light, and new beginnings.", topSong: "Manchild — Sabrina Carpenter", weatherDesc: "Sunny, 96°F — the hottest day of the year", tempHigh: 96, funFact: "The fireflies were out in full force across the Midwest." },
-      { year: 2025, month: 7, topHeadline: "The world was falling in love with iced coffee and summer road trips. Everyone seemed to be outdoors.", topSong: "Espresso — Sabrina Carpenter", weatherDesc: "Hot and humid, 89°F", tempHigh: 89, funFact: "National Ice Cream Month — America ate 1.5 billion gallons this year." },
-      { year: 2025, month: 8, topHeadline: "Back-to-school season kicked off, and families everywhere soaked up the last golden days of summer.", topSong: "I Had Some Help — Post Malone ft. Morgan Wallen", weatherDesc: "Late summer warmth, 85°F", tempHigh: 85, funFact: "The Perseid meteor shower lit up the sky mid-month — up to 100 shooting stars per hour." },
-      { year: 2025, month: 9, topHeadline: "Autumn arrived with pumpkin patches, apple orchards, and the unmistakable crunch of leaves underfoot.", topSong: "Die With A Smile — Lady Gaga & Bruno Mars", weatherDesc: "Cool and crisp, 68°F", tempHigh: 68, funFact: "The NFL season kicked off — families gathered around TVs for opening weekend." },
-      { year: 2025, month: 10, topHeadline: "Halloween costumes were everywhere. Kids dressed as astronauts, dinosaurs, and their favorite superheroes.", topSong: "A Bar Song (Tipsy) — Shaboozey", weatherDesc: "Fall colors, 54°F", tempHigh: 54, funFact: "The World Series captivated baseball fans across the country." },
-      { year: 2025, month: 11, topHeadline: "Thanksgiving tables were set from coast to coast. Families gathered, grateful for another year together.", topSong: "luther — Kendrick Lamar & SZA", weatherDesc: "First snow of the season, 32°F", tempHigh: 32, funFact: "The Macy's Thanksgiving Day Parade marched through Manhattan for the 99th time." },
-      { year: 2025, month: 12, topHeadline: "The holidays arrived with twinkling lights, cozy blankets, and the magic of the season filling every home.", topSong: "APT. — ROSÉ & Bruno Mars", weatherDesc: "Cold and snowy, 22°F", tempHigh: 22, funFact: "Families everywhere were decorating trees and wrapping presents." },
-      { year: 2026, month: 1, topHeadline: "A brand new year began — the world felt full of possibility and fresh starts.", topSong: "Birds of a Feather — Billie Eilish", weatherDesc: "Bitter cold, -4°F", tempHigh: -4, funFact: "Polar vortex brought record cold to the Midwest — perfect for staying in and reading stories." },
-      { year: 2026, month: 2, topHeadline: "Valentine's Day reminded everyone to tell the people they love how much they matter.", topSong: "Pink Pony Club — Chappell Roan", weatherDesc: "Cold and grey, 18°F", tempHigh: 18, funFact: "The Super Bowl brought friends and families together for the biggest watch party of the year." },
-      { year: 2026, month: 3, topHeadline: "Spring was just around the corner — the first crocuses pushed through the snow, and the days started getting longer.", topSong: "Not Like Us — Kendrick Lamar", weatherDesc: "Early spring, 42°F", tempHigh: 42, funFact: "March Madness tipped off — 68 teams chasing a dream." },
-    ];
-    for (const snap of snapshots) {
-      const existing = await ctx.db
-        .query("ourfable_vault_snapshots")
-        .withIndex("by_familyId_year_month", (q) => q.eq("familyId", familyId).eq("year", snap.year).eq("month", snap.month))
-        .first();
-      if (!existing) {
-        await ctx.db.insert("ourfable_vault_snapshots", { familyId, ...snap });
-      }
-    }
-    return { seeded: snapshots.length };
+  handler: async () => {
+    // Disabled until snapshots are migrated to the encrypted vault path.
+    return { seeded: 0 };
   },
 });
 
@@ -1689,32 +1661,8 @@ export const answerBeforeBorn = internalMutation({
 
 export const generateBirthdayLetter = internalMutation({
   args: { familyId: v.string(), year: v.number() },
-  handler: async (ctx, { familyId, year }) => {
-    const family = await ctx.db.query("ourfable_vault_families").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).first();
-    if (!family) return null;
-    const dob = new Date(family.childDob + "T00:00:00");
-    const yearStart = new Date(dob.getFullYear() + year - 1, dob.getMonth(), dob.getDate()).getTime();
-    const yearEnd = new Date(dob.getFullYear() + year, dob.getMonth(), dob.getDate()).getTime();
-    const contributions = await ctx.db.query("ourfable_vault_contributions").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
-    const yearContribs = contributions.filter(c => c.submittedAt >= yearStart && c.submittedAt < yearEnd);
-    const milestones = await ctx.db.query("ourfable_vault_milestones").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
-    const yearMilestones = milestones.filter(m => m.reachedAt && m.reachedAt >= yearStart && m.reachedAt < yearEnd);
-    const snapshots = await ctx.db.query("ourfable_vault_snapshots").withIndex("by_familyId", (q) => q.eq("familyId", familyId)).collect();
-    const yearSnap = snapshots.find(s => {
-      const snapDate = new Date(s.year, s.month - 1, 1).getTime();
-      return snapDate >= yearStart && snapDate < yearEnd;
-    });
-    const milestonesText = yearMilestones.length > 0
-      ? yearMilestones.map(m => m.name).join(", ")
-      : "Growing and learning every day.";
-    const worldHighlight = yearSnap?.topHeadline ?? "A world full of change and wonder.";
-    const existing = await ctx.db.query("ourfable_vault_birthday_letters").withIndex("by_familyId_year", (q) => q.eq("familyId", familyId).eq("year", year)).first();
-    const data = { familyId, year, milestonesText, contributionCount: yearContribs.length, worldHighlight, isSealed: true, sealedUntilAge: 18, generatedAt: Date.now() };
-    if (existing) {
-      await ctx.db.patch(existing._id, data);
-      return existing._id;
-    }
-    return await ctx.db.insert("ourfable_vault_birthday_letters", data);
+  handler: async () => {
+    throw new Error("Birthday letter generation is disabled until it is migrated to the encrypted vault path.");
   },
 });
 

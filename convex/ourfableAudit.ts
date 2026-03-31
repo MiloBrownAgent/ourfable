@@ -243,21 +243,8 @@ export const seedCanaryFamily = internalMutation({
 // Security: only operates on CANARY_FAMILY_ID, rejects all other familyIds
 export const submitCanaryEntry = mutation({
   args: { token: v.string() },
-  handler: async (ctx, { token }) => {
-    const member = await ctx.db
-      .query("ourfable_vault_circle")
-      .withIndex("by_familyId", (q) => q.eq("familyId", CANARY_FAMILY_ID))
-      .first();
-    if (!member) throw new Error("Canary circle member not found");
-
-    return await ctx.db.insert("ourfable_vault_contributions", {
-      familyId: CANARY_FAMILY_ID,
-      memberId: member._id,
-      type: "write",
-      body: `Canary test ${token}`,
-      isOpen: false,
-      submittedAt: Date.now(),
-    });
+  handler: async () => {
+    throw new Error("External canary vault writes are disabled until they are migrated to the encrypted vault path.");
   },
 });
 
