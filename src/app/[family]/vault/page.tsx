@@ -9,7 +9,6 @@ import {
 import { useChildContext } from "@/components/ChildContext";
 import { useVaultKey } from "@/lib/vault-key-context";
 import {
-  decryptBlob,
   decryptText,
   deserializeEncryptedText,
   encryptBlob,
@@ -45,6 +44,7 @@ interface VaultEntry {
   mediaEncryptionIv?: string;
   mediaEncryptionTag?: string;
   mediaEncryptionVersion?: number;
+  mediaDeferred?: boolean;
 }
 
 interface Family {
@@ -108,26 +108,6 @@ function computeAgeFromCustomDate(childDob: string, customDate: string): number 
   const target = new Date(customDate + "T00:00:00");
   const diffYears = (target.getTime() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
   return Math.max(0, Math.round(diffYears));
-}
-
-async function decryptMediaUrl(
-  mediaUrl: string,
-  mimeType: string,
-  iv: string,
-  tag: string,
-  key: CryptoKey
-): Promise<string> {
-  const res = await fetch(mediaUrl, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch encrypted media: ${res.status}`);
-  }
-  const encryptedBlob = await res.blob();
-  const decrypted = await decryptBlob(
-    { data: await encryptedBlob.arrayBuffer(), iv, tag },
-    key,
-    mimeType
-  );
-  return URL.createObjectURL(decrypted);
 }
 
 // ─── Existing Card Components ───────────────────────────────────────────────
@@ -295,44 +275,54 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
             </div>
           )}
 
-          {entry.contentType === "photo" && (entry.mediaUrls && entry.mediaUrls.length > 0 ? (
-            <div
-              className="vault-dispatch-media"
-              style={{
-              display: "flex", gap: 8, overflowX: "auto", marginTop: 6,
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(107,143,111,0.72) rgba(255,255,255,0.04)",
-              WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
-              paddingBottom: 8,
-            }}>
-              {entry.mediaUrls.map((url, idx) => (
+          {entry.mediaDeferred ? (
+            <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(253,251,247,0.08)" }}>
+              <p style={{ fontSize: 12, color: "rgba(253,251,247,0.55)", lineHeight: 1.6, margin: 0 }}>
+                Media is available, but deferred on first load to keep the vault stable on mobile.
+              </p>
+            </div>
+          ) : (
+            <>
+              {entry.contentType === "photo" && (entry.mediaUrls && entry.mediaUrls.length > 0 ? (
+                <div
+                  className="vault-dispatch-media"
+                  style={{
+                  display: "flex", gap: 8, overflowX: "auto", marginTop: 6,
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "rgba(107,143,111,0.72) rgba(255,255,255,0.04)",
+                  WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+                  paddingBottom: 8,
+                }}>
+                  {entry.mediaUrls.map((url, idx) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={idx}
+                      src={url}
+                      alt={`Photo ${idx + 1} from ${entry.memberName}`}
+                      style={{ height: 200, width: "auto", borderRadius: 10, flexShrink: 0, display: "block" }}
+                    />
+                  ))}
+                </div>
+              ) : entry.mediaUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  key={idx}
-                  src={url}
-                  alt={`Photo ${idx + 1} from ${entry.memberName}`}
-                  style={{ height: 200, width: "auto", borderRadius: 10, flexShrink: 0, display: "block" }}
+                  src={entry.mediaUrl}
+                  alt={`Photo from ${entry.memberName}`}
+                  style={{ maxWidth: "100%", borderRadius: 10, marginTop: 6, display: "block" }}
                 />
-              ))}
-            </div>
-          ) : entry.mediaUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={entry.mediaUrl}
-              alt={`Photo from ${entry.memberName}`}
-              style={{ maxWidth: "100%", borderRadius: 10, marginTop: 6, display: "block" }}
-            />
-          ) : null)}
+              ) : null)}
 
-          {entry.contentType === "voice" && entry.mediaUrl && (
-            <audio controls src={entry.mediaUrl} style={{ width: "100%", marginTop: 6 }} />
-          )}
+              {entry.contentType === "voice" && entry.mediaUrl && (
+                <audio controls src={entry.mediaUrl} style={{ width: "100%", marginTop: 6 }} />
+              )}
 
-          {entry.contentType === "video" && entry.mediaUrl && (
-            <video controls playsInline src={entry.mediaUrl} style={{ width: "100%", borderRadius: 10, marginTop: 6, maxHeight: 300, background: "#000" }}
-              // @ts-expect-error webkit-playsinline needed for iOS
-              webkit-playsinline=""
-            />
+              {entry.contentType === "video" && entry.mediaUrl && (
+                <video controls playsInline src={entry.mediaUrl} style={{ width: "100%", borderRadius: 10, marginTop: 6, maxHeight: 300, background: "#000" }}
+                  // @ts-expect-error webkit-playsinline needed for iOS
+                  webkit-playsinline=""
+                />
+              )}
+            </>
           )}
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
@@ -1236,38 +1226,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         }
 
         if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
-          try {
-            try {
-              const objectUrl = await decryptMediaUrl(
-                entry.mediaUrl,
-                entry.mediaMimeType,
-                entry.mediaEncryptionIv,
-                entry.mediaEncryptionTag,
-                familyKey
-              );
-              objectUrlsRef.current.push(objectUrl);
-              entry.mediaUrl = objectUrl;
-            } catch {
-              const wrappedKey = memberInviteKeys[entry.memberId];
-              if (wrappedKey) {
-                if (!inviteKeyCache[entry.memberId]) {
-                  inviteKeyCache[entry.memberId] = await unwrapInviteKey(wrappedKey, familyKey);
-                }
-                const objectUrl = await decryptMediaUrl(
-                  entry.mediaUrl,
-                  entry.mediaMimeType,
-                  entry.mediaEncryptionIv,
-                  entry.mediaEncryptionTag,
-                  inviteKeyCache[entry.memberId]
-                );
-                objectUrlsRef.current.push(objectUrl);
-                entry.mediaUrl = objectUrl;
-              }
-            }
-          } catch (err) {
-            console.error("[vault] Failed to decrypt contribution media:", entry._id, err);
-            entry.mediaUrl = undefined;
-          }
+          entry.mediaDeferred = true;
         }
       }
     }
@@ -1325,20 +1284,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
           }
         }
         if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
-          try {
-            const objectUrl = await decryptMediaUrl(
-              entry.mediaUrl,
-              entry.mediaMimeType,
-              entry.mediaEncryptionIv,
-              entry.mediaEncryptionTag,
-              familyKey
-            );
-            objectUrlsRef.current.push(objectUrl);
-            entry.mediaUrl = objectUrl;
-          } catch (err) {
-            console.error("[vault] Failed to decrypt media:", entry._id, err);
-            entry.mediaUrl = undefined;
-          }
+          entry.mediaDeferred = true;
         }
       }
     }
