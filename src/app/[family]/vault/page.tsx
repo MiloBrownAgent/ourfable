@@ -1,5 +1,5 @@
 "use client";
-import { use, useEffect, useState, useRef, useCallback, DragEvent, ChangeEvent } from "react";
+import React, { use, useEffect, useState, useRef, useCallback, DragEvent, ChangeEvent } from "react";
 import {
   FolderLock, Lock, Unlock, FileText, Image as ImageIcon,
   Mic, Video, ChevronDown, ChevronUp, Plus, X, Upload,
@@ -109,6 +109,38 @@ function computeAgeFromCustomDate(childDob: string, customDate: string): number 
 }
 
 // ─── Existing Card Components ───────────────────────────────────────────────
+
+class VaultErrorBoundary extends React.Component<React.PropsWithChildren, { hasError: boolean }> {
+  constructor(props: React.PropsWithChildren) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("[vault] render crash", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24, borderRadius: 12, border: "1px solid rgba(180,75,75,0.3)", background: "rgba(180,75,75,0.08)", color: "#FDFBF7" }}>
+          <p style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,190,190,0.9)", marginBottom: 8 }}>
+            Vault error
+          </p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+            Part of the vault failed to render. The page stayed up instead of crashing. Reload once, and if it happens again we’ll know it’s a rendering fault, not your data disappearing.
+          </p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function SealedCard({ entry, onUnlock }: { entry: VaultEntry; onUnlock: (id: string) => void }) {
   return (
@@ -1129,37 +1161,41 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const [entries, setEntries] = useState<VaultEntry[]>([]);
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>("");
   const [filter, setFilter] = useState<FilterTab>("all");
   const [personFilter, setPersonFilter] = useState<string>("all");
   const [personOpen, setPersonOpen] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const load = async () => {
-    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-    objectUrlsRef.current = [];
-    const queryArgs = childId ? { familyId, childId } : { familyId };
-    const [entriesRes, ourfableEntriesRes, familyRes, circleRes] = await Promise.all([
-      fetch(`/api/ourfable/data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { ...queryArgs, includeSealed: true }, format: "json" }),
-      }).then(r => r.json()),
-      fetch(`/api/ourfable/data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:listOurFableVaultEntries", args: { ...queryArgs }, format: "json" }),
-      }).then(r => r.json()),
-      fetch(`/api/ourfable/data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
-      }).then(r => r.json()),
-      fetch(`/api/ourfable/data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId }, format: "json" }),
-      }).then(r => r.json()),
-    ]);
+    try {
+      setLoading(true);
+      setLoadError("");
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrlsRef.current = [];
+      const queryArgs = childId ? { familyId, childId } : { familyId };
+      const [entriesRes, ourfableEntriesRes, familyRes, circleRes] = await Promise.all([
+        fetch(`/api/ourfable/data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { ...queryArgs, includeSealed: true }, format: "json" }),
+        }).then(r => r.json()),
+        fetch(`/api/ourfable/data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: "ourfable:listOurFableVaultEntries", args: { ...queryArgs }, format: "json" }),
+        }).then(r => r.json()),
+        fetch(`/api/ourfable/data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
+        }).then(r => r.json()),
+        fetch(`/api/ourfable/data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId }, format: "json" }),
+        }).then(r => r.json()),
+      ]);
 
     // Build map of memberId → encryptedInviteKey for decryption
     const memberInviteKeys: Record<string, string> = {};
@@ -1260,9 +1296,16 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)
     );
 
-    setEntries(merged);
-    setFamily(familyRes.value ?? null);
-    setLoading(false);
+      setEntries(merged);
+      setFamily((familyRes.value as Family | null) ?? null);
+      setLoading(false);
+    } catch (err) {
+      console.error("[vault] load failed", err);
+      setEntries([]);
+      setFamily(null);
+      setLoadError("The vault hit a loading fault. The page stayed up and we logged it.");
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -1379,6 +1422,15 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         </p>
       </div>
 
+      {loadError && (
+        <div style={{ padding: 16, borderRadius: 12, border: "1px solid rgba(180,75,75,0.3)", background: "rgba(180,75,75,0.08)", color: "#FDFBF7" }}>
+          <p style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,190,190,0.9)", marginBottom: 6 }}>
+            Vault load warning
+          </p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, margin: 0 }}>{loadError}</p>
+        </div>
+      )}
+
       {/* Stats bar */}
       {!loading && entries.length > 0 && (
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -1475,6 +1527,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         </div>
       )}
 
+      <VaultErrorBoundary>
       {/* Content */}
       {loading ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1557,6 +1610,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
           onSuccess={() => load()}
         />
       )}
+      </VaultErrorBoundary>
 
       <style>{quickAddStyles}</style>
     </div>
