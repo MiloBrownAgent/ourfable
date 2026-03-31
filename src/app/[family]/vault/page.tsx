@@ -1125,7 +1125,6 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const { family: familyId } = use(params);
   const { selectedChild } = useChildContext();
   const childId = selectedChild?.childId || selectedChild?._id;
-  const { familyKey } = useVaultKey();
   const objectUrlsRef = useRef<string[]>([]);
   const [entries, setEntries] = useState<VaultEntry[]>([]);
   const [family, setFamily] = useState<Family | null>(null);
@@ -1266,7 +1265,12 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [familyId, childId, familyKey]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [familyId, childId]);
 
   useEffect(() => {
     return () => {
