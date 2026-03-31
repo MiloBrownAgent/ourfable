@@ -9,13 +9,10 @@ import {
 import { useChildContext } from "@/components/ChildContext";
 import { useVaultKey } from "@/lib/vault-key-context";
 import {
-  decryptText,
-  deserializeEncryptedText,
   encryptBlob,
   encryptText,
   hashContent,
   serializeEncryptedText,
-  unwrapInviteKey,
 } from "@/lib/vault-encryption";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -31,6 +28,7 @@ interface VaultEntry {
   mediaUrl?: string;
   mediaUrls?: string[];
   mediaMimeType?: string;
+  textDeferred?: boolean;
   isSealed: boolean;
   unlockAge?: number;
   createdAt?: number;
@@ -249,7 +247,13 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
             </p>
           )}
 
-          {entry.contentType === "text" && entry.textContent && (
+          {entry.textDeferred ? (
+            <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(253,251,247,0.08)" }}>
+              <p style={{ fontSize: 12, color: "rgba(253,251,247,0.55)", lineHeight: 1.6, margin: 0 }}>
+                Text is sealed safely, but deferred on first load to keep the vault stable on mobile.
+              </p>
+            </div>
+          ) : entry.contentType === "text" && entry.textContent && (
             <div>
               <p style={{
                 fontSize: 14, color: "rgba(253,251,247,0.75)", lineHeight: 1.8,
@@ -1196,38 +1200,12 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       };
     });
 
-    // Decrypt encrypted contribution entries if family key is available
-    if (familyKey) {
-      // Cache unwrapped invite keys to avoid redundant unwraps
-      const inviteKeyCache: Record<string, CryptoKey> = {};
-      for (const entry of legacyEntries) {
-        if (entry.encryptedBody && !entry.textContent && !entry.isSealed) {
-          try {
-            const encrypted = deserializeEncryptedText(entry.encryptedBody);
-            // Try family key first (for parent-encrypted entries)
-            try {
-              entry.textContent = await decryptText(encrypted, familyKey);
-            } catch {
-              // If family key fails, try unwrapping the circle member's invite key
-              const wrappedKey = memberInviteKeys[entry.memberId];
-              if (wrappedKey) {
-                if (!inviteKeyCache[entry.memberId]) {
-                  inviteKeyCache[entry.memberId] = await unwrapInviteKey(wrappedKey, familyKey);
-                }
-                entry.textContent = await decryptText(encrypted, inviteKeyCache[entry.memberId]);
-              } else {
-                entry.textContent = "[Encrypted — unable to decrypt]";
-              }
-            }
-          } catch (err) {
-            console.error("[vault] Failed to decrypt contribution:", entry._id, err);
-            entry.textContent = "[Encrypted — unable to decrypt]";
-          }
-        }
-
-        if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
-          entry.mediaDeferred = true;
-        }
+    for (const entry of legacyEntries) {
+      if (entry.encryptedBody && !entry.textContent && !entry.isSealed) {
+        entry.textDeferred = true;
+      }
+      if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
+        entry.mediaDeferred = true;
       }
     }
 
@@ -1269,23 +1247,12 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       };
     });
 
-    // Decrypt encrypted entries if family key is available
-    if (familyKey) {
-      for (const entry of ourfableEntries) {
-        if (entry.encryptedBody && !entry.textContent && !entry.isSealed) {
-          try {
-            const encrypted = deserializeEncryptedText(entry.encryptedBody);
-            entry.textContent = await decryptText(encrypted, familyKey);
-          } catch (err) {
-            // ourfable_vault_entries won't have invite-key-encrypted content
-            // (those go through contributions), but handle gracefully
-            console.error("[vault] Failed to decrypt entry:", entry._id, err);
-            entry.textContent = "[Encrypted — unable to decrypt]";
-          }
-        }
-        if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
-          entry.mediaDeferred = true;
-        }
+    for (const entry of ourfableEntries) {
+      if (entry.encryptedBody && !entry.textContent && !entry.isSealed) {
+        entry.textDeferred = true;
+      }
+      if (entry.mediaUrl && entry.mediaEncryptionIv && entry.mediaEncryptionTag && entry.mediaMimeType && !entry.isSealed) {
+        entry.mediaDeferred = true;
       }
     }
 
