@@ -1,14 +1,35 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Lock, Unlock, Mail, Plus, ChevronDown, X, Image as ImageIcon, Mic, Video } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Lock, Unlock, Mail, Plus, ChevronDown, X, Image as ImageIcon, Mic, Video, Upload } from "lucide-react";
 import NextImage from "next/image";
-import FileUpload, { UploadedFile } from "@/components/FileUpload";
 import { useChildContext } from "@/components/ChildContext";
+import { useVaultKey } from "@/lib/vault-key-context";
+import { decryptText, deserializeEncryptedText, encryptBlob, encryptText, hashContent, serializeEncryptedText } from "@/lib/vault-encryption";
 
 interface Letter {
-  _id: string; author: string; subject: string; body: string;
+  _id: string; author: string; subject?: string; body?: string;
+  encryptedBody?: string;
+  displaySubject?: string;
+  displayBody?: string;
   openOn: string; isOpen: boolean; writtenAt: number; openedAt?: number;
   mediaUrl?: string; mediaType?: string;
+  mediaStorageId?: string;
+  mediaMimeType?: string;
+  mediaEncryptionIv?: string;
+  mediaEncryptionTag?: string;
+  mediaEncryptionVersion?: number;
+}
+
+function parseLetterPayload(text: string): { subject: string; body: string } {
+  const normalized = text.replace(/\r\n/g, "\n");
+  if (normalized.startsWith("Subject: ")) {
+    const [first, ...rest] = normalized.split("\n");
+    return {
+      subject: first.replace(/^Subject:\s*/, "").trim() || "A letter for later",
+      body: rest.join("\n").replace(/^\n+/, ""),
+    };
+  }
+  return { subject: "A letter for later", body: normalized };
 }
 
 function countdown(openOn: string): string {
@@ -98,7 +119,7 @@ function OpenCard({ letter }: { letter: Letter }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 400, color: "var(--text)", marginBottom: 4 }}>
-            {letter.subject}
+            {letter.displaySubject ?? letter.subject ?? "A letter for later"}
           </p>
           <p style={{ fontSize: 12, color: "var(--text-3)" }}>
             From {letter.author} · Written {formatDate(letter.writtenAt)}
@@ -110,7 +131,7 @@ function OpenCard({ letter }: { letter: Letter }) {
       {expanded && (
         <div style={{ padding: "0 24px 28px", borderTop: "1px solid var(--border)" }}>
           <div style={{ paddingTop: 20, fontFamily: "var(--font-cormorant)", fontSize: 17, fontWeight: 300, lineHeight: 1.9, color: "var(--text)", whiteSpace: "pre-wrap" }}>
-            {letter.body}
+            {letter.displayBody ?? letter.body ?? "Unlock vault encryption to read this letter."}
           </div>
           {letter.mediaUrl && letter.mediaType && (
             <MediaPlayer mediaUrl={letter.mediaUrl} mediaType={letter.mediaType} />
@@ -130,28 +151,70 @@ const SEAL_PRESETS = [
 ];
 
 function WriteForm({ familyId, childName, onDone }: { familyId: string; childName: string; onDone: () => void }) {
+  const { familyKey, isEncryptionEnabled } = useVaultKey();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [author, setAuthor] = useState("Dave");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState(`Dear ${childName},\n\n`);
   const [openOn, setOpenOn] = useState("2043-06-21");
   const [saving, setSaving] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!familyKey || !isEncryptionEnabled) {
+      setError("Unlock vault encryption before sealing this letter.");
+      return;
+    }
     setSaving(true);
+    setError("");
     try {
-      const mutationArgs: Record<string, string> = { familyId, author, subject, body, openOn };
-      if (uploadedFiles.length > 0) {
-        mutationArgs.mediaUrl = uploadedFiles[0].r2Url;
-        mutationArgs.mediaType = uploadedFiles[0].mediaType;
+      const fullBody = `Subject: ${subject.trim()}\n\n${body.trim()}`;
+      const encrypted = await encryptText(fullBody, familyKey);
+      const contentHash = await hashContent(fullBody);
+      const mutationArgs: Record<string, string | number> = {
+        familyId,
+        author,
+        openOn,
+        encryptedBody: serializeEncryptedText(encrypted),
+        contentHash,
+        encryptionVersion: 1,
+      };
+
+      if (selectedFile) {
+        const encryptedBlob = await encryptBlob(selectedFile, familyKey);
+        const uploadUrlRes = await fetch('/api/ourfable/upload-media', { method: 'POST' });
+        const uploadUrlData = await uploadUrlRes.json();
+        if (!uploadUrlRes.ok) throw new Error(uploadUrlData.error ?? 'Failed to prepare upload');
+
+        const uploadRes = await fetch(uploadUrlData.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: new Blob([encryptedBlob.data], { type: 'application/octet-stream' }),
+        });
+        if (!uploadRes.ok) throw new Error('Failed to upload encrypted attachment');
+
+        const mediaType = selectedFile.type.startsWith('image/') ? 'photo' : selectedFile.type.startsWith('audio/') ? 'voice' : 'video';
+        mutationArgs.mediaUrl = uploadUrlData.publicUrl;
+        mutationArgs.mediaStorageId = uploadUrlData.storageId;
+        mutationArgs.mediaType = mediaType;
+        mutationArgs.mediaMimeType = selectedFile.type || 'application/octet-stream';
+        mutationArgs.mediaEncryptionIv = encryptedBlob.iv;
+        mutationArgs.mediaEncryptionTag = encryptedBlob.tag;
+        mutationArgs.mediaEncryptionVersion = 1;
       }
-      await fetch(`/api/ourfable/data`, {
+
+      const res = await fetch(`/api/ourfable/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: "ourfable:writeLetter", args: mutationArgs, type: "mutation" }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Failed to seal letter');
       onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to seal letter');
     } finally { setSaving(false); }
   };
 
@@ -200,21 +263,27 @@ function WriteForm({ familyId, childName, onDone }: { familyId: string; childNam
           className="input" style={{ resize: "none", fontFamily: "var(--font-cormorant)", fontSize: 16, lineHeight: 1.85 }} />
       </div>
 
-      {/* ── Attach media ── */}
       <div>
         <label style={{ display: "block", fontSize: 10, fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>
           Attach media <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span>
         </label>
-        <FileUpload
-          familyId={familyId}
-          contributionType="letter"
+        <input
+          ref={fileInputRef}
+          type="file"
           accept="image/*,video/mp4,video/quicktime,audio/*,.m4a,.mp3,.wav,.ogg"
-          maxFiles={1}
-          onUploadComplete={(files) => setUploadedFiles(files)}
-          label="Add a photo, video, or voice memo"
-          hint="Drag & drop or click · Photo, video, or voice"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            setSelectedFile(file);
+            e.target.value = '';
+          }}
         />
+        <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-outline" style={{ justifyContent: 'center', width: '100%' }}>
+          <Upload size={14} /> {selectedFile ? selectedFile.name : 'Add a photo, video, or voice memo'}
+        </button>
       </div>
+
+      {error && <p style={{ fontSize: 12, color: '#B44B4B', margin: 0 }}>{error}</p>}
 
       <button type="submit" disabled={saving || !subject.trim() || !body.trim()} className="btn-gold" style={{ justifyContent: "center" }}>
         {saving ? "Sealing…" : "Seal this letter"}
@@ -225,23 +294,39 @@ function WriteForm({ familyId, childName, onDone }: { familyId: string; childNam
 
 export default function LettersInner({ familyId }: { familyId: string }) {
   const { selectedChild } = useChildContext();
+  const { familyKey } = useVaultKey();
   const childId = selectedChild?.childId || selectedChild?._id;
   const [letters, setLetters] = useState<Letter[]>([]);
   const [family, setFamily] = useState<{ childName: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
-  const load = () => {
+  const load = async () => {
     const letterArgs = childId ? { familyId, childId } : { familyId };
-    Promise.all([
-      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listLetters", args: letterArgs }) })
-        .then(r => r.json()).then(d => setLetters(d.value ?? [])),
-      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }) })
-        .then(r => r.json()).then(d => setFamily(d.value ?? null)),
-    ]).finally(() => setLoading(false));
+    const [lettersRes, familyRes] = await Promise.all([
+      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:listLetters", args: letterArgs }) }).then(r => r.json()),
+      fetch(`/api/ourfable/data`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId } }) }).then(r => r.json()),
+    ]);
+
+    const nextLetters: Letter[] = await Promise.all((lettersRes.value ?? []).map(async (letter: Letter) => {
+      if (letter.encryptedBody && familyKey) {
+        try {
+          const decrypted = await decryptText(deserializeEncryptedText(letter.encryptedBody), familyKey);
+          const parsed = parseLetterPayload(decrypted);
+          return { ...letter, displaySubject: parsed.subject, displayBody: parsed.body };
+        } catch {
+          return { ...letter, displaySubject: letter.subject ?? "A sealed letter", displayBody: letter.body };
+        }
+      }
+      return { ...letter, displaySubject: letter.subject, displayBody: letter.body };
+    }));
+
+    setLetters(nextLetters);
+    setFamily(familyRes.value ?? null);
+    setLoading(false);
   };
 
-  useEffect(() => { load(); }, [familyId, childId]);
+  useEffect(() => { void load(); }, [familyId, childId, familyKey]);
 
   const today = new Date().toISOString().slice(0, 10);
   const sealed = letters.filter(l => l.openOn > today);
