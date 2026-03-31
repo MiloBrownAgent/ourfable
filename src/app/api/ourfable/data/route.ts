@@ -54,6 +54,7 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:getUpcomingDeliveries",
   "ourfable:listOurFableVaultEntries",
   "ourfable:getOurFableVaultEntry",
+  "ourfable:getOurFableDispatchDetail",
   "ourfable:addOurFableVaultEntry",
   "ourfable:unlockOurFableVaultEntry",
   "ourfable:unlockVaultEntryEarly",

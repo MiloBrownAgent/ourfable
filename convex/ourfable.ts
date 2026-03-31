@@ -2411,6 +2411,56 @@ export const getOurFableVaultEntry = internalQuery({
   },
 });
 
+export const getOurFableDispatchDetail = internalQuery({
+  args: {
+    familyId: v.string(),
+    entryId: v.string(),
+  },
+  handler: async (ctx, { familyId, entryId }) => {
+    const vaultEntry = await ctx.db
+      .query("ourfable_vault_entries")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect()
+      .then((entries) => entries.find((candidate) => String(candidate._id) === entryId) ?? null);
+
+    if (vaultEntry?.familyId === familyId && vaultEntry.sourceType === "dispatch") {
+      const mediaUrls = Array.from(
+        new Set([...(vaultEntry.mediaUrls ?? []), ...(vaultEntry.mediaUrl ? [vaultEntry.mediaUrl] : [])])
+      );
+
+      return {
+        _id: String(vaultEntry._id),
+        source: "vault_entry",
+        type: vaultEntry.type,
+        subject: undefined,
+        body: vaultEntry.content ?? "",
+        mediaUrls,
+        authorName: vaultEntry.authorName,
+        createdAt: vaultEntry.createdAt,
+      };
+    }
+
+    const dispatch = await ctx.db
+      .query("ourfable_dispatches")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect()
+      .then((entries) => entries.find((candidate) => String(candidate._id) === entryId) ?? null);
+
+    if (!dispatch || dispatch.familyId !== familyId) return null;
+
+    return {
+      _id: String(dispatch._id),
+      source: "dispatch",
+      type: dispatch.type,
+      subject: dispatch.content,
+      body: dispatch.body ?? "",
+      mediaUrls: dispatch.mediaUrls ?? [],
+      authorName: dispatch.sentByName ?? "",
+      createdAt: dispatch.sentAt,
+    };
+  },
+});
+
 export const unlockOurFableVaultEntry = internalMutation({
   args: {
     entryId: v.id("ourfable_vault_entries"),
