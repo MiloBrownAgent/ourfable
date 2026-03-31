@@ -24,7 +24,7 @@ interface VaultEntry {
   memberName: string;
   memberRelationship?: string;
   promptText?: string;
-  contentType: "text" | "photo" | "voice" | "video";
+  contentType: "text" | "photo" | "voice" | "video" | "dispatch";
   textContent?: string;
   mediaUrl?: string;
   mediaUrls?: string[];
@@ -355,7 +355,6 @@ function OpenCard({ entry, familyId }: { entry: VaultEntry; familyId: string }) 
 
               {entry.contentType === "video" && entry.mediaUrl && (
                 <video controls playsInline src={entry.mediaUrl} style={{ width: "100%", borderRadius: 10, marginTop: 6, maxHeight: 300, background: "#000" }}
-                  // @ts-expect-error webkit-playsinline needed for iOS
                   webkit-playsinline=""
                 />
               )}
@@ -1171,7 +1170,6 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const { family: familyId } = use(params);
   const { selectedChild } = useChildContext();
   const childId = selectedChild?.childId || selectedChild?._id;
-  const objectUrlsRef = useRef<string[]>([]);
   const [entries, setEntries] = useState<VaultEntry[]>([]);
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1181,47 +1179,42 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
   const [personOpen, setPersonOpen] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       setLoadError("");
-      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      objectUrlsRef.current = [];
       const queryArgs = childId ? { familyId, childId } : { familyId };
-      const [entriesRes, ourfableEntriesRes, familyRes, circleRes] = await Promise.all([
-        fetch(`/api/ourfable/data`, {
+      const fetchData = async (path: string, args: Record<string, unknown>) => {
+        const res = await fetch("/api/ourfable/data", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: "ourfable:listVaultEntries", args: { ...queryArgs, includeSealed: true }, format: "json" }),
-        }).then(r => r.json()),
-        fetch(`/api/ourfable/data`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: "ourfable:listOurFableVaultEntries", args: { ...queryArgs }, format: "json" }),
-        }).then(r => r.json()),
-        fetch(`/api/ourfable/data`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: "ourfable:getFamily", args: { familyId }, format: "json" }),
-        }).then(r => r.json()),
-        fetch(`/api/ourfable/data`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: "ourfable:listCircle", args: { familyId }, format: "json" }),
-        }).then(r => r.json()),
+          body: JSON.stringify({ path, args, format: "json" }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const err = data as { error?: string };
+          throw new Error(err.error ?? `Failed to load ${path}`);
+        }
+        return data as { value?: unknown };
+      };
+
+      const [entriesResult, ourfableEntriesResult, familyResult] = await Promise.allSettled([
+        fetchData("ourfable:listVaultEntries", { ...queryArgs, includeSealed: true }),
+        fetchData("ourfable:listOurFableVaultEntries", queryArgs),
+        fetchData("ourfable:getFamily", { familyId }),
       ]);
 
-    // Build map of memberId → encryptedInviteKey for decryption
-    const memberInviteKeys: Record<string, string> = {};
-    for (const m of (circleRes.value ?? [])) {
-      if (m.encryptedInviteKey) {
-        memberInviteKeys[m._id] = m.encryptedInviteKey;
+      const entriesRes = entriesResult.status === "fulfilled" ? entriesResult.value : { value: [] };
+      const ourfableEntriesRes = ourfableEntriesResult.status === "fulfilled" ? ourfableEntriesResult.value : { value: [] };
+      const familyRes = familyResult.status === "fulfilled" ? familyResult.value : { value: null };
+
+      if (entriesResult.status === "rejected" && ourfableEntriesResult.status === "rejected") {
+        throw new Error("Both vault data sources failed to load.");
       }
-    }
 
     // Normalize legacy contributions entries
     // SECURITY: Strip content from sealed entries — parents see metadata only
-    const legacyEntries: VaultEntry[] = (entriesRes.value ?? []).map((e: Record<string, unknown>) => {
+    const legacyEntries: VaultEntry[] = (Array.isArray(entriesRes.value) ? entriesRes.value : []).map((e: Record<string, unknown>) => {
       const sealed = e.isOpen === false || e.isSealed === true;
       const hasEncryptedBody = !!e.encryptedBody;
       return {
@@ -1259,24 +1252,25 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
     }
 
     // Resolve parent name from family data
-    const familyData = familyRes.value;
+    const familyData = (familyRes.value as Family | null) ?? null;
     const parentNames = (familyData?.parentNames as string | undefined) ?? null;
 
     // Normalize ourfable_vault_entries
     // SECURITY: Strip content from sealed entries — parents see metadata only
-    const ourfableEntries: VaultEntry[] = (ourfableEntriesRes.value ?? []).map((e: Record<string, unknown>) => {
+    const ourfableEntries: VaultEntry[] = (Array.isArray(ourfableEntriesRes.value) ? ourfableEntriesRes.value : []).map((e: Record<string, unknown>) => {
       const sealed = e.isSealed === true;
       // Use stored authorName; fall back to parentNames if it's still "Parent"
       const rawName = (e.authorName as string) ?? "Parent";
       const displayName = (rawName === "Parent" && parentNames) ? parentNames : rawName;
       const hasEncryptedBody = !!e.encryptedBody;
+      const entryType = (e.type as string) ?? "text";
       return {
         _id: e._id as string,
         memberId: "",
         memberName: displayName,
         memberRelationship: undefined,
         promptText: undefined,
-        contentType: (e.type as string ?? "text") as VaultEntry["contentType"],
+        contentType: entryType as VaultEntry["contentType"],
         textContent: sealed ? undefined : (hasEncryptedBody ? undefined : (e.content as string | undefined)),
         mediaUrl: sealed ? undefined : ((e.photoUrl as string) ?? (e.audioUrl as string) ?? (e.videoUrl as string) ?? (e.mediaUrl as string)),
         mediaUrls: sealed ? undefined : (e.mediaUrls as string[] | undefined),
@@ -1285,7 +1279,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
         unlockAge: e.unlockAge as number | undefined,
         createdAt: e.createdAt as number | undefined,
         sourceTable: "vault_entries" as const,
-        sourceType: (e.sourceType as string | undefined),
+        sourceType: (e.sourceType as string | undefined) ?? (entryType === "dispatch" ? "dispatch" : undefined),
         encryptedBody: sealed ? undefined : (e.encryptedBody as string | undefined),
         contentHash: e.contentHash as string | undefined,
         encryptionVersion: e.encryptionVersion as number | undefined,
@@ -1312,6 +1306,9 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
 
       setEntries(merged);
       setFamily((familyRes.value as Family | null) ?? null);
+      if (entriesResult.status === "rejected" || ourfableEntriesResult.status === "rejected" || familyResult.status === "rejected") {
+        setLoadError("Part of the vault data source failed, but the page stayed up and loaded what it could.");
+      }
       setLoading(false);
     } catch (err) {
       console.error("[vault] load failed", err);
@@ -1320,21 +1317,14 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       setLoadError("The vault hit a loading fault. The page stayed up and we logged it.");
       setLoading(false);
     }
-  };
+  }, [childId, familyId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       void load();
     }, 0);
     return () => clearTimeout(timer);
-  }, [familyId, childId]);
-
-  useEffect(() => {
-    return () => {
-      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      objectUrlsRef.current = [];
-    };
-  }, []);
+  }, [load]);
 
   const handleUnlock = async (entryId: string) => {
     if (!confirm("Unlock this entry early? This will open the entry for reading.")) return;

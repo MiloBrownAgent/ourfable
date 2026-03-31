@@ -1464,6 +1464,7 @@ export const createOutgoing = internalMutation({
     await ctx.db.insert("ourfable_vault_entries", {
       familyId: args.familyId,
       type: args.mediaType ?? "dispatch",
+      sourceType: "dispatch",
       content: args.body,
       mediaUrl: args.mediaUrls?.[0],
       mediaUrls: args.mediaUrls,
@@ -2384,10 +2385,14 @@ export const listOurFableVaultEntries = internalQuery({
 export const getOurFableVaultEntry = internalQuery({
   args: {
     familyId: v.string(),
-    entryId: v.id("ourfable_vault_entries"),
+    entryId: v.string(),
   },
   handler: async (ctx, { familyId, entryId }) => {
-    const entry = await ctx.db.get(entryId);
+    const entry = await ctx.db
+      .query("ourfable_vault_entries")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect()
+      .then((entries) => entries.find((candidate) => String(candidate._id) === entryId) ?? null);
     if (!entry || entry.familyId !== familyId) return null;
 
     const resolved = { ...entry } as Record<string, unknown>;
