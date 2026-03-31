@@ -1,5 +1,6 @@
 "use client";
 import React, { use, useEffect, useState, useRef, useCallback, DragEvent, ChangeEvent } from "react";
+import Link from "next/link";
 import {
   FolderLock, Lock, Unlock, FileText, Image as ImageIcon,
   Mic, Video, ChevronDown, ChevronUp, Plus, X, Upload,
@@ -240,7 +241,7 @@ function SealedCard({ entry, onUnlock }: { entry: VaultEntry; onUnlock: (id: str
   );
 }
 
-function OpenCard({ entry }: { entry: VaultEntry }) {
+function OpenCard({ entry, familyId }: { entry: VaultEntry; familyId: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -362,6 +363,19 @@ function OpenCard({ entry }: { entry: VaultEntry }) {
           )}
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            {entry.sourceType === "dispatch" && entry.sourceTable === "vault_entries" && (
+              <Link
+                href={`/${familyId}/vault/dispatch/${entry._id}`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  border: "1px solid rgba(200,168,122,0.35)", borderRadius: 100,
+                  padding: "5px 12px", fontSize: 11, color: "rgba(200,168,122,0.9)",
+                  textDecoration: "none",
+                }}
+              >
+                Open dispatch
+              </Link>
+            )}
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 4,
               border: "0.5px solid rgba(107,143,111,0.35)",
@@ -1585,7 +1599,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
           {filtered.map(entry =>
             entry.isSealed
               ? <SealedCard key={entry._id} entry={entry} onUnlock={handleUnlock} />
-              : <OpenCard key={entry._id} entry={entry} />
+              : <OpenCard key={entry._id} entry={entry} familyId={familyId} />
           )}
         </div>
       )}

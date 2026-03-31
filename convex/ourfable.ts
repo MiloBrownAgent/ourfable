@@ -2381,6 +2381,31 @@ export const listOurFableVaultEntries = internalQuery({
   },
 });
 
+export const getOurFableVaultEntry = internalQuery({
+  args: {
+    familyId: v.string(),
+    entryId: v.id("ourfable_vault_entries"),
+  },
+  handler: async (ctx, { familyId, entryId }) => {
+    const entry = await ctx.db.get(entryId);
+    if (!entry || entry.familyId !== familyId) return null;
+
+    const resolved = { ...entry } as Record<string, unknown>;
+    if (resolved.mediaStorageId && !resolved.audioUrl && !resolved.photoUrl && !resolved.videoUrl) {
+      const url = await ctx.storage.getUrl(resolved.mediaStorageId as string);
+      if (url) {
+        const mime = (resolved.mediaMimeType as string) ?? "";
+        const type = (resolved.type as string) ?? "";
+        if (mime.startsWith("audio") || type === "voice") resolved.audioUrl = url;
+        if (mime.startsWith("video") || type === "video") resolved.videoUrl = url;
+        if (mime.startsWith("image") || type === "photo") resolved.photoUrl = url;
+      }
+    }
+
+    return resolved;
+  },
+});
+
 export const unlockOurFableVaultEntry = internalMutation({
   args: {
     entryId: v.id("ourfable_vault_entries"),

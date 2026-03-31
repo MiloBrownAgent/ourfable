@@ -53,6 +53,7 @@ const ALLOWED_QUERIES = new Set([
   "ourfable:deleteDeliveryMilestone",
   "ourfable:getUpcomingDeliveries",
   "ourfable:listOurFableVaultEntries",
+  "ourfable:getOurFableVaultEntry",
   "ourfable:addOurFableVaultEntry",
   "ourfable:unlockOurFableVaultEntry",
   "ourfable:unlockVaultEntryEarly",
