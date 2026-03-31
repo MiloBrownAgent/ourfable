@@ -1303,7 +1303,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
     }
   };
 
-  const childFirst = family?.childName.split(" ")[0] ?? "them";
+  const childFirst = family?.childName?.split(" ")[0] ?? "them";
   const sealed = entries.filter(e => e.isSealed);
   const open = entries.filter(e => !e.isSealed);
 
