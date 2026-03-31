@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, action, internalMutation, internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 
 // ── Token generator ────────────────────────────────────────────────────────────
 
@@ -11,6 +12,43 @@ function generateToken(): string {
     token += chars[Math.floor(Math.random() * chars.length)];
   }
   return token;
+}
+
+function matchesChildScope(childId: string | undefined, requestedChildId?: string) {
+  if (!requestedChildId) return true;
+  return !childId || childId === requestedChildId;
+}
+
+function getDispatchMediaUrls(mediaUrls?: string[], mediaUrl?: string) {
+  return Array.from(new Set([...(mediaUrls ?? []), ...(mediaUrl ? [mediaUrl] : [])]));
+}
+
+function buildDispatchDetailFromVaultEntry(vaultEntry: Doc<"ourfable_vault_entries">) {
+  return {
+    _id: String(vaultEntry._id),
+    source: "vault_entry" as const,
+    type: vaultEntry.type,
+    subject: undefined,
+    body: vaultEntry.content ?? "",
+    mediaUrls: getDispatchMediaUrls(vaultEntry.mediaUrls, vaultEntry.mediaUrl),
+    authorName: vaultEntry.authorName,
+    createdAt: vaultEntry.createdAt,
+    childId: vaultEntry.childId,
+  };
+}
+
+function buildDispatchDetailFromDispatch(dispatch: Doc<"ourfable_dispatches">) {
+  return {
+    _id: String(dispatch._id),
+    source: "dispatch" as const,
+    type: dispatch.type,
+    subject: dispatch.content,
+    body: dispatch.body ?? "",
+    mediaUrls: getDispatchMediaUrls(dispatch.mediaUrls),
+    authorName: dispatch.sentByName ?? "",
+    createdAt: dispatch.sentAt,
+    childId: dispatch.childId,
+  };
 }
 
 // ── Families ───────────────────────────────────────────────────────────────────
@@ -2415,49 +2453,29 @@ export const getOurFableDispatchDetail = internalQuery({
   args: {
     familyId: v.string(),
     entryId: v.string(),
+    childId: v.optional(v.string()),
   },
-  handler: async (ctx, { familyId, entryId }) => {
-    const vaultEntry = await ctx.db
-      .query("ourfable_vault_entries")
-      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
-      .collect()
-      .then((entries) => entries.find((candidate) => String(candidate._id) === entryId) ?? null);
-
-    if (vaultEntry?.familyId === familyId && vaultEntry.sourceType === "dispatch") {
-      const mediaUrls = Array.from(
-        new Set([...(vaultEntry.mediaUrls ?? []), ...(vaultEntry.mediaUrl ? [vaultEntry.mediaUrl] : [])])
-      );
-
-      return {
-        _id: String(vaultEntry._id),
-        source: "vault_entry",
-        type: vaultEntry.type,
-        subject: undefined,
-        body: vaultEntry.content ?? "",
-        mediaUrls,
-        authorName: vaultEntry.authorName,
-        createdAt: vaultEntry.createdAt,
-      };
+  handler: async (ctx, { familyId, entryId, childId }) => {
+    const vaultEntryId = ctx.db.normalizeId("ourfable_vault_entries", entryId);
+    if (vaultEntryId) {
+      const vaultEntry = await ctx.db.get(vaultEntryId);
+      if (
+        vaultEntry &&
+        vaultEntry.familyId === familyId &&
+        vaultEntry.sourceType === "dispatch" &&
+        matchesChildScope(vaultEntry.childId, childId)
+      ) {
+        return buildDispatchDetailFromVaultEntry(vaultEntry);
+      }
     }
 
-    const dispatch = await ctx.db
-      .query("ourfable_dispatches")
-      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
-      .collect()
-      .then((entries) => entries.find((candidate) => String(candidate._id) === entryId) ?? null);
+    const dispatchId = ctx.db.normalizeId("ourfable_dispatches", entryId);
+    if (!dispatchId) return null;
 
-    if (!dispatch || dispatch.familyId !== familyId) return null;
+    const dispatch = await ctx.db.get(dispatchId);
+    if (!dispatch || dispatch.familyId !== familyId || !matchesChildScope(dispatch.childId, childId)) return null;
 
-    return {
-      _id: String(dispatch._id),
-      source: "dispatch",
-      type: dispatch.type,
-      subject: dispatch.content,
-      body: dispatch.body ?? "",
-      mediaUrls: dispatch.mediaUrls ?? [],
-      authorName: dispatch.sentByName ?? "",
-      createdAt: dispatch.sentAt,
-    };
+    return buildDispatchDetailFromDispatch(dispatch);
   },
 });
 

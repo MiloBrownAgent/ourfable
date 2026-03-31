@@ -20,6 +20,7 @@ import {
 
 interface VaultEntry {
   _id: string;
+  childId?: string;
   memberId: string;
   memberName: string;
   memberRelationship?: string;
@@ -241,7 +242,7 @@ function SealedCard({ entry, onUnlock }: { entry: VaultEntry; onUnlock: (id: str
   );
 }
 
-function OpenCard({ entry, familyId }: { entry: VaultEntry; familyId: string }) {
+function OpenCard({ entry, familyId, childId }: { entry: VaultEntry; familyId: string; childId?: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -364,7 +365,10 @@ function OpenCard({ entry, familyId }: { entry: VaultEntry; familyId: string }) 
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             {entry.sourceType === "dispatch" && entry.sourceTable === "vault_entries" && (
               <Link
-                href={`/${familyId}/vault/dispatch/${entry._id}`}
+                href={{
+                  pathname: `/${familyId}/vault/dispatch/${entry._id}`,
+                  query: entry.childId ? { childId: entry.childId } : childId ? { childId } : undefined,
+                }}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
                   border: "1px solid rgba(200,168,122,0.35)", borderRadius: 100,
@@ -1266,6 +1270,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
       const entryType = (e.type as string) ?? "text";
       return {
         _id: e._id as string,
+        childId: e.childId as string | undefined,
         memberId: "",
         memberName: displayName,
         memberRelationship: undefined,
@@ -1589,7 +1594,7 @@ export default function VaultPage({ params }: { params: Promise<{ family: string
           {filtered.map(entry =>
             entry.isSealed
               ? <SealedCard key={entry._id} entry={entry} onUnlock={handleUnlock} />
-              : <OpenCard key={entry._id} entry={entry} familyId={familyId} />
+              : <OpenCard key={entry._id} entry={entry} familyId={familyId} childId={childId} />
           )}
         </div>
       )}

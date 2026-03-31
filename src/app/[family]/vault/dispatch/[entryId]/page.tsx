@@ -13,6 +13,7 @@ interface DispatchEntry {
   mediaUrls?: string[];
   authorName?: string;
   createdAt?: number;
+  childId?: string;
 }
 
 function formatDate(ts?: number) {
@@ -26,8 +27,16 @@ function formatDate(ts?: number) {
   });
 }
 
-export default function VaultDispatchDetailPage({ params }: { params: Promise<{ family: string; entryId: string }> }) {
+export default function VaultDispatchDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ family: string; entryId: string }>;
+  searchParams: Promise<{ childId?: string | string[] }>;
+}) {
   const { family: familyId, entryId } = use(params);
+  const rawChildId = use(searchParams).childId;
+  const childId = Array.isArray(rawChildId) ? rawChildId[0] : rawChildId;
   const [entry, setEntry] = useState<DispatchEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,7 +51,7 @@ export default function VaultDispatchDetailPage({ params }: { params: Promise<{ 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             path: "ourfable:getOurFableDispatchDetail",
-            args: { familyId, entryId },
+            args: childId ? { familyId, entryId, childId } : { familyId, entryId },
             format: "json",
           }),
         });
@@ -66,7 +75,7 @@ export default function VaultDispatchDetailPage({ params }: { params: Promise<{ 
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [familyId, entryId]);
+  }, [childId, familyId, entryId]);
 
   const mediaUrls = Array.from(new Set(entry?.mediaUrls?.filter(Boolean) ?? []));
   const isPhotoDispatch = entry?.type === "photo";
