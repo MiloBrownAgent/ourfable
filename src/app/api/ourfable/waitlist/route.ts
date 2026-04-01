@@ -133,6 +133,9 @@ export async function POST(req: NextRequest) {
     const cleanGifterEmail = gifterEmail ? String(gifterEmail).toLowerCase().trim() : undefined;
     const cleanRecipientEmail = recipientEmail ? String(recipientEmail).toLowerCase().trim() : undefined;
     const cleanReferralCode = referralCode ? String(referralCode).trim().toUpperCase() : undefined;
+    const giftGiverNote = cleanGifterEmail
+      ? `${cleanGifterName || "Someone"} <${cleanGifterEmail}>`
+      : cleanGifterName;
     const normalizedPlanType = requestedPlanType ? String(requestedPlanType).trim().toLowerCase() : undefined;
     const cleanRequestedPlanType =
       normalizedPlanType === "standard" || normalizedPlanType === "plus"
@@ -161,15 +164,18 @@ export async function POST(req: NextRequest) {
     };
     if (childName && !isGiftWaitlist) convexBody.childName = String(childName).trim();
     if (childBirthday) convexBody.childBirthday = String(childBirthday);
-    if (cleanGifterName) convexBody.gifterName = cleanGifterName;
-    if (cleanGifterEmail) convexBody.gifterEmail = cleanGifterEmail;
-    if (cleanRecipientEmail) convexBody.recipientEmail = cleanRecipientEmail;
     if (utm_source) convexBody.utm_source = String(utm_source);
     if (utm_medium) convexBody.utm_medium = String(utm_medium);
     if (utm_campaign) convexBody.utm_campaign = String(utm_campaign);
     if (utm_content) convexBody.utm_content = String(utm_content);
     if (utm_term) convexBody.utm_term = String(utm_term);
-    if (cleanReferralCode) convexBody.referredBy = cleanReferralCode;
+    if (isGiftWaitlist && giftGiverNote) {
+      convexBody.referredBy = cleanReferralCode
+        ? `${giftGiverNote} · ref:${cleanReferralCode}`
+        : giftGiverNote;
+    } else if (cleanReferralCode) {
+      convexBody.referredBy = cleanReferralCode;
+    }
     if (cleanRequestedPlanType) convexBody.requestedPlanType = cleanRequestedPlanType;
 
     try {
@@ -269,6 +275,7 @@ export async function POST(req: NextRequest) {
             gifterName: cleanGifterName,
             recipientEmail: cleanEmail,
             planLabel,
+            gifterEmail: cleanGifterEmail,
           });
           const gifterEmailRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
