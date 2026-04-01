@@ -1,19 +1,19 @@
 /**
  * Convex Internal Function Client
- * 
+ *
  * Calls internal Convex functions through the authenticated HTTP action gateway.
  * The gateway is hosted at the Convex site URL (.convex.site).
  */
 
-const CONVEX_CLOUD_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
-const CONVEX_SITE_URL = CONVEX_CLOUD_URL.replace(".convex.cloud", ".convex.site");
+import { getConvexSiteUrl } from "./convex-env";
+
 const CONVEX_SERVER_SECRET = process.env.CONVEX_SERVER_SECRET;
 
 export async function internalConvexQuery<T = unknown>(
   fn: string,
   args: Record<string, unknown> = {}
 ): Promise<T> {
-  const res = await fetch(`${CONVEX_SITE_URL}/internal`, {
+  const res = await fetch(`${getConvexSiteUrl()}/internal`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +36,7 @@ export async function internalConvexMutation<T = unknown>(
   fn: string,
   args: Record<string, unknown> = {}
 ): Promise<T> {
-  const res = await fetch(`${CONVEX_SITE_URL}/internal`, {
+  const res = await fetch(`${getConvexSiteUrl()}/internal`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -1,6 +1,7 @@
-export const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://rightful-eel-502.convex.cloud";
-
 import { internalConvexQuery, internalConvexMutation } from "./convex-internal";
+import { getConvexCloudUrl } from "./convex-env";
+
+export const CONVEX_URL = getConvexCloudUrl();
 
 /**
  * Server-side Convex query — routes through the authenticated internal HTTP gateway.
