@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { waitlistWelcomeEmail } from "../../../../lib/email-templates/waitlist-welcome";
+import {
+  giftWaitlistGifterConfirmationEmail,
+  giftWaitlistRecipientEmail,
+} from "../../../../lib/email-templates/gift-waitlist";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 import { escapeHtml } from "@/lib/email-templates/escape-html";
 import { convexMutation } from "@/lib/convex";
@@ -105,6 +109,9 @@ export async function POST(req: NextRequest) {
       email,
       childName,
       childBirthday,
+      gifterName,
+      gifterEmail,
+      recipientEmail,
       source,
       utm_source,
       utm_medium,
@@ -122,6 +129,9 @@ export async function POST(req: NextRequest) {
 
     const cleanEmail = String(email).toLowerCase().trim();
     const cleanSource = source || "homepage";
+    const cleanGifterName = gifterName ? String(gifterName).trim() : undefined;
+    const cleanGifterEmail = gifterEmail ? String(gifterEmail).toLowerCase().trim() : undefined;
+    const cleanRecipientEmail = recipientEmail ? String(recipientEmail).toLowerCase().trim() : undefined;
     const cleanReferralCode = referralCode ? String(referralCode).trim().toUpperCase() : undefined;
     const normalizedPlanType = requestedPlanType ? String(requestedPlanType).trim().toLowerCase() : undefined;
     const cleanRequestedPlanType =
@@ -129,14 +139,31 @@ export async function POST(req: NextRequest) {
         ? normalizedPlanType
         : undefined;
     const foundingPriceLockedAt = Date.now();
+    const isGiftWaitlist = cleanSource === "gift-waitlist";
+    const planLabel = cleanRequestedPlanType === "plus" ? "Our Fable+" : "Our Fable";
+
+    if (isGiftWaitlist) {
+      if (!cleanGifterName) {
+        return NextResponse.json({ error: "Missing gifter name" }, { status: 400 });
+      }
+      if (!cleanGifterEmail || !cleanGifterEmail.includes("@")) {
+        return NextResponse.json({ error: "Invalid gifter email" }, { status: 400 });
+      }
+      if (!cleanRecipientEmail || cleanRecipientEmail !== cleanEmail) {
+        return NextResponse.json({ error: "Invalid recipient email" }, { status: 400 });
+      }
+    }
 
     // 1. Save to Convex (deduplicates)
     const convexBody: Record<string, string> = {
       email: cleanEmail,
       source: cleanSource,
     };
-    if (childName) convexBody.childName = String(childName).trim();
+    if (childName && !isGiftWaitlist) convexBody.childName = String(childName).trim();
     if (childBirthday) convexBody.childBirthday = String(childBirthday);
+    if (cleanGifterName) convexBody.gifterName = cleanGifterName;
+    if (cleanGifterEmail) convexBody.gifterEmail = cleanGifterEmail;
+    if (cleanRecipientEmail) convexBody.recipientEmail = cleanRecipientEmail;
     if (utm_source) convexBody.utm_source = String(utm_source);
     if (utm_medium) convexBody.utm_medium = String(utm_medium);
     if (utm_campaign) convexBody.utm_campaign = String(utm_campaign);
@@ -161,7 +188,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Best-effort side effects with explicit logging.
-    const childLabel = childName ? ` for ${childName}` : "";
+    const childLabel = isGiftWaitlist
+      ? ` as a gift for ${cleanEmail}`
+      : childName
+        ? ` for ${childName}`
+        : "";
     const utmLabel = utm_source ? ` (via ${utm_source})` : "";
     const referralLabel = cleanReferralCode ? ` · ref: ${cleanReferralCode}` : "";
     const warnings = (await Promise.all([
@@ -170,7 +201,7 @@ export async function POST(req: NextRequest) {
         return appendWaitlistRow({
           timestamp: new Date(foundingPriceLockedAt).toISOString(),
           email: cleanEmail,
-          childName: childName ? String(childName).trim() : undefined,
+          childName: childName && !isGiftWaitlist ? String(childName).trim() : undefined,
           childBirthday: childBirthday ? String(childBirthday) : undefined,
           source: cleanSource,
           utm_source: utm_source ? String(utm_source) : undefined,
@@ -208,6 +239,56 @@ export async function POST(req: NextRequest) {
             skipped: true,
             reason: "Welcome email not configured: missing RESEND_API_KEY",
           };
+        }
+        if (isGiftWaitlist) {
+          const recipientTemplate = giftWaitlistRecipientEmail({
+            gifterName: cleanGifterName,
+            recipientEmail: cleanEmail,
+            planLabel,
+          });
+          const recipientEmailRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+            },
+            body: JSON.stringify({
+              from: "Our Fable <hello@ourfable.ai>",
+              to: [cleanEmail],
+              subject: recipientTemplate.subject,
+              html: recipientTemplate.html,
+              text: recipientTemplate.text,
+              headers: buildUnsubscribeHeaders(cleanEmail),
+            }),
+          });
+          if (!recipientEmailRes.ok) {
+            throw await responseError("Gift recipient email", recipientEmailRes);
+          }
+
+          const gifterTemplate = giftWaitlistGifterConfirmationEmail({
+            gifterName: cleanGifterName,
+            recipientEmail: cleanEmail,
+            planLabel,
+          });
+          const gifterEmailRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+            },
+            body: JSON.stringify({
+              from: "Our Fable <hello@ourfable.ai>",
+              to: [cleanGifterEmail],
+              subject: gifterTemplate.subject,
+              html: gifterTemplate.html,
+              text: gifterTemplate.text,
+              headers: buildUnsubscribeHeaders(cleanGifterEmail!),
+            }),
+          });
+          if (!gifterEmailRes.ok) {
+            throw await responseError("Gift gifter email", gifterEmailRes);
+          }
+          return;
         }
         const { subject, html, text } = waitlistWelcomeEmail(
           childName ? String(childName).trim() : undefined,

@@ -59,6 +59,8 @@ function ReservePageInner() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [successEmail, setSuccessEmail] = useState("");
+  const [successRecipientEmail, setSuccessRecipientEmail] = useState("");
+  const [successMode, setSuccessMode] = useState<"waitlist" | "gift">("waitlist");
   const [error, setError] = useState("");
 
   // — Validation —
@@ -105,7 +107,9 @@ function ReservePageInner() {
         }),
       });
       if (res.ok) {
+        setSuccessMode("waitlist");
         setSuccessEmail(email.trim().toLowerCase());
+        setSuccessRecipientEmail("");
         setSuccess(true);
         trackLead(eid);
       } else {
@@ -132,8 +136,10 @@ function ReservePageInner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: gifterEmail.trim().toLowerCase(),
-          childName: `Gift for ${recipientEmail.trim().toLowerCase()}`,
+          email: recipientEmail.trim().toLowerCase(),
+          gifterName: gifterName.trim(),
+          gifterEmail: gifterEmail.trim().toLowerCase(),
+          recipientEmail: recipientEmail.trim().toLowerCase(),
           source: "gift-waitlist",
           eventId: eid,
           referralCode: searchParams.get("ref") ?? undefined,
@@ -142,7 +148,9 @@ function ReservePageInner() {
         }),
       });
       if (res.ok) {
+        setSuccessMode("gift");
         setSuccessEmail(gifterEmail.trim().toLowerCase());
+        setSuccessRecipientEmail(recipientEmail.trim().toLowerCase());
         setSuccess(true);
         trackLead(eid);
       } else {
@@ -178,14 +186,28 @@ function ReservePageInner() {
             fontFamily: "var(--font-playfair)", fontSize: 28, fontWeight: 700,
             color: "var(--text)", marginBottom: 12,
           }}>
-            You&apos;re in.
+            {successMode === "gift" ? "Gift reserved." : "You&apos;re in."}
           </h1>
           <p style={{ fontSize: 15, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 12 }}>
-            We&apos;ll be in touch when your family&apos;s vault is ready.
+            {successMode === "gift"
+              ? "We emailed the recipient and sent your confirmation."
+              : "We&apos;ll be in touch when your family&apos;s vault is ready."}
           </p>
           <p style={{ fontSize: 13, color: "var(--text-4)", lineHeight: 1.5, marginBottom: 36 }}>
-            Confirmation sent to{" "}
-            <strong style={{ color: "var(--text-3)" }}>{successEmail}</strong>
+            {successMode === "gift" ? (
+              <>
+                Confirmation sent to{" "}
+                <strong style={{ color: "var(--text-3)" }}>{successEmail}</strong>
+                {" · "}
+                Recipient notified at{" "}
+                <strong style={{ color: "var(--text-3)" }}>{successRecipientEmail}</strong>
+              </>
+            ) : (
+              <>
+                Confirmation sent to{" "}
+                <strong style={{ color: "var(--text-3)" }}>{successEmail}</strong>
+              </>
+            )}
           </p>
           <Link href="/" style={{ fontSize: 14, color: "var(--green)", textDecoration: "none", fontWeight: 500 }}>
             ← Back to ourfable.ai
@@ -511,7 +533,7 @@ function ReservePageInner() {
                 required
               />
               <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
-                We&apos;ll send you a confirmation when your gift is delivered.
+                We&apos;ll send you a confirmation as soon as this gift reservation is saved.
               </p>
             </div>
 
@@ -529,7 +551,7 @@ function ReservePageInner() {
                 required
               />
               <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
-                We&apos;ll let them know when their gift is ready.
+                We&apos;ll email them now and follow up again when gifting opens.
               </p>
             </div>
 
@@ -583,7 +605,7 @@ function ReservePageInner() {
           {/* Gift trust signals */}
           <div style={{ marginTop: 18, textAlign: "center", display: "flex", flexDirection: "column", gap: 5 }}>
             <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0 }}>
-              We&apos;ll notify you when gifting opens · Founding member pricing guaranteed
+              We&apos;ll notify both of you when gifting opens · Founding member pricing guaranteed
             </p>
             <p style={{
               fontSize: 12, color: "var(--text-3)", margin: 0,
