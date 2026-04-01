@@ -4,7 +4,7 @@ import HomeClient from "./HomeClient";
 export const metadata: Metadata = {
   title: "Our Fable — Letters to Your Child, Sealed Until They're Ready",
   description:
-    "Record a letter, voice memo, or video for your child — delivered when they turn 13, 18, or 21. Our Fable asks the people who love them every month. Starting at $99/year — founding rate $79/year, limited to 1,000 families.",
+    "Record a letter, voice memo, or video for your child — delivered when they turn 13, 18, or 21. Our Fable asks the people who love them every month. Plans start at $12/month or $99/year.",
   alternates: { canonical: "https://ourfable.ai" },
   robots: { index: true, follow: true },
   openGraph: {

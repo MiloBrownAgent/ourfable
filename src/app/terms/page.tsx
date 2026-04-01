@@ -55,7 +55,7 @@ export default function TermsPage() {
 
           <Section>
             <SectionTitle>3. Subscription and Billing</SectionTitle>
-            <p><strong>Pricing:</strong> Our Fable is available for $79.00 per year (founding member rate) or $99.00 per year (standard rate), billed in advance. Our Fable+ is available for $99.00 per year (founding member rate) or $149.00 per year (standard rate).</p>
+            <p><strong>Pricing:</strong> Our Fable is available for $12.00 per month or $99.00 per year, billed in advance according to the billing period you choose. Our Fable+ is available for $19.00 per month or $149.00 per year.</p>
             <p><strong>Auto-renewal:</strong> Subscriptions renew automatically at the end of each billing period. You authorize us to charge your payment method on file for the renewal amount unless you cancel before the renewal date.</p>
             <p><strong>Cancellation:</strong> You may cancel your subscription at any time through your account settings or by contacting us. Cancellation takes effect at the end of your current billing period. We do not offer prorated refunds for unused portions of a subscription period, except where required by applicable law.</p>
             <p><strong>Price changes:</strong> We will provide at least 30 days' notice before changing subscription pricing. Continued use after the effective date constitutes acceptance of the new price.</p>
