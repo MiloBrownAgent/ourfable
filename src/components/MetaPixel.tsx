@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 
@@ -27,15 +27,37 @@ function isPublicRoute(pathname: string): boolean {
   return false;
 }
 
+function readOptOut(): boolean {
+  try {
+    return localStorage.getItem("cookie-consent") === "0";
+  } catch {
+    return false;
+  }
+}
+
 export function MetaPixel({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
   const hasTrackedInitialPage = useRef(false);
+  const [optedOut, setOptedOut] = useState(() => readOptOut());
+
+  useEffect(() => {
+    const handler = () => setOptedOut(readOptOut());
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window.fbq !== "function") return;
+    window.fbq("consent", optedOut ? "revoke" : "grant");
+  }, [optedOut]);
 
   useEffect(() => {
     if (!isPublicRoute(pathname)) {
       hasTrackedInitialPage.current = true;
       return;
     }
+
+    if (optedOut) return;
 
     if (!hasTrackedInitialPage.current) {
       hasTrackedInitialPage.current = true;
@@ -45,9 +67,9 @@ export function MetaPixel({ pixelId }: { pixelId: string }) {
     if (typeof window.fbq !== "function") return;
 
     window.fbq("track", "PageView");
-  }, [pathname]);
+  }, [optedOut, pathname]);
 
-  if (!isPublicRoute(pathname)) return null;
+  if (!isPublicRoute(pathname) || optedOut) return null;
 
   return (
     <>
@@ -61,6 +83,7 @@ export function MetaPixel({ pixelId }: { pixelId: string }) {
         s.parentNode.insertBefore(t,s)}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
         fbq('init', '${pixelId}');
+        fbq('consent', 'grant');
         fbq('track', 'PageView');
       `}</Script>
       <noscript>
