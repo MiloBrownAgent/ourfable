@@ -2,26 +2,11 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Check, Lock, Gift, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { Check, Lock, Gift, Loader2 } from "lucide-react";
 import { captureUtmParams, getUtmParams } from "../../lib/utm";
 import { trackLead, generateEventId } from "../../lib/analytics";
 
 type GiftTier = "standard" | "plus";
-
-const TIERS = {
-  standard: {
-    name: "Our Fable",
-    annualPrice: 79,
-    originalPrice: 99,
-    tagline: "Vault, prompts, circle",
-  },
-  plus: {
-    name: "Our Fable+",
-    annualPrice: 99,
-    originalPrice: 149,
-    tagline: "Everything + voice, dispatches",
-  },
-};
 
 export default function ReservePage() {
   return (
@@ -44,7 +29,6 @@ function ReservePageInner() {
   }, [searchParams]);
 
   // — Waitlist state —
-  const [childName, setChildName] = useState("");
   const [childBirthday, setChildBirthday] = useState("");
   const [email, setEmail] = useState("");
 
@@ -53,7 +37,7 @@ function ReservePageInner() {
   const [gifterEmail, setGifterEmail] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [gifterMessage, setGifterMessage] = useState("");
-  const [selectedTier, setSelectedTier] = useState<GiftTier>("standard");
+  const [selectedTier] = useState<GiftTier>("standard");
 
   // — Shared state —
   const [loading, setLoading] = useState(false);
@@ -67,13 +51,11 @@ function ReservePageInner() {
   const emailTouched = email.length > 0;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const showEmailError = emailTouched && !emailValid && email.length > 3;
-  const canSubmitWaitlist = childName.trim().length > 0 && emailValid;
+  const canSubmitWaitlist = emailValid;
 
   const gifterEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gifterEmail.trim());
   const recipientEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim());
   const canSubmitGift = gifterName.trim().length > 0 && gifterEmailValid && recipientEmailValid;
-
-  const tier = TIERS[selectedTier];
 
   // Height animation refs
   const waitlistRef = useRef<HTMLDivElement>(null);
@@ -98,7 +80,6 @@ function ReservePageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
-          childName: childName.trim(),
           childBirthday,
           source: "reserve",
           eventId: eid,
@@ -186,12 +167,12 @@ function ReservePageInner() {
             fontFamily: "var(--font-playfair)", fontSize: 28, fontWeight: 700,
             color: "var(--text)", marginBottom: 12,
           }}>
-            {successMode === "gift" ? "Gift reserved." : "You&apos;re in."}
+            {successMode === "gift" ? "Gift reserved." : "You're in."}
           </h1>
           <p style={{ fontSize: 15, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 12 }}>
             {successMode === "gift"
               ? "We emailed the recipient and sent your confirmation."
-              : "We&apos;ll be in touch when your family&apos;s vault is ready."}
+              : "We'll be in touch when your vault is ready."}
           </p>
           <p style={{ fontSize: 13, color: "var(--text-4)", lineHeight: 1.5, marginBottom: 36 }}>
             {successMode === "gift" ? (
@@ -407,25 +388,10 @@ function ReservePageInner() {
           className={`mode-panel ${!isGift ? "panel-visible" : "panel-hidden"}`}
         >
           <form onSubmit={handleWaitlistSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            {/* Child name */}
-            <div>
-              <label htmlFor="reserve-child-name" style={labelStyle}>
-                Child&apos;s first name
-              </label>
-              <input
-                id="reserve-child-name"
-                type="text"
-                value={childName}
-                onChange={(e) => setChildName(e.target.value)}
-                placeholder="e.g. Oliver"
-                autoComplete="given-name"
-              />
-            </div>
-
             {/* Child birthday */}
             <div>
               <label htmlFor="reserve-child-birthday" style={labelStyle}>
-                Child&apos;s birthday <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10, color: "var(--text-4)" }}>(optional)</span>
+                Child's birthday <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10, color: "var(--text-4)" }}>(optional)</span>
               </label>
               <input
                 id="reserve-child-birthday"
@@ -497,7 +463,7 @@ function ReservePageInner() {
           {/* Gift intro */}
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <p style={{ fontSize: 15, color: "var(--text-2)", lineHeight: 1.7 }}>
-              We&apos;ll notify you when gifting is available. Founding member rates will apply.
+              We'll notify you when gifting is available. Founding member rates will apply.
             </p>
           </div>
 
@@ -533,14 +499,14 @@ function ReservePageInner() {
                 required
               />
               <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
-                We&apos;ll send you a confirmation as soon as this gift reservation is saved.
+                We'll send you a confirmation as soon as this gift reservation is saved.
               </p>
             </div>
 
             {/* Recipient email */}
             <div>
               <label htmlFor="gift-recipient-email" style={labelStyle}>
-                Recipient&apos;s email <span style={{ color: "#E07070" }}>*</span>
+                Recipient's email <span style={{ color: "#E07070" }}>*</span>
               </label>
               <input
                 id="gift-recipient-email"
@@ -551,7 +517,7 @@ function ReservePageInner() {
                 required
               />
               <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
-                We&apos;ll email them now and follow up again when gifting opens.
+                We'll email them now and follow up again when gifting opens.
               </p>
             </div>
 
@@ -605,7 +571,7 @@ function ReservePageInner() {
           {/* Gift trust signals */}
           <div style={{ marginTop: 18, textAlign: "center", display: "flex", flexDirection: "column", gap: 5 }}>
             <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0 }}>
-              We&apos;ll notify both of you when gifting opens · Founding member pricing guaranteed
+              We'll notify both of you when gifting opens · Founding member pricing guaranteed
             </p>
             <p style={{
               fontSize: 12, color: "var(--text-3)", margin: 0,
