@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 
-// Public routes where Meta Pixel should fire
+// Public-facing marketing and invite routes where Meta Pixel may fire.
 const PUBLIC_PATHS = [
   "/",
   "/faq",
@@ -15,38 +15,38 @@ const PUBLIC_PATHS = [
   "/login",
   "/signup",
   "/welcome",
+  "/how-it-works",
+  "/journal",
+  "/partners",
 ];
 
 function isPublicRoute(pathname: string): boolean {
-  // Exact match or starts with a known public prefix
   if (PUBLIC_PATHS.includes(pathname)) return true;
-  // Also allow /join/ and /respond/ (public invite flows) and /redeem/
+  if (pathname.startsWith("/journal/")) return true;
   if (pathname.startsWith("/join/") || pathname.startsWith("/respond/") || pathname.startsWith("/redeem/")) return true;
   return false;
 }
 
 export function MetaPixel({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
-  const [consented, setConsented] = useState(false);
+  const hasTrackedInitialPage = useRef(false);
 
   useEffect(() => {
-    try {
-      setConsented(localStorage.getItem("cookie-consent") === "1");
-    } catch {}
+    if (!isPublicRoute(pathname)) {
+      hasTrackedInitialPage.current = true;
+      return;
+    }
 
-    const handler = () => {
-      try {
-        setConsented(localStorage.getItem("cookie-consent") === "1");
-      } catch {}
-    };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
+    if (!hasTrackedInitialPage.current) {
+      hasTrackedInitialPage.current = true;
+      return;
+    }
 
-  // Don't load pixel until user has consented
-  if (!consented) return null;
+    if (typeof window.fbq !== "function") return;
 
-  // Don't load pixel on authenticated/family routes
+    window.fbq("track", "PageView");
+  }, [pathname]);
+
   if (!isPublicRoute(pathname)) return null;
 
   return (

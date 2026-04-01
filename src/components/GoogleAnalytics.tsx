@@ -1,11 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 
 /**
- * Google Analytics 4 — consent-gated, same as MetaPixel.
- * Only loads on public marketing pages after cookie consent.
+ * Google Analytics 4 for public-facing marketing and invite flows.
+ * It never emits page views on authenticated family routes.
  */
 
 const PUBLIC_PATHS = [
@@ -33,23 +33,28 @@ function isPublicRoute(pathname: string): boolean {
 
 export function GoogleAnalytics({ gaId }: { gaId: string }) {
   const pathname = usePathname();
-  const [consented, setConsented] = useState(false);
+  const hasTrackedInitialPage = useRef(false);
 
   useEffect(() => {
-    try {
-      setConsented(localStorage.getItem("cookie-consent") === "1");
-    } catch {}
+    if (!isPublicRoute(pathname)) {
+      hasTrackedInitialPage.current = true;
+      return;
+    }
 
-    const handler = () => {
-      try {
-        setConsented(localStorage.getItem("cookie-consent") === "1");
-      } catch {}
-    };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
+    if (!hasTrackedInitialPage.current) {
+      hasTrackedInitialPage.current = true;
+      return;
+    }
 
-  if (!consented) return null;
+    if (typeof window.gtag !== "function") return;
+
+    window.gtag("config", gaId, {
+      page_path: window.location.pathname + window.location.search,
+      page_title: document.title,
+      page_location: window.location.href,
+    });
+  }, [gaId, pathname]);
+
   if (!isPublicRoute(pathname)) return null;
 
   return (
@@ -60,10 +65,12 @@ export function GoogleAnalytics({ gaId }: { gaId: string }) {
       />
       <Script id="ga4-init" strategy="afterInteractive">{`
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '${gaId}', {
-          page_path: window.location.pathname,
+        window.gtag = window.gtag || function gtag(){window.dataLayer.push(arguments);};
+        window.gtag('js', new Date());
+        window.gtag('config', '${gaId}', {
+          page_path: window.location.pathname + window.location.search,
+          page_location: window.location.href,
+          page_title: document.title,
           send_page_view: true
         });
       `}</Script>

@@ -1,18 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 export function CookieBanner() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
+  const [visible, setVisible] = useState(() => {
     try {
-      const consent = localStorage.getItem("cookie-consent");
-      if (consent === null) setVisible(true);
+      return localStorage.getItem("cookie-consent") === null;
     } catch {
-      // localStorage unavailable
+      return false;
     }
-  }, []);
+  });
 
   function accept() {
     try {
@@ -53,7 +50,7 @@ export function CookieBanner() {
       animation: "fadeIn 0.3s ease both",
     }}>
       <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6, maxWidth: 640, margin: 0 }}>
-        We use cookies to keep you signed in and to measure how people find us (via the Meta Pixel).
+        We use cookies to keep you signed in and use analytics on our public pages to understand how people find us.
         No family content is ever used for advertising.{" "}
         <Link href="/privacy#cookies" style={{ color: "var(--green)", textDecoration: "underline" }}>
           Privacy Policy
