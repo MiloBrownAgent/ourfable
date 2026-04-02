@@ -128,7 +128,9 @@ const CANARY_ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 const HEALTHCHECK_ALERT_COOLDOWN_MS = 60 * 60 * 1000;
 
 function bytesToBase64(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString("base64");
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
 }
 
 async function hashContent(content: string): Promise<string> {
@@ -367,7 +369,6 @@ export const submitCanaryEntryInternal = internalMutation({
       familyId: CANARY_FAMILY_ID,
       memberId: member._id,
       type: "write",
-      subject: token,
       encryptedBody,
       contentHash,
       encryptionVersion: 1,
@@ -377,7 +378,7 @@ export const submitCanaryEntryInternal = internalMutation({
 });
 
 // Public versions for legacy/external reads only.
-export const submitCanaryEntry = mutation({
+export const submitCanaryEntry = action({
   args: { token: v.string() },
   handler: async (ctx, { token }): Promise<Id<"ourfable_vault_contributions">> => {
     const plaintext = `Canary test ${token}`;
