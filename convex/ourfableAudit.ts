@@ -18,7 +18,6 @@
 
 import { v } from "convex/values";
 import {
-  query,
   mutation,
   action,
   internalMutation,
@@ -184,54 +183,95 @@ async function encryptCanaryText(content: string) {
   };
 }
 
+type CanaryExecutionMode = "scheduled" | "manual";
+
+type CanaryExecutionResult = {
+  ok: boolean;
+  mode: CanaryExecutionMode;
+  token: string;
+  plaintext: string;
+  entryId?: Id<"ourfable_vault_contributions">;
+  durationMs: number;
+  errorMessage?: string;
+};
+
+type CanaryExecutionCtx = {
+  runMutation: <T>(ref: unknown, args?: Record<string, unknown>) => Promise<T>;
+  runQuery: <T>(ref: unknown, args?: Record<string, unknown>) => Promise<T>;
+};
+
+async function executeCanary(
+  ctx: CanaryExecutionCtx,
+  mode: CanaryExecutionMode,
+): Promise<CanaryExecutionResult> {
+  const startTime = Date.now();
+  const token = `canary-${mode}-${startTime}`;
+  const plaintext = `Canary test ${token}`;
+
+  try {
+    const family = await ctx.runQuery(internal.ourfableAudit.getCanaryFamily);
+    if (!family) {
+      await ctx.runMutation(internal.ourfableAudit.seedCanaryFamily);
+    }
+
+    const encrypted = await encryptCanaryText(plaintext);
+    const contentHash = await hashContent(plaintext);
+    const entryId = await ctx.runMutation<Id<"ourfable_vault_contributions">>(internal.ourfableAudit.submitCanaryEntryInternal, {
+      token,
+      encryptedBody: encrypted.encryptedBody,
+      contentHash,
+    });
+
+    const readBack = await ctx.runQuery<{
+      encryptedBody?: string;
+      contentHash?: string;
+      encryptionVersion?: number;
+    } | null>(internal.ourfableAudit.getCanaryEntryInternal, { entryId });
+
+    if (!readBack) {
+      throw new Error("Canary entry submitted but read-back returned null");
+    }
+    if (!readBack.encryptedBody || readBack.contentHash !== contentHash || readBack.encryptionVersion !== 1) {
+      throw new Error("Canary entry did not persist the encrypted payload correctly");
+    }
+
+    const decrypted = await encrypted.decrypt();
+    if (decrypted !== plaintext) {
+      throw new Error(`Canary decrypt mismatch: expected "${plaintext}" got "${decrypted}"`);
+    }
+
+    await ctx.runMutation(internal.ourfableAudit.deleteCanaryEntryInternal, { entryId });
+
+    return {
+      ok: true,
+      mode,
+      token,
+      plaintext,
+      entryId,
+      durationMs: Date.now() - startTime,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      mode,
+      token,
+      plaintext,
+      durationMs: Date.now() - startTime,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 export const runCanary = internalAction({
   args: {},
   handler: async (ctx) => {
-    const startTime = Date.now();
+    const result = await executeCanary(ctx, "scheduled");
 
-    try {
-      // 1. Ensure canary family exists
-      const family = await ctx.runQuery(internal.ourfableAudit.getCanaryFamily);
-      if (!family) {
-        await ctx.runMutation(internal.ourfableAudit.seedCanaryFamily);
-      }
-
-      // 2. Submit a test entry through the encrypted internal vault path
-      const testToken = `canary-${Date.now()}`;
-      const plaintext = `Canary test ${testToken}`;
-      const encrypted = await encryptCanaryText(plaintext);
-      const contentHash = await hashContent(plaintext);
-      const entryId = await ctx.runMutation(internal.ourfableAudit.submitCanaryEntryInternal, {
-        token: testToken,
-        encryptedBody: encrypted.encryptedBody,
-        contentHash,
-      });
-
-      // 3. Read it back immediately and verify ciphertext + decryptability
-      const readBack = await ctx.runQuery(api.ourfableAudit.getCanaryEntry, { entryId });
-
-      if (!readBack) {
-        throw new Error("Canary entry submitted but read-back returned null");
-      }
-      if (!readBack.encryptedBody || readBack.contentHash !== contentHash || readBack.encryptionVersion !== 1) {
-        throw new Error("Canary entry did not persist the encrypted payload correctly");
-      }
-
-      const decrypted = await encrypted.decrypt();
-      if (decrypted !== plaintext) {
-        throw new Error(`Canary decrypt mismatch: expected "${plaintext}" got "${decrypted}"`);
-      }
-
-      // 4. Clean up — delete the test entry
-      await ctx.runMutation(api.ourfableAudit.deleteCanaryEntry, { entryId });
-
-      const durationMs = Date.now() - startTime;
-
-      // 5. Log success
+    if (result.ok) {
       await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
         testType: "write",
         status: "pass",
-        durationMs,
+        durationMs: result.durationMs,
       });
 
       const priorFailure = await ctx.runQuery(internal.ourfableAudit.getLatestCanaryResultByStatus, {
@@ -249,58 +289,62 @@ export const runCanary = internalAction({
             lines: [
               "The internal encrypted canary is passing again.",
               `Recovered after failure: ${priorFailure.errorMessage ?? "unknown error"}`,
-              `Duration: ${durationMs}ms`,
+              `Duration: ${result.durationMs}ms`,
               `Time: ${new Date().toISOString()}`,
             ],
           })
         );
       }
 
-      console.log(`[canary] Vault write test passed in ${durationMs}ms`);
-    } catch (err) {
-      const durationMs = Date.now() - startTime;
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      const latestFailureAlert = await ctx.runQuery(internal.ourfableAudit.getLatestCanaryResultByStatus, {
-        status: "fail",
-      });
-      const shouldAlert = !latestFailureAlert || (startTime - latestFailureAlert.timestamp) >= CANARY_ALERT_COOLDOWN_MS;
-
-      await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
-        testType: "write",
-        status: "fail",
-        durationMs,
-        errorMessage: errorMsg,
-      });
-
-      if (shouldAlert) {
-        await sendAlert(
-          formatAlertMessage({
-            severity: "critical",
-            title: "VAULT CANARY FAILURE",
-            channel: "canary",
-            lines: [
-              "The internal encrypted canary failed.",
-              `Error: ${errorMsg}`,
-              `Duration: ${durationMs}ms`,
-              `Time: ${new Date().toISOString()}`,
-              "Impact: vault submissions may be broken for all users. Investigate immediately.",
-            ],
-          })
-        );
-      }
+      console.log(`[canary] Vault write test passed in ${result.durationMs}ms`);
+      return result;
     }
+
+    const errorMsg = result.errorMessage ?? "Unknown canary failure";
+    const latestFailureAlert = await ctx.runQuery(internal.ourfableAudit.getLatestCanaryResultByStatus, {
+      status: "fail",
+    });
+    const shouldAlert = !latestFailureAlert || (Date.now() - latestFailureAlert.timestamp) >= CANARY_ALERT_COOLDOWN_MS;
+
+    await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
+      testType: "write",
+      status: "fail",
+      durationMs: result.durationMs,
+      errorMessage: errorMsg,
+    });
+
+    if (shouldAlert) {
+      await sendAlert(
+        formatAlertMessage({
+          severity: "critical",
+          title: "VAULT CANARY FAILURE",
+          channel: "canary",
+          lines: [
+            "The internal encrypted canary failed.",
+            `Error: ${errorMsg}`,
+            `Duration: ${result.durationMs}ms`,
+            `Time: ${new Date().toISOString()}`,
+            "Impact: vault submissions may be broken for all users. Investigate immediately.",
+          ],
+        })
+      );
+    }
+
+    return result;
   },
 });
 
-// Used by external canary (Cloudflare Worker) — must be public query (not internal)
-// so the Cloudflare Worker can call it via /api/query
-export const getCanaryMember = query({
-  args: { familyId: v.string() },
-  handler: async (ctx, { familyId }) => {
-    return await ctx.db
-      .query("ourfable_vault_circle")
-      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
-      .first();
+export const runManualCanary = action({
+  args: {},
+  handler: async (ctx) => {
+    const result = await executeCanary(ctx, "manual");
+    await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
+      testType: "manual_write",
+      status: result.ok ? "pass" : "fail",
+      durationMs: result.durationMs,
+      errorMessage: result.errorMessage,
+    });
+    return result;
   },
 });
 
@@ -377,22 +421,7 @@ export const submitCanaryEntryInternal = internalMutation({
   },
 });
 
-// Public versions for legacy/external reads only.
-export const submitCanaryEntry = action({
-  args: { token: v.string() },
-  handler: async (ctx, { token }): Promise<Id<"ourfable_vault_contributions">> => {
-    const plaintext = `Canary test ${token}`;
-    const encrypted = await encryptCanaryText(plaintext);
-    const contentHash = await hashContent(plaintext);
-    return await ctx.runMutation(internal.ourfableAudit.submitCanaryEntryInternal, {
-      token,
-      encryptedBody: encrypted.encryptedBody,
-      contentHash,
-    });
-  },
-});
-
-export const getCanaryEntry = query({
+export const getCanaryEntryInternal = internalQuery({
   args: { entryId: v.id("ourfable_vault_contributions") },
   handler: async (ctx, { entryId }) => {
     const entry = await ctx.db.get(entryId);
@@ -407,7 +436,7 @@ export const getCanaryEntry = query({
   },
 });
 
-export const deleteCanaryEntry = mutation({
+export const deleteCanaryEntryInternal = internalMutation({
   args: { entryId: v.id("ourfable_vault_contributions") },
   handler: async (ctx, { entryId }) => {
     // Safety: only allow deleting canary entries
