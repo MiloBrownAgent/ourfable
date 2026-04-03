@@ -37,7 +37,7 @@ function ReservePageInner() {
   const [gifterEmail, setGifterEmail] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [gifterMessage, setGifterMessage] = useState("");
-  const [selectedTier] = useState<GiftTier>("standard");
+  const [selectedTier, setSelectedTier] = useState<GiftTier>("standard");
 
   // — Shared state —
   const [loading, setLoading] = useState(false);
@@ -167,12 +167,12 @@ function ReservePageInner() {
             fontFamily: "var(--font-playfair)", fontSize: 28, fontWeight: 700,
             color: "var(--text)", marginBottom: 12,
           }}>
-            {successMode === "gift" ? "Gift reserved." : "You're in."}
+            {successMode === "gift" ? "Gift reserved." : "You locked in your spot."}
           </h1>
           <p style={{ fontSize: 15, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 12 }}>
             {successMode === "gift"
               ? "We emailed the recipient and sent your confirmation."
-              : "We'll be in touch when your vault is ready."}
+              : "You’re on the founding-families list. We’ll follow up when your vault is ready, and your pricing is locked in for life."}
           </p>
           <p style={{ fontSize: 13, color: "var(--text-4)", lineHeight: 1.5, marginBottom: 36 }}>
             {successMode === "gift" ? (
@@ -340,13 +340,42 @@ function ReservePageInner() {
             fontFamily: "var(--font-playfair)", fontSize: 25, fontWeight: 700,
             color: "var(--text)", marginBottom: 8,
           }}>
-            {isGift ? "Give Our Fable as a gift" : "Reserve your family\u2019s vault"}
+            {isGift ? "Give Our Fable as a gift" : "Reserve your family’s vault"}
           </h1>
-          <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 12 }}>
             {isGift
-              ? "Give someone the gift of a memory vault for their child."
-              : "We just need a few details to get started."}
+              ? "Reserve a founding-family gift and we’ll notify both of you when gifting opens."
+              : "Reserve free now, lock in founding pricing for life, and we’ll invite you in as onboarding opens."}
           </p>
+          {!isGift && (
+            <div style={{
+              padding: "14px 16px",
+              background: "var(--bg-2, #F9F7F4)",
+              borderRadius: 12,
+              border: "1px solid var(--border)",
+              textAlign: "left",
+              display: "grid",
+              gap: 8,
+            }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
+                Founders pricing
+              </p>
+              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, margin: 0, display: "grid", gap: 2 }}>
+                <p style={{ margin: 0 }}>
+                  Our Fable: <strong>$12/mo or $99/yr</strong>
+                </p>
+                <p style={{ margin: 0 }}>
+                  Our Fable+: <strong>$19/mo or $149/yr</strong>
+                </p>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
+                After founders, pricing becomes $16/mo or $149/yr for Our Fable and $25/mo or $199/yr for Our Fable+.
+              </p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
+                Additional children are $7/mo or $59/yr during founders, then $9/mo or $79/yr. Each child gets their own vault and can share the same circle or have a completely separate one.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Gift toggle */}
@@ -387,11 +416,27 @@ function ReservePageInner() {
           ref={waitlistRef}
           className={`mode-panel ${!isGift ? "panel-visible" : "panel-hidden"}`}
         >
+          <div style={{
+            marginBottom: 18,
+            padding: "14px 16px",
+            background: "rgba(107,143,111,0.08)",
+            border: "1px solid rgba(107,143,111,0.18)",
+            borderRadius: 12,
+            display: "grid",
+            gap: 6,
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
+              What happens next
+            </p>
+            <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6, margin: 0 }}>
+              Reserve now, then we’ll follow up as founding-family onboarding opens. No card required today. You’ll keep your founding price for life.
+            </p>
+          </div>
           <form onSubmit={handleWaitlistSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             {/* Child birthday */}
             <div>
               <label htmlFor="reserve-child-birthday" style={labelStyle}>
-                Child's birthday <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10, color: "var(--text-4)" }}>(optional)</span>
+                Child&apos;s birthday <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10, color: "var(--text-4)" }}>(optional)</span>
               </label>
               <input
                 id="reserve-child-birthday"
@@ -443,7 +488,7 @@ function ReservePageInner() {
           {/* Waitlist trust signals */}
           <div style={{ marginTop: 18, textAlign: "center", display: "flex", flexDirection: "column", gap: 5 }}>
             <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0 }}>
-              Free to reserve · No card required
+              Free to reserve · No card required · Child birthday optional
             </p>
             <p style={{
               fontSize: 12, color: "var(--text-3)", margin: 0,
@@ -462,12 +507,55 @@ function ReservePageInner() {
         >
           {/* Gift intro */}
           <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <p style={{ fontSize: 15, color: "var(--text-2)", lineHeight: 1.7 }}>
-              We'll notify you when gifting is available. Founding member rates will apply.
+            <p style={{ fontSize: 15, color: "var(--text-2)", lineHeight: 1.7, marginBottom: 10 }}>
+              Reserve a gift now and we’ll notify both of you when gifting opens. Founding-family pricing will apply.
+            </p>
+            <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6, margin: 0 }}>
+              Our Fable is the private vault for one child. Our Fable+ adds Dispatches, unlimited circle members, and one additional child included.
             </p>
           </div>
 
           <form onSubmit={handleGiftSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={labelStyle}>
+                Gift plan
+              </label>
+              <div className="plan-grid">
+                <button
+                  type="button"
+                  className={`plan-card ${selectedTier === "standard" ? "selected" : ""}`}
+                  onClick={() => setSelectedTier("standard")}
+                  aria-pressed={selectedTier === "standard"}
+                >
+                  <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)", margin: "0 0 8px" }}>
+                    Our Fable
+                  </p>
+                  <p style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 6px" }}>
+                    $99/yr
+                  </p>
+                  <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0, lineHeight: 1.5 }}>
+                    The private vault for one child, with up to 10 circle members.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  className={`plan-card ${selectedTier === "plus" ? "selected" : ""}`}
+                  onClick={() => setSelectedTier("plus")}
+                  aria-pressed={selectedTier === "plus"}
+                >
+                  <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)", margin: "0 0 8px" }}>
+                    Our Fable+
+                  </p>
+                  <p style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 6px" }}>
+                    $149/yr
+                  </p>
+                  <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0, lineHeight: 1.5 }}>
+                    Everything in Our Fable, plus Dispatches, unlimited circle members, and one additional child included.
+                  </p>
+                </button>
+              </div>
+            </div>
+
             {/* Gifter name */}
             <div>
               <label htmlFor="gift-gifter-name" style={labelStyle}>
@@ -499,14 +587,14 @@ function ReservePageInner() {
                 required
               />
               <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
-                We'll send you a confirmation as soon as this gift reservation is saved.
+                We&apos;ll send you a confirmation as soon as this gift reservation is saved.
               </p>
             </div>
 
             {/* Recipient email */}
             <div>
               <label htmlFor="gift-recipient-email" style={labelStyle}>
-                Recipient's email <span style={{ color: "#E07070" }}>*</span>
+                Recipient&apos;s email <span style={{ color: "#E07070" }}>*</span>
               </label>
               <input
                 id="gift-recipient-email"
@@ -517,7 +605,7 @@ function ReservePageInner() {
                 required
               />
               <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
-                We'll email them now and follow up again when gifting opens.
+                We&apos;ll email them now and follow up again when gifting opens.
               </p>
             </div>
 
@@ -571,7 +659,7 @@ function ReservePageInner() {
           {/* Gift trust signals */}
           <div style={{ marginTop: 18, textAlign: "center", display: "flex", flexDirection: "column", gap: 5 }}>
             <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0 }}>
-              We'll notify both of you when gifting opens · Founding member pricing guaranteed
+              We&apos;ll notify both of you when gifting opens · Founding member pricing guaranteed
             </p>
             <p style={{
               fontSize: 12, color: "var(--text-3)", margin: 0,

@@ -25,11 +25,12 @@ crons.cron(
 );
 
 
-// OurFable: Monthly prompts — 1st of each month at 10 AM CT (15:00 UTC)
+// OurFable: Monthly prompt delivery chains — daily at 10 AM CT (15:00 UTC)
+// Processes due per-member/per-child prompt rows created from each member's join-date cadence.
 crons.cron(
   "ourfable-monthly-prompts",
-  "0 15 1 * *",
-  internal.ourfableMonthly.sendMonthlyPrompts
+  "0 15 * * *",
+  internal.ourfablePrompts.processDueMonthlyPrompts
 );
 
 // OurFable: Daily cleanup of soft-deleted families older than 30 days — 3 AM CT (08:00 UTC)

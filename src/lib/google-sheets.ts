@@ -49,12 +49,22 @@ export interface WaitlistSheetRow {
   childName?: string;
   childBirthday?: string;
   source?: string;
+  referredBy?: string;
+  requestedPlanType?: string;
+  gifterName?: string;
+  gifterEmail?: string;
+  recipientEmail?: string;
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
   utm_content?: string;
   utm_term?: string;
   foundingMember?: string;
+  foundingPriceLockedAt?: string;
+  foundingStandardAnnualPrice?: string;
+  foundingStandardAnnualCompareAt?: string;
+  foundingPlusAnnualPrice?: string;
+  foundingPlusAnnualCompareAt?: string;
 }
 
 export interface GoogleSheetWriteResult {
@@ -77,16 +87,26 @@ function rowToCSV(row: WaitlistSheetRow): string {
     row.childName ?? "",
     row.childBirthday ?? "",
     row.source ?? "",
+    row.referredBy ?? "",
+    row.requestedPlanType ?? "",
+    row.gifterName ?? "",
+    row.gifterEmail ?? "",
+    row.recipientEmail ?? "",
     row.utm_source ?? "",
     row.utm_medium ?? "",
     row.utm_campaign ?? "",
     row.utm_content ?? "",
     row.utm_term ?? "",
     row.foundingMember ?? "",
+    row.foundingPriceLockedAt ?? "",
+    row.foundingStandardAnnualPrice ?? "",
+    row.foundingStandardAnnualCompareAt ?? "",
+    row.foundingPlusAnnualPrice ?? "",
+    row.foundingPlusAnnualCompareAt ?? "",
   ].map(escapeCSV).join(",");
 }
 
-const HEADERS = "Timestamp,Email,Child Name,Child Birthday,Source,UTM Source,UTM Medium,UTM Campaign,UTM Content,UTM Term,Founding Member";
+const HEADERS = "Timestamp,Email,Child Name,Child Birthday,Source,Referred By,Requested Plan Type,Gifter Name,Gifter Email,Recipient Email,UTM Source,UTM Medium,UTM Campaign,UTM Content,UTM Term,Founding Member,Founding Price Locked At,Founding Standard Annual Price,Founding Standard Annual Compare At,Founding Plus Annual Price,Founding Plus Annual Compare At";
 
 /**
  * Append a waitlist signup row to the Google Sheet.

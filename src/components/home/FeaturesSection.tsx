@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Reveal } from "./Reveal";
 
 interface CoreFeature {
@@ -12,7 +13,7 @@ const CORE_FEATURES: CoreFeature[] = [
   { num: "01", title: "The Vault", body: "Every letter, photo, voice memo, and video — sealed until the milestone age you choose. Each child gets their own vault, managed from one dashboard. They open it at 13. At 18. At their wedding." },
   { num: "02", title: "Monthly Prompts", body: "On the 1st of every month, Our Fable sends a personalized prompt to every person in your circle. Grandma gets a different question than the family friend. They respond with text, a photo, a voice memo, or a video. No app required." },
   { num: "03", title: "The Circle", body: "Grandparents, aunts, uncles, godparents, family friends — everyone who loves your child gets invited. They each get their own prompts and their own way to contribute. The more people in the circle, the richer the vault." },
-  { num: "04", title: "Dispatches", body: "Send photos, videos, voice memos, or updates to your whole circle — privately. No group chat. No social media. Just the people who matter.", plus: true },
+  { num: "04", title: "Dispatches", body: "Private family updates to your whole circle. Send one photo, video, voice memo, or note without a group chat. Included only in Our Fable+.", plus: true },
 ];
 
 
@@ -28,14 +29,14 @@ export function FeaturesSection() {
               <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.15, marginBottom: 16 }}>
                 Everything your child<br />will want someday.
               </h2>
-              <a href="/demo" style={{
+              <Link href="/demo" style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 fontSize: 13, fontWeight: 500, color: "var(--green)",
                 textDecoration: "none", borderBottom: "1px solid var(--green-border)",
                 paddingBottom: 2,
               }}>
                 Try the interactive demo →
-              </a>
+              </Link>
             </div>
           </Reveal>
 
@@ -113,7 +114,7 @@ export function FeaturesSection() {
               lineHeight: 1.7,
               paddingLeft: 48,
             }}>
-              Plus: The vault automatically captures the world the day your child arrived — weather, headlines, the #1 song.
+              Included in every plan: the vault automatically captures the world the day your child arrived — weather, headlines, the #1 song.
             </p>
           </Reveal>
         </div>

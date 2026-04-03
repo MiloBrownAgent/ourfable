@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState } from "react";
 import {
   MobileNav,
   HeroSection,
@@ -111,15 +111,15 @@ export default function HomeClient() {
       <StickyNav scrolled={scrolled} showSecondNav={showSecondNav} activeSection={activeSection} />
       <HeroSection />
       <ProofStrip />
-      <VignettesSection />
+      <HowItWorksSection />
       <DispatchSection />
+      <FeaturesSection />
       <TrustSection />
+      <VignettesSection />
       <LetterMomentSection />
       <VideoMomentSection />
       <CircleSection />
       <VaultOpeningSection />
-      <HowItWorksSection />
-      <FeaturesSection />
       <MultiChildSection />
       <StatsSection />
       <FounderNote />

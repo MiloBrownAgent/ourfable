@@ -721,7 +721,7 @@ export default function WritingBlock({ childFirst, familyId, dispatchChildId, lo
 
       <div style={{ padding: '20px 24px 0' }}>
         {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
           <span style={{
             fontFamily: 'var(--font-display)',
             fontStyle: 'italic',
@@ -745,7 +745,7 @@ export default function WritingBlock({ childFirst, familyId, dispatchChildId, lo
           <input
             value={dispatchSubject}
             onChange={e => setDispatchSubject(e.target.value)}
-            placeholder={`${childFirst} update`}
+            placeholder="Subject"
             style={{
               width: '100%',
               border: 'none',

@@ -213,7 +213,7 @@ export default function PrintPage({ params }: { params: Promise<{ family: string
                     </p>
                     <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 14 }}>{start} — {end}</p>
                     <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                      Vault contributions · Letters · World Snapshots · Milestones
+                      Vault contributions · Letters · The Day They Were Born · Milestones
                     </p>
 
                     {order ? (

@@ -43,7 +43,7 @@ export default function TermsPage() {
 
           <Section>
             <SectionTitle>1. The Service</SectionTitle>
-            <p>Our Fable is a private digital memory platform. Parents and guardians create a private vault for their child. Invited circle members (family, friends, godparents) contribute letters, photos, voice memos, and videos in response to monthly prompts. Content is sealed and delivered to the child at milestone ages chosen by the parent. Our Fable also generates monthly World Snapshots capturing global events during the child's life.</p>
+            <p>Our Fable is a private digital memory platform. Parents and guardians create a private vault for their child. Invited circle members (family, friends, godparents) contribute letters, photos, voice memos, and videos in response to monthly prompts. Content is sealed and delivered to the child at milestone ages chosen by the parent. Our Fable also preserves milestone context like The Day They Were Born.</p>
             <p>Our Fable is intended for use by adults (18+) only. Children are the subject of vaults but do not use the service directly.</p>
           </Section>
 

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Reveal } from "./Reveal";
 import { Lock } from "lucide-react";
 
@@ -58,8 +59,9 @@ export function MultiChildSection() {
             }}
           >
             Each child&apos;s vault is completely separate — their own memories, their own
-            circle, their own sealed collection. Your circle members contribute to
-            every child without extra work. Manage it all from one place.
+            circle, their own sealed collection. Share the same circle when it makes sense,
+            or keep circles separate for blended families, half siblings, or different sides
+            of the family. Manage it all from one place.
           </p>
         </Reveal>
 
@@ -186,7 +188,7 @@ export function MultiChildSection() {
                   marginBottom: 4,
                 }}
               >
-                Add any child for $7/mo
+                Add any child for $7/mo or $59/yr
               </p>
               <p
                 style={{
@@ -195,12 +197,12 @@ export function MultiChildSection() {
                   lineHeight: 1.5,
                 }}
               >
-                Same circle. Same account. Separate vaults.
+                Same account, separate vaults, and flexible circles for each child.
                 <br />
                 No child left out.
               </p>
             </div>
-            <a
+            <Link
               href="/reserve"
               className="btn-gold"
               style={{
@@ -211,7 +213,7 @@ export function MultiChildSection() {
               }}
             >
               Get started →
-            </a>
+            </Link>
           </div>
         </Reveal>
       </div>

@@ -17,10 +17,10 @@ const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "";
 const META_CAPI_TOKEN = process.env.META_CAPI_TOKEN ?? "";
 
 const FOUNDING_OFFER = {
-  standardAnnualPrice: 79,
-  standardAnnualCompareAt: 99,
-  plusAnnualPrice: 99,
-  plusAnnualCompareAt: 149,
+  standardAnnualPrice: 99,
+  standardAnnualCompareAt: 149,
+  plusAnnualPrice: 149,
+  plusAnnualCompareAt: 199,
 } as const;
 
 type NonCriticalWarning = string;
@@ -204,12 +204,22 @@ export async function POST(req: NextRequest) {
           childName: childName && !isGiftWaitlist ? String(childName).trim() : undefined,
           childBirthday: childBirthday ? String(childBirthday) : undefined,
           source: cleanSource,
+          referredBy: cleanReferralCode,
+          requestedPlanType: cleanRequestedPlanType,
+          gifterName: cleanGifterName,
+          gifterEmail: cleanGifterEmail,
+          recipientEmail: cleanRecipientEmail,
           utm_source: utm_source ? String(utm_source) : undefined,
           utm_medium: utm_medium ? String(utm_medium) : undefined,
           utm_campaign: utm_campaign ? String(utm_campaign) : undefined,
           utm_content: utm_content ? String(utm_content) : undefined,
           utm_term: utm_term ? String(utm_term) : undefined,
           foundingMember: "yes",
+          foundingPriceLockedAt: new Date(foundingPriceLockedAt).toISOString(),
+          foundingStandardAnnualPrice: String(FOUNDING_OFFER.standardAnnualPrice),
+          foundingStandardAnnualCompareAt: String(FOUNDING_OFFER.standardAnnualCompareAt),
+          foundingPlusAnnualPrice: String(FOUNDING_OFFER.plusAnnualPrice),
+          foundingPlusAnnualCompareAt: String(FOUNDING_OFFER.plusAnnualCompareAt),
         });
       }),
       runNonCritical("Resend audience sync", async () => {
@@ -292,7 +302,6 @@ export async function POST(req: NextRequest) {
           return;
         }
         const { subject, html, text } = waitlistWelcomeEmail(
-          childName ? String(childName).trim() : undefined,
           cleanEmail,
           buildUnsubscribeUrl(cleanEmail)
         );

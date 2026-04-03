@@ -347,7 +347,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
       const urlRes = await fetch("/api/ourfable/upload-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, fileSize: encryptedBlob.size }),
       });
       const urlData = await urlRes.json();
       const uploadUrl = urlData.uploadUrl as string;

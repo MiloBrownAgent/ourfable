@@ -42,7 +42,7 @@ export function DispatchSection() {
               textTransform: "uppercase", color: "var(--text-3)",
               margin: 0,
             }}>
-              Exclusive feature
+              Included only in Plus
             </p>
           </div>
 
@@ -64,22 +64,22 @@ export function DispatchSection() {
             fontSize: 18, color: "#6B8F6E", fontWeight: 600,
             marginBottom: 36, lineHeight: 1.4,
           }}>
-            Send a photo, voice memo, or video once — Our Fable delivers it to your child's entire circle.
+            Send a photo, voice memo, video, or note once. Our Fable+ privately delivers it to your child&apos;s circle.
           </p>
 
           {/* Body copy */}
           <div className="dispatch-body" style={{ fontSize: 17, lineHeight: 1.85, color: "var(--text-2)", maxWidth: 580 }}>
             <p style={{ marginBottom: 20 }}>
-              Your mom wants photos. Your sister wants videos. Your best friend just wants to know how the baby's doing. And you're supposed to remember to send all of it, to all of them, while running on three hours of sleep.
+              Your mom wants photos. Your sister wants videos. Your best friend just wants to know how the baby&apos;s doing. And you&apos;re supposed to remember to send all of it, to all of them, while running on three hours of sleep.
             </p>
             <p style={{ marginBottom: 20, color: "var(--text)" }}>
               Not anymore.
             </p>
             <p style={{ marginBottom: 20 }}>
-              Grandparents. Aunts. Uncles. Godparents. The college friend who's already obsessed. Everyone gets the update. Nobody gets forgotten.
+              Grandparents. Aunts. Uncles. Godparents. The college friend who&apos;s already obsessed. Everyone gets the update. Nobody gets forgotten.
             </p>
             <p style={{ marginBottom: 40, color: "var(--text)", fontStyle: "italic", fontFamily: "var(--font-playfair)", fontSize: 20, lineHeight: 1.6 }}>
-              No group texts. No "sorry I forgot to send you that." No guilt.<br />
+              No group texts. No &ldquo;sorry I forgot to send you that.&rdquo; No guilt.<br />
               Just one moment, shared with everyone who cares.
             </p>
           </div>
@@ -115,10 +115,10 @@ export function DispatchSection() {
           }}>
             <div>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>
-                Included in Our Fable+
+                Included only in Our Fable+
               </p>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, margin: 0 }}>
-                Dispatches to your full circle. Plus everything in Our Fable.
+                Dispatches to your full circle, plus everything in Our Fable.
               </p>
             </div>
             <Link href="/reserve" style={{

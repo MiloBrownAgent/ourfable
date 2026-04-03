@@ -9,7 +9,7 @@ const SECTION_NAV = [
   { label: "Pricing", href: "#pricing" },
 ];
 
-const PROOF_ITEMS = ["Automatic monthly prompts", "Photos, video & voice memos", "Dispatches to your whole circle", "Sealed until they're ready", "Private by design"];
+const PROOF_ITEMS = ["Automatic monthly prompts", "Photos, video & voice memos", "Dispatches in Our Fable+", "Sealed until they're ready", "Private by design"];
 
 interface StickyNavProps {
   scrolled: boolean;
@@ -23,7 +23,7 @@ export function StickyNav({ scrolled, showSecondNav, activeSection }: StickyNavP
       {/* ── PRIMARY NAV (desktop) ── */}
       <nav className="desktop-nav" role="navigation" aria-label="Main navigation" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, minHeight: 64, display: "flex", alignItems: "center", padding: "env(safe-area-inset-top, 0px) 24px 0 24px", background: scrolled ? "rgba(253,251,247,0.97)" : "transparent", borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent", backdropFilter: scrolled ? "blur(20px)" : "none", transition: "all 300ms ease" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <a href="/" onClick={(e) => { if (window.location.pathname === "/") { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); } }} style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--green)", letterSpacing: "-0.01em", textDecoration: "none", cursor: "pointer" }}>Our Fable</a>
+          <Link href="/" onClick={(e) => { if (window.location.pathname === "/") { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); } }} style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--green)", letterSpacing: "-0.01em", textDecoration: "none", cursor: "pointer" }}>Our Fable</Link>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div className="nav-links" style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <Link href="/" className="nav-link" style={{ fontSize: 14 }}>Home</Link>

@@ -91,7 +91,7 @@ const softwareApplicationSchema = {
       price: "12.00",
       priceCurrency: "USD",
       billingIncrement: "P1M",
-      description: "Vault, up to 10 circle members, monthly prompts, 5 GB storage",
+      description: "Founding price. The Vault, up to 10 circle members, monthly prompts, 5 GB storage",
     },
     {
       "@type": "Offer",
@@ -99,7 +99,7 @@ const softwareApplicationSchema = {
       price: "99.00",
       priceCurrency: "USD",
       billingIncrement: "P1Y",
-      description: "Vault, up to 10 circle members, monthly prompts, 5 GB storage",
+      description: "Founding price. The Vault, up to 10 circle members, monthly prompts, 5 GB storage",
     },
     {
       "@type": "Offer",
@@ -107,7 +107,7 @@ const softwareApplicationSchema = {
       price: "19.00",
       priceCurrency: "USD",
       billingIncrement: "P1M",
-      description: "Everything in Our Fable plus Dispatches, unlimited circle, voice messages, 25 GB storage",
+      description: "Founding price. Everything in Our Fable, plus Dispatches, unlimited circle members, one additional child included, and 25 GB storage",
     },
     {
       "@type": "Offer",
@@ -115,7 +115,7 @@ const softwareApplicationSchema = {
       price: "149.00",
       priceCurrency: "USD",
       billingIncrement: "P1Y",
-      description: "Everything in Our Fable plus Dispatches, unlimited circle, voice messages, 25 GB storage",
+      description: "Founding price. Everything in Our Fable, plus Dispatches, unlimited circle members, one additional child included, and 25 GB storage",
     },
   ],
   featureList: [
@@ -123,7 +123,7 @@ const softwareApplicationSchema = {
     "Monthly automated prompts sent to grandparents, family, friends",
     "Letters, voice memos, photos, and video messages",
     "Born Day Snapshot — the vault captures the world the day your child arrived",
-    "Dispatches — send updates to your whole circle privately",
+    "Dispatches — private family updates included in Our Fable+",
     "Full data export at any time",
   ],
 };

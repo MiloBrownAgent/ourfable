@@ -156,6 +156,7 @@ export default defineSchema({
     inviteToken: v.string(),
     shareToken: v.string(),
     hasAccepted: v.boolean(),
+    joinedAt: v.optional(v.number()),
     acceptedAt: v.optional(v.number()),
     lastActiveAt: v.optional(v.number()),
     contributionCount: v.optional(v.number()),
@@ -221,23 +222,32 @@ export default defineSchema({
   ourfable_vault_prompt_queue: defineTable({
     familyId: v.string(),
     memberId: v.id("ourfable_vault_circle"),
+    childId: v.optional(v.string()),
+    templateKey: v.optional(v.string()),
     promptText: v.string(),
     promptCategory: v.string(),
     promptUnlocksAtAge: v.optional(v.number()),
     promptUnlocksAtEvent: v.optional(v.string()),
+    cycleNumber: v.optional(v.number()),
+    promptSequence: v.optional(v.number()),
     scheduledFor: v.string(),
+    responseWindowEndsAt: v.optional(v.number()),
     sentAt: v.optional(v.number()),
     status: v.union(
       v.literal("pending"),
       v.literal("sent"),
       v.literal("responded"),
-      v.literal("skipped")
+      v.literal("skipped"),
+      v.literal("expired")
     ),
     submissionToken: v.optional(v.string()),
   })
     .index("by_familyId", ["familyId"])
     .index("by_memberId", ["memberId"])
-    .index("by_status_scheduledFor", ["status", "scheduledFor"]),
+    .index("by_memberId_childId", ["memberId", "childId"])
+    .index("by_submissionToken", ["submissionToken"])
+    .index("by_status_scheduledFor", ["status", "scheduledFor"])
+    .index("by_status_responseWindowEndsAt", ["status", "responseWindowEndsAt"]),
 
   ourfable_vault_recipes: defineTable({
     familyId: v.string(),

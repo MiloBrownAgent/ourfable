@@ -33,7 +33,7 @@ export const FAQS = [
   },
   {
     q: "What does Our Fable cost?",
-    a: "Our Fable has two tiers. Our Fable is $12/month or $99/year — it includes the vault, up to 10 circle members, monthly prompts, and 5 GB of storage. Our Fable+ is $19/month or $149/year — it includes everything in Our Fable plus Dispatches, unlimited circle members, voice messages, one additional child included, and 25 GB of storage.",
+    a: "Founding pricing is live now. Our Fable is $12/month or $99/year — it includes the Vault, up to 10 circle members, monthly prompts, and 5 GB of storage. Our Fable+ is $19/month or $149/year — it includes everything in Our Fable, plus Dispatches, unlimited circle members, one additional child included, and 25 GB of storage. Additional children are $7/month or $59/year during founders, then $9/month or $79/year after founders. Each child gets their own vault and can share the same circle or have a completely separate one. After the founding period, pricing becomes $16/month or $149/year for Our Fable and $25/month or $199/year for Our Fable+.",
   },
   {
     q: "Is my family's content private?",
@@ -41,11 +41,7 @@ export const FAQS = [
   },
   {
     q: "Can I give Our Fable as a baby shower gift?",
-    a: "Yes. Our Fable can be gifted as a gift code — perfect for baby showers, birth announcements, or as a meaningful gift from a grandparent. Visit ourfable.ai/gift to send a gift code by email. The recipient activates it when they're ready.",
-  },
-  {
-    q: "What is the World Snapshot?",
-    a: "Every month, Our Fable automatically creates a one-page 'snapshot' of the world during that month of your child's life — top news, the #1 song, weather, and other cultural markers. By the time your child turns 18, they'll have 216 of these snapshots. It's a living record of the world they grew up in.",
+    a: "Yes. Our Fable can be gifted as a gift code — perfect for baby showers, birth announcements, or as a meaningful gift from a grandparent. You can choose Our Fable or Our Fable+. Our Fable+ adds Dispatches, unlimited circle members, and one additional child included. Visit ourfable.ai/gift to send a gift code by email. The recipient activates it when they're ready.",
   },
   {
     q: "What is 'Day They Were Born'?",
@@ -53,7 +49,7 @@ export const FAQS = [
   },
   {
     q: "What are Dispatches?",
-    a: "Dispatches let parents send photos, videos, notes, or voice memos to their whole circle — or just a few people — privately. No group chat. No social media. Parents can send an update like 'She said her first word today' and their whole circle (grandparents, godparents, family friends) receives it privately.",
+    a: "Dispatches are included only in Our Fable+. They let parents send photos, videos, notes, or voice memos to their whole circle — or just a few people — privately. No group chat. No social media. Parents can send an update like 'She said her first word today' and their whole circle receives it privately.",
   },
   {
     q: "What happens to the vault if I cancel?",
@@ -122,7 +118,7 @@ export default function FAQPage() {
             <div className="nav-text-links" style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <Link href="/" className="nav-link" style={{ fontSize: 14 }}>Home</Link>
               <Link href="/faq" className="nav-link" style={{ fontSize: 14, fontWeight: 600, color: "var(--green)" }}>FAQ</Link>
-              <Link href="/reserve" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
+              <Link href="/gift" className="nav-link" style={{ fontSize: 14 }}>Give as a gift</Link>
               <Link href="/login" className="nav-link" style={{ fontSize: 14 }}>Sign in</Link>
             </div>
             <Link href="/reserve" className="btn-primary" style={{ padding: "9px 20px", fontSize: 14, textDecoration: "none" }}>
@@ -182,7 +178,7 @@ export default function FAQPage() {
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "var(--green)" }}>Our Fable</span>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <Link href="/reserve" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
+            <Link href="/gift" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
             <Link href="/faq" className="nav-link" style={{ fontSize: 13 }}>FAQ</Link>
             <Link href="/journal" className="nav-link" style={{ fontSize: 13 }}>Journal</Link>
             <Link href="/partners" className="nav-link" style={{ fontSize: 13 }}>Partner with us</Link>

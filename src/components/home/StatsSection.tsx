@@ -3,7 +3,7 @@ import { Reveal } from "./Reveal";
 import { Counter } from "./Counter";
 
 const STATS = [
-  { value: 216, suffix: "", label: "World Snapshots by the time they turn 18" },
+  { value: 1, suffix: "", label: "Born Day front page capturing the day they arrived" },
   { value: 18, suffix: "", label: "Years of memories, sealed in the Vault" },
   { value: 10, suffix: "+", label: "People in their circle, each telling their story" },
 ];

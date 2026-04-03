@@ -367,7 +367,7 @@ function Step3({
               Per additional child, billed to your existing subscription.
             </p>
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: "0.5px solid var(--border)", display: "flex", flexDirection: "column", gap: 8 }}>
-              {["Vault & sealed memories", "Born Day counter", "World Snapshot", "All circle features"].map((f) => (
+              {["Vault & sealed memories", "The Day They Were Born", "All circle features"].map((f) => (
                 <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-2)" }}>
                   <Check size={12} color="var(--green)" />
                   {f}

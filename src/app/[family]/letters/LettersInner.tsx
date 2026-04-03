@@ -184,7 +184,11 @@ function WriteForm({ familyId, childName, onDone }: { familyId: string; childNam
 
       if (selectedFile) {
         const encryptedBlob = await encryptBlob(selectedFile, familyKey);
-        const uploadUrlRes = await fetch('/api/ourfable/upload-media', { method: 'POST' });
+        const uploadUrlRes = await fetch('/api/ourfable/upload-media', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileSize: encryptedBlob.data.byteLength }),
+        });
         const uploadUrlData = await uploadUrlRes.json();
         if (!uploadUrlRes.ok) throw new Error(uploadUrlData.error ?? 'Failed to prepare upload');
 

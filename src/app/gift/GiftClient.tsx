@@ -9,19 +9,19 @@ type GiftTier = "standard" | "plus";
 const TIERS = {
   standard: {
     name: "Our Fable",
-    annualPrice: 79,
-    originalPrice: 99,
-    monthlyEquiv: "$6.58/mo",
-    tagline: "The essentials — vault, prompts, circle",
+    annualPrice: 99,
+    originalPrice: 149,
+    monthlyEquiv: "$8.25/mo",
+    tagline: "The Vault for one child",
     features: ["The Vault", "Up to 10 circle members", "Monthly prompts", "5GB storage"],
   },
   plus: {
     name: "Our Fable+",
-    annualPrice: 99,
-    originalPrice: 149,
-    monthlyEquiv: "$8.25/mo",
-    tagline: "Everything + dispatches, voice, unlimited circle",
-    features: ["Everything in Our Fable", "Dispatches", "Unlimited circle", "Voice Messages", "25GB storage"],
+    annualPrice: 149,
+    originalPrice: 199,
+    monthlyEquiv: "$12.42/mo",
+    tagline: "Everything in Our Fable, plus Dispatches",
+    features: ["Everything in Our Fable", "Dispatches", "Unlimited circle members", "1 additional child included", "25GB storage"],
   },
 };
 
@@ -106,7 +106,7 @@ export default function GiftClient() {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div className="nav-text-links" style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <Link href="/" className="nav-link" style={{ fontSize: 14 }}>Home</Link>
-              <Link href="/how-it-works" className="nav-link" style={{ fontSize: 14 }}>How it works</Link>
+              <Link href="/faq" className="nav-link" style={{ fontSize: 14 }}>FAQ</Link>
               <Link href="/login" className="nav-link" style={{ fontSize: 14 }}>Sign in</Link>
             </div>
             <Link href="/reserve" className="btn-primary" style={{ padding: "10px 20px", fontSize: 14 }}>Reserve your spot</Link>
@@ -125,7 +125,7 @@ export default function GiftClient() {
             Give them <em style={{ color: "var(--green)", fontStyle: "italic" }}>Our Fable.</em>
           </h1>
           <p style={{ fontSize: 18, lineHeight: 1.75, color: "var(--text-2)", marginBottom: 16, maxWidth: 520, margin: "0 auto 16px", animation: "revealUp 0.5s ease 0.16s both" }}>
-            Every month, Our Fable interviews the people in a child's life. Every answer is sealed until they're ready. You're giving them a library of love.
+            The gift is a private vault for a child&apos;s future. Our Fable+ also includes Dispatches, unlimited circle members, and one additional child included.
           </p>
         </div>
 
@@ -199,7 +199,7 @@ export default function GiftClient() {
         {/* Gift form */}
         <div className="card" style={{ padding: "36px 32px", marginBottom: 56, animation: "revealUp 0.5s ease 0.24s both" }}>
           <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>Gift {tier.name}</h2>
-          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 28 }}>${tier.annualPrice}/year · Annual gift · Founding member rate</p>
+          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 28 }}>${tier.annualPrice}/year · Annual gift · Founding member rate locked in</p>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Recipient email */}
             <div>
@@ -270,7 +270,7 @@ export default function GiftClient() {
 
         {/* Features — pillar layout */}
         <div style={{ borderTop: "1px solid var(--border)", marginBottom: 56 }}>
-          {FEATURES.map((f, i) => {
+          {FEATURES.map((f) => {
             const Icon = f.icon;
             return (
               <div key={f.title} style={{
@@ -307,14 +307,14 @@ export default function GiftClient() {
             <div>
               <Users size={18} color="var(--green)" strokeWidth={1.75} style={{ marginBottom: 8 }} />
               <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>Built for 18 years</p>
-              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>Not a subscription trap. Priced to stay in a family's life from birth to adulthood.</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>Not a subscription trap. Priced to stay in a family&apos;s life from birth to adulthood.</p>
             </div>
           </div>
         </div>
 
         <div style={{ textAlign: "center", marginTop: 40 }}>
           <p style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7 }}>
-            The people who love a child won't be here forever.<br/>
+            The people who love a child won&apos;t be here forever.<br/>
             Our Fable makes sure their voices are.
           </p>
         </div>

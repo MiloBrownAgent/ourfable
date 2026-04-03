@@ -1,23 +1,16 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ArrowLeft, Check, Shield, Sparkles, Users, Gift } from "lucide-react";
+import {
+  FOUNDING_CHILD_ADDON_PRICES,
+  FOUNDING_PLAN_PRICES as PLAN_PRICES,
+  REGULAR_PLAN_PRICES as NORMAL_PRICES,
+} from "@/lib/ourfable-pricing";
 
 type PlanType = "standard" | "plus";
 type BillingPeriod = "monthly" | "annual";
-
-// During founding period, ALL signups get founding pricing
-const PLAN_PRICES: Record<PlanType, Record<BillingPeriod, number>> = {
-  standard: { monthly: 12, annual: 79 },
-  plus: { monthly: 19, annual: 99 },
-};
-
-// Full prices shown as strikethrough so users see the discount
-const NORMAL_PRICES: Record<PlanType, Record<BillingPeriod, number>> = {
-  standard: { monthly: 12, annual: 99 },
-  plus: { monthly: 19, annual: 149 },
-};
 
 const MIN_PASSWORD_LENGTH = 12;
 
@@ -50,15 +43,23 @@ function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: str
   );
 }
 
-export default function SignupClient() {
+export default function SignupClient({
+  initialEmail = "",
+  initialChildName = "",
+  initialPlanType,
+}: {
+  initialEmail?: string;
+  initialChildName?: string;
+  initialPlanType?: PlanType;
+}) {
   const searchParams = useSearchParams();
   const giftCodeParam = searchParams.get("gift") ?? "";
   const giftPlanParam = (searchParams.get("plan") ?? "standard") as PlanType;
   const isGiftRedemption = !!giftCodeParam;
   // During founding period, ALL signups are founding members
   const isFoundingMember = true;
-  const prefillEmail = searchParams.get("email") ?? "";
-  const prefillChild = searchParams.get("child") ?? "";
+  const prefillEmail = searchParams.get("email") ?? initialEmail;
+  const prefillChild = searchParams.get("child") ?? initialChildName;
 
   const [step, setStep] = useState(1);
 
@@ -86,17 +87,14 @@ export default function SignupClient() {
   const [notifyFacilitatorOnLapse, setNotifyFacilitatorOnLapse] = useState(true);
 
   // Step 5 — Plan selection
-  const [planType, setPlanType] = useState<PlanType>(giftPlanParam === "plus" ? "plus" : "standard");
+  const [planType, setPlanType] = useState<PlanType>(
+    giftPlanParam === "plus" ? "plus" : initialPlanType ?? "standard"
+  );
   const [billing, setBilling] = useState<BillingPeriod>("annual");
   const [coppaConsent, setCoppaConsent] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Sync plan type from URL param (gift redemption)
-  useEffect(() => {
-    if (giftPlanParam === "plus") setPlanType("plus");
-  }, [giftPlanParam]);
 
   const childFirst = childName.split(" ")[0] || "your child";
 
@@ -144,7 +142,7 @@ export default function SignupClient() {
         const data = await res.json();
         if (res.ok && data.familyId) {
           const welcomeParams = new URLSearchParams({ familyId: data.familyId, child: childName.split(" ")[0], dob: childDob });
-          window.location.href = `/welcome?${welcomeParams.toString()}`;
+          window.location.assign(`/welcome?${welcomeParams.toString()}`);
         } else {
           setError(data.error ?? "Something went wrong. Try again.");
           setLoading(false);
@@ -177,7 +175,7 @@ export default function SignupClient() {
       });
       const data = await res.json();
       if (res.ok && data.url) {
-        window.location.href = data.url;
+        window.location.assign(data.url);
       } else {
         setError(data.error ?? "Something went wrong. Try again.");
         setLoading(false);
@@ -598,8 +596,9 @@ export default function SignupClient() {
                   {billing === "monthly" ? "per month" : "per year"}
                 </p>
                 <div style={{ fontSize: 11, color: "var(--text-3)", lineHeight: 1.7 }}>
-                  <p>Up to 10 circle members</p>
-                  <p>5GB storage</p>
+                  <p>The Vault for one child</p>
+                  <p>Up to 10 circle members · 5GB</p>
+                  <p>Add another child later for ${FOUNDING_CHILD_ADDON_PRICES.monthly}/mo or ${FOUNDING_CHILD_ADDON_PRICES.annual}/yr</p>
                 </div>
                 {planType === "standard" && (
                   <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 4 }}>
@@ -651,8 +650,9 @@ export default function SignupClient() {
                   {billing === "monthly" ? "per month" : "per year"}
                 </p>
                 <div style={{ fontSize: 11, color: "var(--text-3)", lineHeight: 1.7 }}>
-                  <p>Dispatches + Voice Messages</p>
-                  <p>Unlimited circle · 25GB</p>
+                  <p>Everything in Our Fable, plus:</p>
+                  <p>Dispatches · Unlimited circle · 25GB</p>
+                  <p>One additional child included · separate circles supported</p>
                 </div>
                 {planType === "plus" && (
                   <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 4 }}>
@@ -665,9 +665,15 @@ export default function SignupClient() {
 
             {billing === "annual" && (
               <p style={{ fontSize: 12, color: "var(--green)", textAlign: "center", fontWeight: 500 }}>
-                {planType === "standard" ? "Save $65/yr vs monthly" : "Save $129/yr vs monthly"}
+                {planType === "standard" ? "Save $45/yr vs monthly" : "Save $79/yr vs monthly"}
               </p>
             )}
+
+            <div style={{ padding: "14px 16px", borderRadius: 12, background: "var(--bg-2)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.65, margin: 0 }}>
+                Additional children are {planType === "plus" ? `included for the first extra child on Our Fable+, then ${FOUNDING_CHILD_ADDON_PRICES.monthly}/mo or ${FOUNDING_CHILD_ADDON_PRICES.annual}/yr after that.` : `available after signup for ${FOUNDING_CHILD_ADDON_PRICES.monthly}/mo or ${FOUNDING_CHILD_ADDON_PRICES.annual}/yr each.`} Every child gets a separate vault and can share the same circle or have a completely different one.
+              </p>
+            </div>
 
             {/* Age Verification */}
             <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>

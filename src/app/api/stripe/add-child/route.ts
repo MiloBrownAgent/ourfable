@@ -1,34 +1,31 @@
-import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
-/**
- * POST /api/stripe/add-child
- *
- * Creates a new child for a family and initiates Stripe Checkout for the
- * per-child add-on subscription. Our Fable+ accounts get their first
- * additional child for free.
- *
- * Body:
- *   familyId        — string (required)
- *   childName       — string (required)
- *   childDob        — string (required, YYYY-MM-DD)
- *   billingPeriod   — "monthly" | "annual" (default: "monthly")
- *   copyCircleFrom  — string (optional childId to copy circle members from)
- *   selectedMemberIds — string[] (optional, used with copyCircleFrom)
- *   successUrl      — string (optional, defaults to dashboard)
- *   cancelUrl       — string (optional, defaults to dashboard)
- */
-
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { verifySession, COOKIE } from "@/lib/auth";
+import { internalConvexMutation, internalConvexQuery } from "@/lib/convex-internal";
+import {
+  FOUNDING_CHILD_ADDON_PRICES,
+  REGULAR_CHILD_ADDON_PRICES,
+  getIncludedAdditionalChildren,
+  type BillingPeriod,
+  type PlanType,
+} from "@/lib/ourfable-pricing";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://ourfable.ai";
 
 function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY required");
   return new Stripe(key, { apiVersion: "2026-02-25.clover" });
 }
+
+function getChildAddonPriceId(billingPeriod: BillingPeriod): string | undefined {
+  return billingPeriod === "annual"
+    ? process.env.STRIPE_PRICE_CHILD_ANNUAL
+    : process.env.STRIPE_PRICE_CHILD_MONTHLY;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // Auth check
     const sessionToken = req.cookies.get(COOKIE)?.value;
     const session = sessionToken ? await verifySession(sessionToken) : null;
     if (!session) {
@@ -37,7 +34,6 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      familyId: _clientFamilyId,
       childName,
       childDob,
       billingPeriod = "monthly",
@@ -46,146 +42,109 @@ export async function POST(req: NextRequest) {
       successUrl,
       cancelUrl,
     } = body as {
-      familyId: string;
-      childName: string;
-      childDob: string;
-      billingPeriod?: "monthly" | "annual";
+      childName?: string;
+      childDob?: string;
+      billingPeriod?: BillingPeriod;
       copyCircleFrom?: string;
       selectedMemberIds?: string[];
       successUrl?: string;
       cancelUrl?: string;
     };
 
-    // SECURITY: Always use session familyId, ignore client-supplied value
     const familyId = session.familyId;
-
-    if (!familyId || !childName || !childDob) {
-      return NextResponse.json(
-        { error: "familyId, childName, and childDob are required" },
-        { status: 400 },
-      );
+    if (!familyId || !childName?.trim() || !childDob) {
+      return NextResponse.json({ error: "childName and childDob are required" }, { status: 400 });
     }
 
-    // Look up family
-    const family = (await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId })) as {
+    const family = await internalConvexQuery("ourfable:getOurFableFamilyById", { familyId }) as {
       familyId: string;
-      email: string;
-      childName: string;
-      planType: string;
+      email?: string;
+      planType?: string;
       stripeCustomerId?: string;
-      subscriptionStatus: string;
     } | null;
 
     if (!family) {
       return NextResponse.json({ error: "Family not found" }, { status: 404 });
     }
 
-    // Count existing additional children (non-first)
-    const existingChildren = (await convexQuery("ourfable:listChildren", { familyId })) as Array<{
+    const resolvedPlanType: PlanType = family.planType === "plus" ? "plus" : "standard";
+    const activeChildren = await internalConvexQuery("ourfable:listChildren", { familyId }) as Array<{
       childId: string;
       isFirst: boolean;
-      isActive: boolean;
-    }> | null;
-
-    const additionalActiveChildren = (existingChildren ?? []).filter(
-      (c) => !c.isFirst && c.isActive,
-    ).length;
-
-    // Our Fable+ accounts: first additional child is free
-    const isPlus = family.planType === "plus";
-    const isFree = isPlus && additionalActiveChildren === 0;
-
-    // 1. Create child in Convex
-    const insertResult = await convexMutation("ourfable:addChild", {
-      familyId,
-      childName,
-      childDob,
-    });
-    const childDocId = (insertResult as { value?: string }).value ?? insertResult;
-
-    // Retrieve the new childId slug
-    const allChildren = (await convexQuery("ourfable:listChildren", { familyId })) as Array<{
-      childId: string;
+      isActive?: boolean;
       childName: string;
       childDob: string;
-      isFirst: boolean;
     }> | null;
-    const newChild = (allChildren ?? []).find(
-      (c) => !c.isFirst && c.childName === childName && c.childDob === childDob,
-    );
 
-    if (!newChild) {
-      return NextResponse.json({ error: "Failed to create child record" }, { status: 500 });
-    }
+    const additionalActiveChildren = (activeChildren ?? []).filter((child) => !child.isFirst).length;
+    const includedAdditionalChildren = getIncludedAdditionalChildren(resolvedPlanType);
+    const isIncluded = additionalActiveChildren < includedAdditionalChildren;
 
-    // 2. Copy circle if requested
-    if (copyCircleFrom && selectedMemberIds && selectedMemberIds.length > 0) {
-      await convexMutation("ourfable:copyCircleToChild", {
+    const insertResult = await internalConvexMutation("ourfable:addChild", {
+      familyId,
+      childName: childName.trim(),
+      childDob,
+    }) as { childId: string; _id: string };
+
+    const newChildId = insertResult.childId;
+
+    if (copyCircleFrom && Array.isArray(selectedMemberIds) && selectedMemberIds.length > 0) {
+      await internalConvexMutation("ourfable:copyCircleToChild", {
         sourceChildId: copyCircleFrom,
-        targetChildId: newChild.childId,
+        targetChildId: newChildId,
         memberIds: selectedMemberIds,
       });
     }
 
-    // 3. Free path: Our Fable+ first additional child
-    if (isFree) {
+    if (isIncluded) {
       return NextResponse.json({
-        free: true,
-        childId: newChild.childId,
-        message: "First additional child added at no charge (Our Fable+)",
+        childId: newChildId,
+        included: true,
+        message: "Additional child added to your plan.",
       });
     }
 
-    // 4. Paid path: create Stripe Checkout session
-    const stripe = getStripe();
+    await internalConvexMutation("ourfable:removeChild", { childId: newChildId });
 
-    const priceId =
-      billingPeriod === "annual"
-        ? process.env.STRIPE_PRICE_CHILD_ANNUAL
-        : process.env.STRIPE_PRICE_CHILD_MONTHLY;
-
+    const priceId = getChildAddonPriceId(billingPeriod);
     if (!priceId || priceId.startsWith("price_placeholder")) {
-      // Price IDs not yet configured — return the child was created, skip checkout
-      console.warn("[add-child] Stripe price ID not configured for child add-on");
-      return NextResponse.json({
-        childId: newChild.childId,
-        checkoutUrl: null,
-        warning: "Stripe price not configured — child created but billing not started",
-      });
+      return NextResponse.json(
+        {
+          error: `Child add-on Stripe price is not configured yet. Recommended pricing is $${FOUNDING_CHILD_ADDON_PRICES.monthly}/mo founders, then $${REGULAR_CHILD_ADDON_PRICES.monthly}/mo after founders.`,
+        },
+        { status: 500 },
+      );
     }
 
-    const dashboardUrl = `https://ourfable.ai/${familyId}`;
-
+    const stripe = getStripe();
+    const settingsUrl = new URL(`/${familyId}/settings`, BASE_URL).toString();
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: family.stripeCustomerId,
       customer_email: family.stripeCustomerId ? undefined : family.email,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
       metadata: {
         type: "child_addon",
         familyId,
-        childId: newChild.childId,
-        childName,
+        childId: newChildId,
+        childName: childName.trim(),
         childDob,
       },
-      success_url: successUrl ?? `${dashboardUrl}/children?added=true`,
-      cancel_url: cancelUrl ?? `${dashboardUrl}/children?cancelled=true`,
+      success_url: successUrl ?? `${settingsUrl}?child_added=true`,
+      cancel_url: cancelUrl ?? `${settingsUrl}?child_addon_cancelled=true`,
       subscription_data: {
         metadata: {
           type: "child_addon",
           familyId,
-          childId: newChild.childId,
+          childId: newChildId,
         },
       },
     });
 
     return NextResponse.json({
-      childId: newChild.childId,
+      childId: newChildId,
+      included: false,
       checkoutUrl: checkoutSession.url,
     });
   } catch (err) {

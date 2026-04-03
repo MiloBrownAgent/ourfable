@@ -664,13 +664,13 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
           )}
 
           {/* Compose card */}
-          <div className="card" style={{ padding: "32px 28px", display: "flex", flexDirection: "column", gap: 22 }}>
-            <div>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 400, color: "var(--text)", marginBottom: 4 }}>
-                New update
+          <div className="card" style={{ padding: "20px 24px 0", display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 400, color: "var(--green)", fontStyle: "italic", margin: 0 }}>
+                Dispatch to {childName}&apos;s circle
               </p>
-              <p style={{ fontSize: 12, color: "var(--text-3)" }}>
-                {withEmail.length > 0 ? `${withEmail.length} circle member${withEmail.length !== 1 ? "s" : ""} have email addresses` : "No circle members with email addresses yet"}
+              <p style={{ fontSize: 11, color: "var(--sage)", letterSpacing: "0.04em", margin: 0 }}>
+                {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
               </p>
             </div>
 
@@ -729,92 +729,80 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
 
             {/* Subject */}
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>
-                Subject
-              </label>
               <input
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
-                placeholder={`A subject line…`}
+                placeholder="Subject"
                 className="input"
-                style={{ fontFamily: "var(--font-cormorant)", fontSize: 17 }}
+                style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text)", background: "transparent", padding: "0 0 14px", border: "none", borderRadius: 0, borderBottom: "0.5px solid var(--border)" }}
               />
             </div>
 
             {/* Body */}
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>
-                Message
-              </label>
               <textarea
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 rows={7}
                 placeholder={`Share what's happening with ${childName} — a milestone, a moment, something worth keeping…`}
                 className="input"
-                style={{ resize: "vertical", fontFamily: "var(--font-cormorant)", fontSize: 16, lineHeight: 1.85 }}
+                style={{ resize: "vertical", fontFamily: "var(--font-body)", fontSize: 15, lineHeight: 1.85, border: "none", padding: 0, background: "transparent" }}
               />
             </div>
 
             {/* Recipients */}
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 12 }}>
-                Recipients
-              </label>
-              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  Send to
+                </span>
                 <button
-                  onClick={() => setSentToAll(true)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, fontSize: 13, cursor: "pointer", transition: "all 160ms",
-                    background: sentToAll ? "var(--sage-dim)" : "var(--surface)",
-                    border: `1px solid ${sentToAll ? "rgba(107,143,111,0.3)" : "var(--border)"}`,
-                    color: sentToAll ? "var(--sage)" : "var(--text-3)",
-                    fontWeight: sentToAll ? 500 : 400,
+                  onClick={() => {
+                    if (sentToAll || selectedIds.size === withEmail.length) {
+                      setSentToAll(false);
+                      setSelectedIds(new Set());
+                    } else {
+                      setSentToAll(true);
+                      setSelectedIds(new Set(withEmail.map(m => m._id)));
+                    }
                   }}
+                  style={{ background: "none", border: "none", fontSize: 11, color: "var(--sage)", cursor: "pointer", fontFamily: "var(--font-body)", textDecoration: "underline" }}
                 >
-                  <Users size={13} strokeWidth={1.5} />
-                  Everyone ({withEmail.length})
-                </button>
-                <button
-                  onClick={() => setSentToAll(false)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, fontSize: 13, cursor: "pointer", transition: "all 160ms",
-                    background: !sentToAll ? "var(--sage-dim)" : "var(--surface)",
-                    border: `1px solid ${!sentToAll ? "rgba(107,143,111,0.3)" : "var(--border)"}`,
-                    color: !sentToAll ? "var(--sage)" : "var(--text-3)",
-                    fontWeight: !sentToAll ? 500 : 400,
-                  }}
-                >
-                  <User size={13} strokeWidth={1.5} />
-                  Select people
+                  {sentToAll || selectedIds.size === withEmail.length ? "Deselect all" : "Select all"}
                 </button>
               </div>
 
-              {!sentToAll && !loadingCircle && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {withEmail.length === 0 ? (
-                    <p style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>No circle members with email addresses.</p>
-                  ) : withEmail.map(m => {
-                    const selected = selectedIds.has(m._id);
-                    return (
-                      <button
-                        key={m._id}
-                        onClick={() => toggleMember(m._id)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer", transition: "all 140ms",
-                          background: selected ? "var(--sage-dim)" : "var(--surface)",
-                          border: `1px solid ${selected ? "rgba(107,143,111,0.3)" : "var(--border)"}`,
-                          color: selected ? "var(--sage)" : "var(--text-2)",
-                        }}
-                      >
-                        {selected && <Check size={11} strokeWidth={2.5} />}
-                        {m.name}
-                        <span style={{ fontSize: 10, color: selected ? "rgba(107,143,111,0.6)" : "var(--text-3)" }}>· {m.relationship}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {withEmail.length === 0 ? (
+                  <p style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>No circle members with email addresses.</p>
+                ) : withEmail.map(m => {
+                  const selected = sentToAll || selectedIds.has(m._id);
+                  return (
+                    <button
+                      key={m._id}
+                      onClick={() => {
+                        if (sentToAll) {
+                          setSentToAll(false);
+                          setSelectedIds(new Set(withEmail.map(member => member._id).filter(id => id !== m._id)));
+                          return;
+                        }
+                        toggleMember(m._id);
+                      }}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 100, fontSize: 12, cursor: "pointer",
+                        border: selected ? "1.5px solid var(--green)" : "1px solid var(--border)",
+                        background: selected ? "var(--green-light)" : "transparent",
+                        color: selected ? "var(--green)" : "var(--text-3)",
+                        fontFamily: "var(--font-body)",
+                        fontWeight: selected ? 500 : 400,
+                        transition: "all 150ms ease",
+                      }}
+                    >
+                      {selected ? "✓ " : ""}{m.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Media attachments */}
@@ -901,19 +889,19 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
                     onClick={openVideoPreview}
                     style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
                   >
-                    <Video size={15} strokeWidth={1.5} color="var(--sage)" /> Record video
+                    <Video size={15} strokeWidth={1.5} color="var(--sage)" /> Video
                   </button>
                   <button
                     onClick={prepareVoiceRecording}
                     style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
                   >
-                    <Mic size={15} strokeWidth={1.5} color="var(--sage)" /> Record voice
+                    <Mic size={15} strokeWidth={1.5} color="var(--sage)" /> Voice
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-2)", fontFamily: "var(--font-body)", transition: "all 160ms" }}
                   >
-                    <ImageIcon size={15} strokeWidth={1.5} color="var(--sage)" /> Add photo / file
+                    <ImageIcon size={15} strokeWidth={1.5} color="var(--sage)" /> Photo
                   </button>
                 </div>
               )}

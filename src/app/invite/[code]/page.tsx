@@ -157,7 +157,7 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
               "A private vault for your child — sealed until they're ready",
               "Monthly prompts sent to grandparents, family, friends",
               "Every letter, photo, voice memo, video — preserved forever",
-              "World Snapshots — one page per month of their life",
+              "The Day They Were Born — a permanent front page for their birthday",
             ].map((item, i) => (
               <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--green-light)", border: "1px solid var(--green-border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>

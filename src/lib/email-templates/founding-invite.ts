@@ -80,7 +80,7 @@ export function foundingInviteEmail({
                   <td style="padding:28px 32px;background:#F7F4EE;border-radius:14px;border-left:3px solid #4A5E4C;">
                     <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A8880;">Founding member rate</p>
                     <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.6;color:#1A1A18;">
-                      As a founding member, your spot is locked in at <strong>$79/year</strong> <span style="color:#9A9590;text-decoration:line-through;">$99</span>. No one else gets this rate. It's yours for life.
+                      As a founding member, your spot is locked in at <strong>$99/year</strong> <span style="color:#9A9590;text-decoration:line-through;">$149</span>. No one else gets this rate. It's yours for life.
                     </p>
                   </td>
                 </tr>
@@ -144,7 +144,7 @@ You signed up early. You believed in this before it existed. That matters.
 ---
 
 FOUNDING MEMBER RATE
-As a founding member, your spot is locked in at $79/year (normally $99). No one else gets this rate. It's yours for life.
+As a founding member, your spot is locked in at $99/year (normally $149). No one else gets this rate. It's yours for life.
 
 ---
 

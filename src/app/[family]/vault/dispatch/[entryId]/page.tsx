@@ -93,7 +93,13 @@ export default function VaultDispatchDetailPage({
       padding: "40px 24px calc(80px + env(safe-area-inset-bottom, 0px))",
     }}>
       <div style={{ width: "100%", maxWidth: 1100, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
-        <Link href={`/${familyId}/vault`} style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "rgba(200,168,122,0.9)", textDecoration: "none", fontSize: 13 }}>
+        <Link
+          href={{
+            pathname: `/${familyId}/vault`,
+            query: childId ? { childId } : undefined,
+          }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "rgba(200,168,122,0.9)", textDecoration: "none", fontSize: 13 }}
+        >
           <ArrowLeft size={15} /> Back to vault
         </Link>
 

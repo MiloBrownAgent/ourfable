@@ -79,15 +79,17 @@ const STANDARD_FEATURES = [
   "Up to 10 circle members",
   "Letters, photos & voice memos",
   "Monthly world snapshots",
+  "Add more children anytime for $7/mo or $59/yr during founders",
   "Email support",
 ];
 
 const PLUS_FEATURES = [
   "25 GB storage",
   "Unlimited circle members",
+  "1 additional child included",
+  "Separate or shared circles for each child",
   "Video messages up to 10 min",
   "Priority support",
-  "Annual print book included",
   "Everything in Standard",
 ];
 

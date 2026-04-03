@@ -506,7 +506,7 @@ function QuickAddModal({
     const uploadUrlRes = await fetch("/api/ourfable/upload-media", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ fileSize: uploadBlob.size }),
     });
     const uploadUrlData = await uploadUrlRes.json().catch(() => ({}));
     if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {

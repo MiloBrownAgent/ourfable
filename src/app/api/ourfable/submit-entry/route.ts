@@ -29,6 +29,7 @@ type PromptTokenResult =
   | {
       familyId: string;
       memberId: string;
+      childId?: string;
       promptText?: string;
       promptCategory?: string;
       promptUnlocksAtAge?: number;
@@ -45,6 +46,7 @@ type PromptTokenResult =
       };
       member?: { _id: string };
       family?: { familyId: string };
+      childId?: string;
     };
 
 function pickString(value: unknown): string | undefined {
@@ -96,13 +98,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
     }
 
+    const wrappedPrompt = "prompt" in promptData ? promptData.prompt : undefined;
     const familyId = "familyId" in promptData ? promptData.familyId : promptData.family?.familyId;
     const memberId = "memberId" in promptData ? promptData.memberId : promptData.member?._id;
-    const status = "status" in promptData ? promptData.status : promptData.prompt?.status;
-    const unlocksAtAge = body.unlocksAtAge ?? ("promptUnlocksAtAge" in promptData ? promptData.promptUnlocksAtAge : promptData.prompt?.promptUnlocksAtAge);
-    const unlocksAtEvent = body.unlocksAtEvent ?? ("promptUnlocksAtEvent" in promptData ? promptData.promptUnlocksAtEvent : promptData.prompt?.promptUnlocksAtEvent);
-    const promptText = "promptText" in promptData ? promptData.promptText : promptData.prompt?.promptText;
-    const promptCategory = "promptCategory" in promptData ? promptData.promptCategory : promptData.prompt?.promptCategory;
+    const childId = promptData.childId;
+    const status = "status" in promptData ? promptData.status : wrappedPrompt?.status;
+    const unlocksAtAge = body.unlocksAtAge ?? ("promptUnlocksAtAge" in promptData ? promptData.promptUnlocksAtAge : wrappedPrompt?.promptUnlocksAtAge);
+    const unlocksAtEvent = body.unlocksAtEvent ?? ("promptUnlocksAtEvent" in promptData ? promptData.promptUnlocksAtEvent : wrappedPrompt?.promptUnlocksAtEvent);
+    const promptText = "promptText" in promptData ? promptData.promptText : wrappedPrompt?.promptText;
+    const promptCategory = "promptCategory" in promptData ? promptData.promptCategory : wrappedPrompt?.promptCategory;
 
     if (!familyId || !memberId || status === "responded") {
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
@@ -111,6 +115,7 @@ export async function POST(req: NextRequest) {
     const entryId = await internalConvexMutation<string>("ourfable:submitVaultEntry", {
       familyId,
       memberId,
+      childId,
       type,
       encryptedBody: pickString(body.encryptedBody),
       contentHash: pickString(body.contentHash),

@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { Reveal } from "./Reveal";
 import Link from "next/link";
 import { trackPricingScroll } from "../../lib/analytics";
+import { FOUNDING_CHILD_ADDON_PRICES } from "@/lib/ourfable-pricing";
 
 type BillingPeriod = "monthly" | "annual";
 
@@ -13,19 +14,19 @@ const TIERS = [
   {
     name: "Our Fable",
     monthlyPrice: 12,
-    annualPrice: 79,
+    annualPrice: 99,
     originalMonthly: 16,
-    originalAnnual: 99,
+    originalAnnual: 149,
     badge: "Founding Member" as string | undefined,
     highlight: false,
+    intro: "A private vault for one child.",
     features: [
-      "The Vault — sealed entries from circle members",
+      "The Vault with letters, voice notes, photos, and videos",
       "Up to 10 circle members",
       "Monthly prompts to circle",
-      "All response types — text, voice, photo & video",
-      "World Snapshots",
+      "Milestone opening at 13, 18, graduation, wedding, or your chosen date",
+      "All response types — text, voice, photo, and video",
       "The Day They Were Born",
-      "Birthday Letters",
       "5GB storage",
       "Data export anytime",
     ],
@@ -33,14 +34,14 @@ const TIERS = [
   {
     name: "Our Fable+",
     monthlyPrice: 19,
-    annualPrice: 99,
+    annualPrice: 149,
     originalMonthly: 25,
-    originalAnnual: 149,
+    originalAnnual: 199,
     badge: "Founding Member",
     highlight: true,
+    intro: "Everything in Our Fable, plus:",
     features: [
-      "Everything in Our Fable",
-      "Dispatches — parent updates to circle",
+      "Dispatches — private family updates to your circle",
       "Unlimited circle members",
       "25GB storage",
       "1 additional child included",
@@ -81,7 +82,7 @@ export function PricingSection() {
               Simple, honest pricing.
             </h2>
             <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.75, maxWidth: 480, margin: "0 auto 28px" }}>
-              One family. One vault. Two plans to fit how your family shares.
+              One private vault for your child. Two clearly different ways to use it.
             </p>
 
             {/* Billing toggle */}
@@ -139,31 +140,33 @@ export function PricingSection() {
                   <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)", marginBottom: 12 }}>
                     {tier.name}
                   </p>
+                  <p style={{ fontSize: 15, color: "var(--text)", fontWeight: 600, marginBottom: 16, lineHeight: 1.5 }}>
+                    {tier.intro}
+                  </p>
 
-                  {/* Original price — large, crossed out */}
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-                    <span style={{ fontFamily: "var(--font-playfair)", fontSize: 44, fontWeight: 800, color: "var(--text-4)", letterSpacing: "-0.03em", lineHeight: 1, textDecoration: "line-through" }}>
-                      ${billing === "monthly" ? tier.originalMonthly : tier.originalAnnual}
-                    </span>
-                    <span style={{ fontSize: 15, color: "var(--text-4)", textDecoration: "line-through" }}>{period}</span>
-                  </div>
-
-                  {/* Founding price — smaller, green */}
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                    <span style={{ fontFamily: "var(--font-playfair)", fontSize: 28, fontWeight: 800, color: "var(--green)", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
+                    <span style={{ fontFamily: "var(--font-playfair)", fontSize: 44, fontWeight: 800, color: tier.highlight ? "var(--green)" : "var(--text)", letterSpacing: "-0.03em", lineHeight: 1 }}>
                       ${price}
                     </span>
-                    <span style={{ fontSize: 13, color: "var(--green)", fontWeight: 600 }}>{period} founding</span>
+                    <span style={{ fontSize: 15, color: tier.highlight ? "var(--green)" : "var(--text-3)" }}>{period}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                    <span style={{ fontSize: 12, color: "var(--green)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      Founding price
+                    </span>
+                    <span style={{ fontSize: 12, color: "var(--text-4)", textDecoration: "line-through" }}>
+                      After founders: ${billing === "monthly" ? tier.originalMonthly : tier.originalAnnual}{period}
+                    </span>
                   </div>
 
                   {billing === "annual" && (
                     <p style={{ fontSize: 12, color: "var(--green)", fontWeight: 600, marginBottom: 12 }}>
-                      Locked for life · Save ${tier.originalAnnual - tier.annualPrice}/yr
+                      Locked for life when you reserve now
                     </p>
                   )}
                   {billing === "monthly" && (
                     <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 12 }}>
-                      or ${tier.annualPrice}/yr annual founding rate — save ${savings}
+                      or ${tier.annualPrice}/yr annually at the founding rate — save ${savings}
                     </p>
                   )}
 
@@ -198,7 +201,7 @@ export function PricingSection() {
           <div style={{ marginTop: 16, padding: "16px 24px", background: "rgba(200,168,122,0.06)", border: "1px solid rgba(200,168,122,0.25)", borderRadius: 12, display: "flex", gap: 12, alignItems: "center", justifyContent: "center", textAlign: "center" }}>
             <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6 }}>
               <strong style={{ color: "var(--text)" }}>Growing family?</strong>{" "}
-              Add each additional child for <strong style={{ color: "var(--green)" }}>$7/mo</strong> — or $59/yr at the founding rate.
+              Add each additional child for <strong style={{ color: "var(--green)" }}>${FOUNDING_CHILD_ADDON_PRICES.monthly}/mo or ${FOUNDING_CHILD_ADDON_PRICES.annual}/yr</strong> at founding pricing. Each child gets their own vault and can share the same circle or have a completely separate one.
             </p>
           </div>
         </Reveal>
@@ -240,7 +243,7 @@ export function PricingSection() {
             <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 6, fontFamily: "var(--font-sans, Inter, sans-serif)" }}>
               Private vault · Your data is never shared · Export anytime
             </p>
-            <p style={{ fontSize: 13, color: "var(--text-3)" }}>Plans start at $12/mo or $99/yr · Private by design · Export anytime</p>
+            <p style={{ fontSize: 13, color: "var(--text-3)" }}>Founding pricing: Our Fable from $12/mo or $99/yr · Our Fable+ from $19/mo or $149/yr</p>
           </div>
         </Reveal>
       </section>

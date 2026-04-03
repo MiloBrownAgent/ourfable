@@ -63,6 +63,10 @@ function hasUsablePasswordHash(passwordHash: string | undefined | null): passwor
   return typeof passwordHash === "string" && passwordHash.trim().length > 0;
 }
 
+function normalizePlanType(value: unknown): "standard" | "plus" | undefined {
+  return value === "standard" || value === "plus" ? value : undefined;
+}
+
 async function sendPasswordSetupEmail(email: string) {
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
@@ -526,9 +530,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     familyId: string;
     passwordHash?: string;
   } | null>("ourfable:getOurFableFamilyByEmail", { email: normalizedEmail });
-  if (existingAccount && hasUsablePasswordHash(existingAccount.passwordHash)) {
-    console.log(`[webhook] Family already exists for email=${normalizedEmail} — skipping creation (idempotent)`);
-    return;
+  const accountAlreadyProvisioned = !!(existingAccount && hasUsablePasswordHash(existingAccount.passwordHash));
+  if (accountAlreadyProvisioned) {
+    console.log(`[webhook] Family already exists for email=${normalizedEmail} — reconciling remaining webhook side effects`);
   }
 
   const existingVaultFamily = await internalConvexQuery<{ familyId: string } | null>(
@@ -558,6 +562,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ? session.subscription
       : session.subscription?.id ?? undefined;
 
+  const waitlistEntry = founding === "true"
+    ? await internalConvexQuery<Record<string, unknown> | null>("ourfable:getWaitlistEntryByEmail", {
+        email: normalizedEmail,
+      }).catch((err) => {
+        console.warn("[webhook] Failed to load waitlist entry for founding fallback:", err);
+        return null;
+      })
+    : null;
+
   // 1. Upsert family in the vault/dashboard table.
   // This keeps webhook retries and partial recoveries from leaving auth + vault state out of sync.
   await internalConvexMutation("ourfable:createFamily", {
@@ -575,44 +588,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   let passwordHash = "";
   let requiresPasswordSetupEmail = false;
   try {
-    if (meta.signup_token) {
-      const signupData = await internalConvexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
-        passwordHash: string;
-        consumed?: boolean;
-        expiresAt: number;
-      } | null;
-      if (signupData && !signupData.consumed && Date.now() < signupData.expiresAt) {
-        passwordHash = signupData.passwordHash;
-        // Consume and delete the token
-        await internalConvexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
-      }
-    }
-
-    if (!hasUsablePasswordHash(passwordHash)) {
-      requiresPasswordSetupEmail = true;
-      passwordHash = hashPassword(crypto.randomBytes(32).toString("hex"));
-      console.warn(`[webhook] signup_token missing/expired for ${normalizedEmail}; creating account with password-setup fallback`);
-    }
-
-    if (existingAccount) {
-      await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
-        email: normalizedEmail,
-        passwordHash,
-        passwordChangedAt: Date.now(),
-      });
+    if (accountAlreadyProvisioned && existingAccount?.passwordHash) {
+      passwordHash = existingAccount.passwordHash;
 
       const existingUser = await internalConvexQuery<{ _id: string } | null>(
         "ourfable:getOurFableUserByEmail",
         { email: normalizedEmail }
       ).catch(() => null);
 
-      if (existingUser) {
-        await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
-          email: normalizedEmail,
-          passwordHash,
-          passwordChangedAt: Date.now(),
-        });
-      } else {
+      if (!existingUser) {
         await internalConvexMutation("ourfable:createOurFableUser", {
           email: normalizedEmail,
           passwordHash,
@@ -623,17 +607,66 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         });
       }
     } else {
-      await addAccount({
-        email: normalizedEmail,
-        passwordHash,
-        familyId,
-        childName,
-        parentNames: parentNames ?? "",
-        planType,
-        stripeCustomerId,
-        stripeSubscriptionId,
-        birthDate: childDob,
-      });
+      if (meta.signup_token) {
+        const signupData = await internalConvexQuery("ourfable:getSignupToken", { token: meta.signup_token }) as {
+          passwordHash: string;
+          consumed?: boolean;
+          expiresAt: number;
+        } | null;
+        if (signupData && !signupData.consumed && Date.now() < signupData.expiresAt) {
+          passwordHash = signupData.passwordHash;
+          // Consume and delete the token
+          await internalConvexMutation("ourfable:consumeSignupToken", { token: meta.signup_token }).catch(() => {});
+        }
+      }
+
+      if (!hasUsablePasswordHash(passwordHash)) {
+        requiresPasswordSetupEmail = true;
+        passwordHash = hashPassword(crypto.randomBytes(32).toString("hex"));
+        console.warn(`[webhook] signup_token missing/expired for ${normalizedEmail}; creating account with password-setup fallback`);
+      }
+
+      if (existingAccount) {
+        await internalConvexMutation("ourfable:updateOurFablePasswordHash", {
+          email: normalizedEmail,
+          passwordHash,
+          passwordChangedAt: Date.now(),
+        });
+
+        const existingUser = await internalConvexQuery<{ _id: string } | null>(
+          "ourfable:getOurFableUserByEmail",
+          { email: normalizedEmail }
+        ).catch(() => null);
+
+        if (existingUser) {
+          await internalConvexMutation("ourfable:updateOurFableUserPasswordHash", {
+            email: normalizedEmail,
+            passwordHash,
+            passwordChangedAt: Date.now(),
+          });
+        } else {
+          await internalConvexMutation("ourfable:createOurFableUser", {
+            email: normalizedEmail,
+            passwordHash,
+            passwordChangedAt: Date.now(),
+            familyId,
+            name: parentNames ?? "Parent",
+            role: "owner",
+          });
+        }
+      } else {
+        await addAccount({
+          email: normalizedEmail,
+          passwordHash,
+          familyId,
+          childName,
+          parentNames: parentNames ?? "",
+          planType,
+          stripeCustomerId,
+          stripeSubscriptionId,
+          birthDate: childDob,
+        });
+      }
     }
   } catch (err) {
     console.error(
@@ -647,14 +680,32 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // 3. Persist founding-offer lock-in on the family record.
   if (founding === "true") {
+    const resolvedFoundingPriceLockedAt =
+      typeof foundingPriceLockedAt === "string" && foundingPriceLockedAt.trim().length > 0
+        ? Number(foundingPriceLockedAt)
+        : typeof waitlistEntry?.foundingPriceLockedAt === "number"
+          ? waitlistEntry.foundingPriceLockedAt
+          : Date.now();
+    const resolvedFoundingSource =
+      typeof foundingSource === "string" && foundingSource.trim().length > 0
+        ? foundingSource
+        : typeof waitlistEntry?.source === "string" && waitlistEntry.source.trim().length > 0
+          ? waitlistEntry.source
+          : "signup";
+    const resolvedFoundingRequestedPlanType =
+      (typeof foundingRequestedPlanType === "string" && normalizePlanType(foundingRequestedPlanType)) ||
+      normalizePlanType(waitlistEntry?.requestedPlanType) ||
+      normalizePlanType(planType) ||
+      "standard";
+
     await convexMutation("ourfable:setOurFableFoundingOffer", {
       familyId,
       foundingMember: true,
-      foundingPriceLockedAt: Number(foundingPriceLockedAt || Date.now()),
-      foundingSource: foundingSource || undefined,
-      foundingRequestedPlanType: foundingRequestedPlanType || planType,
-      foundingStandardAnnualPrice: Number(foundingStandardAnnualPrice || 79),
-      foundingPlusAnnualPrice: Number(foundingPlusAnnualPrice || 99),
+      foundingPriceLockedAt: resolvedFoundingPriceLockedAt,
+      foundingSource: resolvedFoundingSource,
+      foundingRequestedPlanType: resolvedFoundingRequestedPlanType,
+      foundingStandardAnnualPrice: Number(foundingStandardAnnualPrice || 99),
+      foundingPlusAnnualPrice: Number(foundingPlusAnnualPrice || 149),
     }).catch((err) => {
       console.warn("[webhook] setOurFableFoundingOffer failed (non-fatal):", err);
     });

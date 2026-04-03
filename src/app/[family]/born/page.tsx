@@ -449,7 +449,7 @@ export default function BornPage({ params }: { params: Promise<{ family: string 
             {family.childName.split(" ")[0]}&apos;s World
           </h2>
           <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.65, marginBottom: 40, maxWidth: 480 }}>
-            A snapshot of the world, month by month — the headlines, the songs, the weather outside.
+            A permanent front page for the day they arrived — the headlines, the songs, and the weather outside.
           </p>
 
           {(() => {
