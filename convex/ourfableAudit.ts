@@ -209,10 +209,7 @@ async function executeCanary(
   const plaintext = `Canary test ${token}`;
 
   try {
-    const family = await ctx.runQuery(internal.ourfableAudit.getCanaryFamily);
-    if (!family) {
-      await ctx.runMutation(internal.ourfableAudit.seedCanaryFamily);
-    }
+    await ctx.runMutation(internal.ourfableAudit.seedCanaryFamily);
 
     const encrypted = await encryptCanaryText(plaintext);
     const contentHash = await hashContent(plaintext);
@@ -361,33 +358,46 @@ export const getCanaryFamily = internalQuery({
 export const seedCanaryFamily = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const existing = await ctx.db
+    const existingFamily = await ctx.db
       .query("ourfable_vault_families")
       .withIndex("by_familyId", (q) => q.eq("familyId", CANARY_FAMILY_ID))
       .first();
-    if (existing) return;
-    await ctx.db.insert("ourfable_vault_families", {
-      familyId: CANARY_FAMILY_ID,
-      familyName: "Canary Test Family",
-      childName: "Test Child",
-      childDob: "2025-01-01",
-      parentNames: "System",
-      timezone: "America/Chicago",
-      plan: "test",
-      createdAt: Date.now(),
-    });
-    // Need a circle member for submissions
-    await ctx.db.insert("ourfable_vault_circle", {
-      familyId: CANARY_FAMILY_ID,
-      name: "Canary Bot",
-      email: "canary@ourfable.ai",
-      relationshipKey: "family_friend",
-      relationship: "System Test",
-      inviteToken: "canary-invite",
-      shareToken: "canary-share",
-      hasAccepted: true,
-      contributionCount: 0,
-    });
+
+    if (!existingFamily) {
+      await ctx.db.insert("ourfable_vault_families", {
+        familyId: CANARY_FAMILY_ID,
+        familyName: "Canary Test Family",
+        childName: "Test Child",
+        childDob: "2025-01-01",
+        parentNames: "System",
+        timezone: "America/Chicago",
+        plan: "test",
+        createdAt: Date.now(),
+      });
+    }
+
+    const existingMembers = await ctx.db
+      .query("ourfable_vault_circle")
+      .withIndex("by_familyId", (q) => q.eq("familyId", CANARY_FAMILY_ID))
+      .collect();
+
+    const hasCanaryMember = existingMembers.some((member) => (
+      member.email === "canary@ourfable.ai" || member.name === "Canary Bot"
+    ));
+
+    if (!hasCanaryMember) {
+      await ctx.db.insert("ourfable_vault_circle", {
+        familyId: CANARY_FAMILY_ID,
+        name: "Canary Bot",
+        email: "canary@ourfable.ai",
+        relationshipKey: "family_friend",
+        relationship: "System Test",
+        inviteToken: "canary-invite",
+        shareToken: "canary-share",
+        hasAccepted: true,
+        contributionCount: 0,
+      });
+    }
   },
 });
 
