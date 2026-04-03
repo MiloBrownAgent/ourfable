@@ -25,19 +25,31 @@ interface Family {
   plan?: string;
 }
 
-async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
-  if (!RESEND_API_KEY) return;
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-      body: JSON.stringify({
-        from: "Our Fable <hello@ourfable.ai>",
-        to,
-        subject,
-        html,
-        headers: buildUnsubscribeHeaders(to),
-      }),
-    });
+async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
+  if (!RESEND_API_KEY) {
+    console.warn("[storage-warnings] RESEND_FULL_API_KEY not configured; warning email not sent");
+    return false;
+  }
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+    body: JSON.stringify({
+      from: "Our Fable <hello@ourfable.ai>",
+      to,
+      subject,
+      html,
+      headers: buildUnsubscribeHeaders(to),
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => "unknown error");
+    console.error(`[storage-warnings] Resend API error: ${errorText}`);
+    return false;
+  }
+
+  return true;
 }
 
 function warningEmailHtml({
@@ -166,23 +178,25 @@ export async function checkStorageWarnings(
 
     // 95% warning
     if (percent >= 95 && !warned95) {
-      await sendEmail({
+      const sent = await sendEmail({
         to: parentEmail,
         subject: `${childFirst}'s vault is almost full`,
         html: warningEmailHtml({ childFirst, percent, isAlmostFull: true }),
       });
-      // Mark warned95 in Convex
-      await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned95: true });
+      if (sent) {
+        await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned95: true });
+      }
     }
     // 80% warning
     else if (percent >= 80 && !warned80) {
-      await sendEmail({
+      const sent = await sendEmail({
         to: parentEmail,
         subject: `${childFirst}'s vault is filling up`,
         html: warningEmailHtml({ childFirst, percent, isAlmostFull: false }),
       });
-      // Mark warned80 in Convex
-      await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned80: true });
+      if (sent) {
+        await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned80: true });
+      }
     }
 
     return { blocked: false };

@@ -7,14 +7,16 @@ import { encryptText, encryptBlob, hashContent, serializeEncryptedText } from '@
 interface WritingBlockProps {
   childFirst: string
   familyId?: string
+  dispatchChildId?: string
   locked?: boolean
   onSealed?: () => void
 }
 
 interface CircleMember { _id: string; name: string; email?: string }
 
-export default function WritingBlock({ childFirst, familyId, locked = false, onSealed }: WritingBlockProps) {
+export default function WritingBlock({ childFirst, familyId, dispatchChildId, locked = false, onSealed }: WritingBlockProps) {
   const [text, setText] = useState('')
+  const [dispatchSubject, setDispatchSubject] = useState('')
   const [focused, setFocused] = useState(false)
   const [mode, setMode] = useState<'seal' | 'dispatch'>('seal')
 
@@ -284,6 +286,8 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
     if (locked) {
       setShowUpgradeModal(true)
     } else {
+      setSelectedMembers(circleMembers.filter(m => m.email).map(m => m._id))
+      setDispatchSubject(prev => prev || `${childFirst} update`)
       setMode('dispatch')
     }
   }
@@ -343,7 +347,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
       const urlRes = await fetch('/api/ourfable/upload-media', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ fileSize: uploadBlob.size }),
       })
       const urlData = await urlRes.json()
       const uploadUrl = urlData.uploadUrl as string
@@ -535,30 +539,52 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
         }
       }
 
-      const res = await fetch('/api/ourfable/data', {
+      const recipientIds = selectedMembers.length === circleMembers.filter(m => m.email).length ? undefined : selectedMembers
+
+      const saveRes = await fetch('/api/ourfable/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           path: 'ourfable:createOutgoing',
           args: {
             familyId,
-            subject: 'Dispatch',
+            childId: dispatchChildId,
+            subject: dispatchSubject.trim() || `${childFirst} update`,
             body: text.trim(),
             mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
             mediaType,
-            sentToAll: selectedMembers.length === circleMembers.length,
-            sentToMemberIds: selectedMembers,
-            sentByName: 'Parent',
-            recipientCount: selectedMembers.length,
+            sentToAll: !recipientIds,
+            sentToMemberIds: recipientIds,
+            sentByName: parentName,
+            recipientCount: recipientIds ? recipientIds.length : circleMembers.filter(m => m.email).length,
+            scheduleEmailDelivery: false,
           },
           type: 'mutation',
         }),
       })
-      if (!res.ok) throw new Error('Failed to send dispatch')
+      if (!saveRes.ok) throw new Error('Failed to save dispatch')
+
+      const sendRes = await fetch('/api/ourfable/send-outgoing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          familyId,
+          childId: dispatchChildId,
+          subject: dispatchSubject.trim() || `${childFirst} update`,
+          messageBody: text.trim(),
+          sentToAll: !recipientIds,
+          memberIds: recipientIds,
+          sentByName: parentName,
+          mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+          mediaType,
+        }),
+      })
+      if (!sendRes.ok) throw new Error('Failed to send dispatch')
       setDispatchMsg('Dispatch sent!')
       setTimeout(() => {
         setDispatchMsg('')
         setText('')
+        setDispatchSubject('')
         setPhotos([]); photoFilesRef.current = []
         setVideo(null)
         setVideoBlob(null)
@@ -703,7 +729,7 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
             fontWeight: 400,
             color: 'var(--green)',
           }}>
-            Dear {childFirst},
+            {mode === 'dispatch' ? `Dispatch to ${childFirst}'s circle` : `Dear ${childFirst},`}
           </span>
           <span style={{
             fontFamily: 'var(--font-body)',
@@ -715,13 +741,33 @@ export default function WritingBlock({ childFirst, familyId, locked = false, onS
           </span>
         </div>
 
+        {mode === 'dispatch' && (
+          <input
+            value={dispatchSubject}
+            onChange={e => setDispatchSubject(e.target.value)}
+            placeholder={`${childFirst} update`}
+            style={{
+              width: '100%',
+              border: 'none',
+              outline: 'none',
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              color: 'var(--text)',
+              background: 'transparent',
+              padding: '0 0 14px',
+              marginBottom: 14,
+              borderBottom: '0.5px solid var(--border)',
+            }}
+          />
+        )}
+
         {/* Textarea */}
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Something happened today I want you to know about…"
+          placeholder={mode === 'dispatch' ? 'Share a photo, milestone, or update with the people who love them…' : 'Something happened today I want you to know about…'}
           rows={6}
           style={{
             width: '100%',

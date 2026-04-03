@@ -77,6 +77,39 @@ export const getFamilyByEmail = internalQuery({
 
 // ── Create Family (for new signups via Stripe webhook) ────────────────────────
 
+async function ensurePrimaryChildRecord(
+  ctx: { db: { query: Function; insert: Function; patch: Function } },
+  familyId: string,
+  childName: string,
+  childDob: string,
+  createdAt: number,
+) {
+  const children = await ctx.db
+    .query("ourfable_children")
+    .withIndex("by_familyId", (q: { eq: Function }) => q.eq("familyId", familyId))
+    .collect();
+
+  const existingPrimary = children.find((child) => child.isFirst);
+  if (existingPrimary) {
+    await ctx.db.patch(existingPrimary._id, {
+      childName,
+      childDob,
+      isActive: true,
+    });
+    return existingPrimary._id;
+  }
+
+  return await ctx.db.insert("ourfable_children", {
+    familyId,
+    childId: familyId,
+    childName,
+    childDob,
+    createdAt,
+    isFirst: true,
+    isActive: true,
+  });
+}
+
 export const createFamily = internalMutation({
   args: {
     familyId: v.string(),
@@ -104,6 +137,7 @@ export const createFamily = internalMutation({
       if (typeof args.stripeCustomerId !== "undefined") patch.stripeCustomerId = args.stripeCustomerId;
       if (typeof args.stripeSubscriptionId !== "undefined") patch.stripeSubscriptionId = args.stripeSubscriptionId;
       await ctx.db.patch(existing._id, patch);
+      await ensurePrimaryChildRecord(ctx, args.familyId, args.childName, args.childDob, existing.createdAt);
       return existing._id;
     }
 
@@ -135,6 +169,8 @@ export const createFamily = internalMutation({
         parentEmail: args.parentEmail,
       });
     }
+
+    await ensurePrimaryChildRecord(ctx, args.familyId, args.childName, args.childDob, Date.now());
 
     // Generate 3 referral codes for this family
     const referralCodes: string[] = [];
@@ -458,6 +494,24 @@ export const getMemberByInviteToken = internalQuery({
   },
 });
 
+export const getVaultCircleMemberByEmail = internalQuery({
+  args: {
+    familyId: v.string(),
+    email: v.string(),
+  },
+  handler: async (ctx, { familyId, email }) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return null;
+
+    const members = await ctx.db
+      .query("ourfable_vault_circle")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+
+    return members.find((member) => (member.email ?? "").trim().toLowerCase() === normalizedEmail) ?? null;
+  },
+});
+
 export const getMemberByShareToken = internalQuery({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
@@ -479,13 +533,19 @@ export const addCircleMember = internalMutation({
     city: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("ourfable_vault_circle", {
+    const memberId = await ctx.db.insert("ourfable_vault_circle", {
       ...args,
       inviteToken: generateToken(),
       shareToken: generateToken(),
       hasAccepted: false,
       contributionCount: 0,
+      joinedAt: Date.now(),
     });
+    await ctx.scheduler.runAfter(0, internal.ourfablePrompts.ensureMemberPromptChains, {
+      familyId: args.familyId,
+      memberId,
+    });
+    return memberId;
   },
 });
 
@@ -853,8 +913,12 @@ export const submitVaultEntry = internalMutation({
         .withIndex("by_memberId", (q) => q.eq("memberId", args.memberId))
         .filter((q) => q.eq(q.field("submissionToken"), args.submissionToken))
         .first();
-      if (queueEntry) {
+      if (queueEntry && (queueEntry.status === "sent" || queueEntry.status === "pending")) {
         await ctx.db.patch(queueEntry._id, { status: "responded" });
+        await ctx.scheduler.runAfter(0, internal.ourfablePrompts.ensureMemberPromptChains, {
+          familyId: queueEntry.familyId,
+          memberId: queueEntry.memberId,
+        });
       }
     }
 
@@ -1166,10 +1230,10 @@ export const getPromptByToken = internalQuery({
   handler: async (ctx, { token }) => {
     const prompt = await ctx.db
       .query("ourfable_vault_prompt_queue")
-      .withIndex("by_memberId")
-      .filter((q) => q.eq(q.field("submissionToken"), token))
+      .withIndex("by_submissionToken", (q) => q.eq("submissionToken", token))
       .first();
     if (!prompt) return null;
+    if (prompt.status !== "sent" && prompt.status !== "responded") return null;
 
     const member = await ctx.db.get(prompt.memberId);
     if (!member) return null;
@@ -1179,7 +1243,20 @@ export const getPromptByToken = internalQuery({
       .withIndex("by_familyId", (q) => q.eq("familyId", prompt.familyId))
       .first();
 
-    return { prompt, member, family };
+    let childName = family?.childName;
+    let childDob = family?.childDob;
+    if (prompt.childId) {
+      const child = await ctx.db
+        .query("ourfable_children")
+        .withIndex("by_childId", (q) => q.eq("childId", prompt.childId!))
+        .first();
+      if (child) {
+        childName = child.childName;
+        childDob = child.childDob;
+      }
+    }
+
+    return { prompt, member, family, childId: prompt.childId, childName, childDob };
   },
 });
 
@@ -1915,6 +1992,21 @@ export const redeemGift = internalMutation({
     if (gift.status && gift.status !== "paid") return { error: "Gift not yet paid" };
     await ctx.db.patch(gift._id, { redeemedAt: Date.now(), redeemedByFamilyId: familyId, status: "redeemed" });
     return { success: true, planType: gift.planType ?? "standard", billingPeriod: gift.billingPeriod ?? "annual" };
+  },
+});
+
+export const rollbackGiftRedemption = internalMutation({
+  args: { giftCode: v.string(), familyId: v.string() },
+  handler: async (ctx, { giftCode, familyId }) => {
+    const gift = await ctx.db.query("ourfable_gifts").withIndex("by_giftCode", (q) => q.eq("giftCode", giftCode)).first();
+    if (!gift) return { error: "Gift not found" };
+    if (gift.redeemedByFamilyId !== familyId) return { error: "Gift belongs to a different family" };
+    await ctx.db.patch(gift._id, {
+      redeemedAt: undefined,
+      redeemedByFamilyId: undefined,
+      status: gift.stripeSessionId ? "paid" : undefined,
+    });
+    return { success: true };
   },
 });
 
@@ -3497,10 +3589,17 @@ function generateChildId(childName: string): string {
 export const listChildren = internalQuery({
   args: { familyId: v.string() },
   handler: async (ctx, { familyId }) => {
-    return await ctx.db
+    const children = await ctx.db
       .query("ourfable_children")
       .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
       .collect();
+
+    return children
+      .filter((child) => child.isActive !== false)
+      .sort((a, b) => {
+        if (a.isFirst === b.isFirst) return a.createdAt - b.createdAt;
+        return a.isFirst ? -1 : 1;
+      });
   },
 });
 

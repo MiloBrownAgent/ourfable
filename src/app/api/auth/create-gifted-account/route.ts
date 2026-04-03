@@ -3,9 +3,20 @@ import { hashPassword, addAccount } from "@/lib/accounts";
 import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
 import { MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
-// POST /api/auth/create-gifted-account
-// Creates a new OurFable family account using a gift code (no Stripe payment needed)
+
+function buildFamilyId(childName: string): string {
+  const firstNameSlug = childName
+    .split(" ")[0]
+    .toLowerCase()
+    .replace(/[^a-z]/g, "")
+    .slice(0, 12);
+  return `${firstNameSlug}-${Date.now().toString(36)}`;
+}
+
 export async function POST(req: NextRequest) {
+  let redeemedGiftCode: string | null = null;
+  let redeemedFamilyId: string | null = null;
+
   try {
     const body = await req.json();
     const {
@@ -48,8 +59,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` }, { status: 400 });
     }
 
-    // 1. Look up and validate the gift
-    const gift = await internalConvexQuery("ourfable:getGift", { giftCode: giftCode.toUpperCase() }) as {
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedGiftCode = giftCode.toUpperCase();
+
+    const gift = await internalConvexQuery("ourfable:getGift", { giftCode: normalizedGiftCode }) as {
       giftCode: string;
       status?: string;
       redeemedAt?: number;
@@ -73,42 +86,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment for this gift is still processing. Please try again in a moment." }, { status: 400 });
     }
 
-    // 2. Check if account already exists
-    const existing = await internalConvexQuery("ourfable:getOurFableFamilyByEmail", { email: email.toLowerCase().trim() });
+    const existing = await internalConvexQuery("ourfable:getOurFableFamilyByEmail", { email: normalizedEmail });
     if (existing) {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 400 });
     }
 
-    // 3. Generate familyId
-    const firstNameSlug = childName
-      .split(" ")[0]
-      .toLowerCase()
-      .replace(/[^a-z]/g, "")
-      .slice(0, 12);
-    const familyId = `${firstNameSlug}-${Date.now().toString(36)}`;
+    const familyId = buildFamilyId(childName);
+    const redeemResult = await internalConvexMutation("ourfable:redeemGift", {
+      giftCode: normalizedGiftCode,
+      familyId,
+    }) as {
+      success?: boolean;
+      error?: string;
+      planType?: string;
+      billingPeriod?: string;
+    };
 
-    const planType = gift.planType ?? "standard";
-    const billingPeriod = gift.billingPeriod ?? "annual";
+    if (!redeemResult?.success) {
+      return NextResponse.json({ error: redeemResult?.error ?? "This gift code could not be redeemed" }, { status: 400 });
+    }
+
+    redeemedGiftCode = normalizedGiftCode;
+    redeemedFamilyId = familyId;
+
+    const planType = redeemResult.planType ?? gift.planType ?? "standard";
+    const billingPeriod = redeemResult.billingPeriod ?? gift.billingPeriod ?? "annual";
     const passwordHash = hashPassword(password);
 
-    // 4. Create the family in Convex
     await internalConvexMutation("ourfable:createFamily", {
       familyId,
       childName,
       childDob,
       parentNames,
-      parentEmail: email.toLowerCase().trim(),
+      parentEmail: normalizedEmail,
       plan: billingPeriod,
     });
 
-    // 5. Seed default content
     await internalConvexMutation("ourfable:seedCircle", { familyId }).catch(() => {});
     await internalConvexMutation("ourfable:seedMilestones", { familyId }).catch(() => {});
     await internalConvexMutation("ourfable:seedFirstLetter", { familyId }).catch(() => {});
 
-    // 6. Create account record
     await addAccount({
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       passwordHash,
       familyId,
       childName,
@@ -117,7 +136,6 @@ export async function POST(req: NextRequest) {
       birthDate: childDob,
     });
 
-    // 7. Save facilitators if provided
     if (facilitator1Name || facilitator1Email) {
       await internalConvexMutation("ourfable:updateOurFableFacilitators", {
         familyId,
@@ -136,7 +154,6 @@ export async function POST(req: NextRequest) {
       notifyFacilitatorOnLapse: notifyFacilitatorOnLapse !== false,
     }).catch(() => {});
 
-    // 8. Create delivery milestones
     if (childDob) {
       await internalConvexMutation("ourfable:createOurFableDeliveryMilestones", {
         familyId,
@@ -144,16 +161,10 @@ export async function POST(req: NextRequest) {
       }).catch(() => {});
     }
 
-    // 9. Mark gift as redeemed
-    await internalConvexMutation("ourfable:redeemGift", {
-      giftCode: giftCode.toUpperCase(),
-      familyId,
-    }).catch(() => {});
+    console.log(`[create-gifted-account] ✅ Account created via gift: familyId=${familyId} email=${normalizedEmail} giftCode=${normalizedGiftCode} planType=${planType}`);
 
-    console.log(`[create-gifted-account] ✅ Account created via gift: familyId=${familyId} email=${email} giftCode=${giftCode} planType=${planType}`);
-
-    const sessionToken = await createSession(familyId, {
-      email: email.toLowerCase().trim(),
+    const sessionToken = createSession(familyId, {
+      email: normalizedEmail,
       name: parentNames,
     });
 
@@ -167,6 +178,13 @@ export async function POST(req: NextRequest) {
     });
     return res;
   } catch (err) {
+    if (redeemedGiftCode && redeemedFamilyId) {
+      await internalConvexMutation("ourfable:rollbackGiftRedemption", {
+        giftCode: redeemedGiftCode,
+        familyId: redeemedFamilyId,
+      }).catch(() => {});
+    }
+
     console.error("[create-gifted-account]", err);
     return NextResponse.json({ error: "Failed to create account" }, { status: 500 });
   }

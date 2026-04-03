@@ -510,7 +510,7 @@ export const hourlyHealthCheck = internalAction({
 
     const severity: AlertSeverity = parseFloat(failRate) > 5 ? "critical" : "warning";
 
-    await sendAlert(
+    const delivered = await sendAlert(
       formatAlertMessage({
         severity,
         title: "VAULT HEALTH CHECK",
@@ -525,12 +525,14 @@ export const hourlyHealthCheck = internalAction({
       })
     );
 
-    await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
-      testType: "healthcheck",
-      status: "healthcheck_alert",
-      durationMs: 0,
-      errorMessage: `${failCount} failures / ${failRate}% in last hour`,
-    });
+    if (delivered) {
+      await ctx.runMutation(api.ourfableAudit.logCanaryResult, {
+        testType: "healthcheck",
+        status: "healthcheck_alert",
+        durationMs: 0,
+        errorMessage: `${failCount} failures / ${failRate}% in last hour`,
+      });
+    }
   },
 });
 
@@ -585,14 +587,15 @@ async function writeShadowLedger(entry: {
 // Telegram Alerts
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function sendAlert(message: string) {
+async function sendAlert(message: string): Promise<boolean> {
   // Layer 1: Try Telegram
-  const BOT_TOKEN = process.env.TELEGRAM_ALERT_BOT_TOKEN;
+  const BOT_TOKEN=proces...KEN;
   const CHAT_ID = process.env.TELEGRAM_ALERT_CHAT_ID;
+  let delivered = false;
 
   if (BOT_TOKEN && CHAT_ID) {
     try {
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -602,6 +605,11 @@ async function sendAlert(message: string) {
           disable_web_page_preview: true,
         }),
       });
+      if (res.ok) {
+        delivered = true;
+      } else {
+        console.error("[audit] Telegram alert failed:", await res.text().catch(() => "unknown error"));
+      }
     } catch (err) {
       console.error("[audit] Telegram alert failed:", err);
     }
@@ -616,7 +624,7 @@ async function sendAlert(message: string) {
       const firstLine = message.split("\n")[0] ?? "OurFable Vault Alert";
       const subject = firstLine.length > 110 ? `${firstLine.slice(0, 107)}...` : firstLine;
 
-      await fetch("https://api.resend.com/emails", {
+      const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -629,6 +637,11 @@ async function sendAlert(message: string) {
           html: `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap;">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`,
         }),
       });
+      if (res.ok) {
+        delivered = true;
+      } else {
+        console.error("[audit] Email alert failed:", await res.text().catch(() => "unknown error"));
+      }
     } catch (err) {
       console.error("[audit] Email alert failed:", err);
     }
@@ -636,6 +649,7 @@ async function sendAlert(message: string) {
 
   // Always log to console as final fallback
   console.error(`[VAULT ALERT] ${message}`);
+  return delivered;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

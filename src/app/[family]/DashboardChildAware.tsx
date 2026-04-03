@@ -495,7 +495,7 @@ export default function DashboardChildAware({
             What do you want {childFirst} to know about the day they were born?
           </p>
         )}
-        <WritingBlock childFirst={childFirst} familyId={familyId} />
+        <WritingBlock childFirst={childFirst} familyId={familyId} dispatchChildId={selectedChild?.childId} />
       </div>
 
       {/* ── 3. VAULT ── */}
@@ -731,7 +731,7 @@ export default function DashboardChildAware({
           animation: "fadeUp 0.6s var(--spring) 0.7s both",
         }}>
           <Music size={12} strokeWidth={1.5} />
-          <span>World Snapshot · {new Date(currentSnap.year, currentSnap.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+          <span>The Day They Were Born · {new Date(currentSnap.year, currentSnap.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
         </Link>
       )}
 

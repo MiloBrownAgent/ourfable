@@ -94,6 +94,13 @@ function recipientHtml({ purchaserName, recipientName, message, giftCode, unsubs
 
 export async function POST(req: NextRequest) {
   try {
+    return NextResponse.json(
+      {
+        error: "Deprecated route. Gifts must be purchased through the secure Stripe checkout flow.",
+      },
+      { status: 410 },
+    );
+
     // Rate limit by IP — 5 gift confirmations per 15 minutes
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "unknown";
     const { allowed } = checkRateLimit(`gift-confirm:${ip}`, 5, 15 * 60 * 1000);

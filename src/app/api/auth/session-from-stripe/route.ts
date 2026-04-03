@@ -3,6 +3,8 @@ import Stripe from "stripe";
 import { createSession, COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 import { getAccount } from "@/lib/accounts";
 
+const CHECKOUT_CLAIM_COOKIE = "of_checkout_claim";
+
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY required");
@@ -24,6 +26,11 @@ export async function POST(req: NextRequest) {
     }
 
     const meta = stripeSession.metadata ?? {};
+    const checkoutClaim = req.cookies.get(CHECKOUT_CLAIM_COOKIE)?.value ?? "";
+    if (!meta.signup_token || checkoutClaim !== meta.signup_token) {
+      return NextResponse.json({ error: "Checkout session could not be verified for this browser" }, { status: 403 });
+    }
+
     const email = (meta.email ?? stripeSession.customer_email ?? "").toLowerCase().trim();
     if (!email) {
       return NextResponse.json({ error: "Checkout session missing email" }, { status: 400 });
@@ -63,6 +70,13 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: SESSION_MAX_AGE,
+      path: "/",
+    });
+    res.cookies.set(CHECKOUT_CLAIM_COOKIE, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0,
       path: "/",
     });
     return res;

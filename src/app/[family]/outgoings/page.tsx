@@ -64,6 +64,8 @@ function getMediaType(fileType: string): UploadedFile["mediaType"] {
 
 function OutgoingCard({ item }: { item: Outgoing }) {
   const [expanded, setExpanded] = useState(false);
+  const mediaUrls = Array.isArray(item.mediaUrls) ? item.mediaUrls.filter(Boolean) : [];
+  const title = item.subject?.trim() || "Dispatch";
   return (
     <div className="card">
       <button
@@ -75,7 +77,7 @@ function OutgoingCard({ item }: { item: Outgoing }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 18, fontWeight: 400, color: "var(--text)", marginBottom: 4, lineHeight: 1.3 }}>
-            {item.subject}
+            {title}
           </p>
           <p style={{ fontSize: 12, color: "var(--text-3)" }}>
             {formatDate(item.sentAt)} · {item.sentToAll ? "Everyone in the circle" : `${item.recipientCount ?? item.sentToMemberIds?.length ?? "?"} people`}
@@ -87,12 +89,12 @@ function OutgoingCard({ item }: { item: Outgoing }) {
       </button>
       {expanded && (
         <div style={{ padding: "0 24px 24px", borderTop: "1px solid var(--border)" }}>
-          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 16, fontWeight: 300, lineHeight: 1.9, color: "var(--text-2)", paddingTop: 20, whiteSpace: "pre-wrap", marginBottom: item.mediaUrls?.length ? 16 : 0 }}>
+          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 16, fontWeight: 300, lineHeight: 1.9, color: "var(--text-2)", paddingTop: 20, whiteSpace: "pre-wrap", marginBottom: mediaUrls.length ? 16 : 0 }}>
             {item.body}
           </p>
-          {item.mediaUrls && item.mediaUrls.length > 0 && (
+          {mediaUrls.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {item.mediaUrls.map((url, i) => {
+              {mediaUrls.map((url, i) => {
                 if (item.mediaType === "photo") {
                   return <img key={i} src={url} alt="Dispatch photo" style={{ maxWidth: "100%", borderRadius: 10, display: "block" }} />;
                 }
@@ -185,6 +187,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
   const [isRecordingVideo, setIsRecordingVideo] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [uploadingRecording, setUploadingRecording] = useState(false);
+  const [uploadingLabel, setUploadingLabel] = useState("Uploading file…");
   const [recorderError, setRecorderError] = useState("");
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [videoFileName, setVideoFileName] = useState<string | null>(null);
@@ -347,13 +350,14 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
 
   const uploadBlobAttachment = async (blob: Blob, fileName: string, type: "voice" | "video"): Promise<UploadedFile | null> => {
     setUploadingRecording(true);
+    setUploadingLabel(type === "video" ? "Uploading video…" : "Uploading voice memo…");
     try {
       if (blob.size === 0) throw new Error("Recording was empty. Please record again.");
 
       const uploadUrlRes = await fetch("/api/ourfable/upload-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ fileSize: blob.size }),
       });
       const uploadUrlData = await uploadUrlRes.json().catch(() => ({}));
       if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {
@@ -403,12 +407,13 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
 
   const uploadSelectedFile = async (file: File) => {
     setUploadingRecording(true);
+    setUploadingLabel(`Uploading ${getMediaType(file.type || "application/octet-stream")}…`);
     try {
       const fileType = file.type || "application/octet-stream";
       const uploadUrlRes = await fetch("/api/ourfable/upload-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ fileSize: file.size }),
       });
       const uploadUrlData = await uploadUrlRes.json().catch(() => ({}));
       if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {
@@ -885,7 +890,7 @@ export default function OutgoingsPage({ params }: { params: Promise<{ family: st
               {/* Uploading indicator */}
               {uploadingRecording && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", fontSize: 13, color: "var(--text-3)" }}>
-                  <Loader2 size={14} strokeWidth={2} style={{ animation: "spin 1s linear infinite" }} /> Uploading recording…
+                  <Loader2 size={14} strokeWidth={2} style={{ animation: "spin 1s linear infinite" }} /> {uploadingLabel}
                 </div>
               )}
 

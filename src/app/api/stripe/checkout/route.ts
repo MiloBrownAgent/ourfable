@@ -11,6 +11,7 @@ function getStripe() {
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://ourfable.ai";
+const CHECKOUT_CLAIM_COOKIE = "of_checkout_claim";
 
 type PlanType = "standard" | "plus";
 type BillingPeriod = "monthly" | "annual";
@@ -32,9 +33,13 @@ const FOUNDING_ANNUAL_COUPON_MAP: Record<PlanType, string | undefined> = {
 };
 
 const FOUNDING_OFFER = {
-  standardAnnualPrice: 79,
-  plusAnnualPrice: 99,
+  standardAnnualPrice: 99,
+  plusAnnualPrice: 149,
 } as const;
+
+function normalizePlanType(value: unknown): PlanType | undefined {
+  return value === "standard" || value === "plus" ? value : undefined;
+}
 
 function getCheckoutDiscounts(
   planType: PlanType,
@@ -121,6 +126,9 @@ export async function POST(req: NextRequest) {
     const foundingSource = isFoundingMember
       ? String(typeof waitlistEntry?.source === "string" ? waitlistEntry.source : "signup")
       : undefined;
+    const foundingRequestedPlanType = isFoundingMember
+      ? normalizePlanType(waitlistEntry?.requestedPlanType) ?? resolvedPlanType
+      : undefined;
     const cancelUrl = new URL("/signup", BASE_URL);
     if (isFoundingMember) {
       cancelUrl.searchParams.set("founding", "true");
@@ -144,7 +152,7 @@ export async function POST(req: NextRequest) {
         founding: isFoundingMember ? "true" : "false",
         ...(foundingPriceLockedAt ? { foundingPriceLockedAt } : {}),
         ...(foundingSource ? { foundingSource } : {}),
-        ...(isFoundingMember ? { foundingRequestedPlanType: resolvedPlanType } : {}),
+        ...(foundingRequestedPlanType ? { foundingRequestedPlanType } : {}),
         ...(isFoundingMember ? { foundingStandardAnnualPrice: String(FOUNDING_OFFER.standardAnnualPrice) } : {}),
         ...(isFoundingMember ? { foundingPlusAnnualPrice: String(FOUNDING_OFFER.plusAnnualPrice) } : {}),
         planType: resolvedPlanType,
@@ -162,7 +170,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ url: session.url });
+    const response = NextResponse.json({ url: session.url });
+    response.cookies.set(CHECKOUT_CLAIM_COOKIE, signupToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60,
+      path: "/",
+    });
+    return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[stripe/checkout]", message, err);

@@ -102,8 +102,8 @@ export async function POST(req: NextRequest) {
   const { fileName, fileType, fileSize, familyId, contributionType } = body;
 
   // Validate required fields
-  if (!fileName || !fileType || !familyId) {
-    return NextResponse.json({ error: "fileName, fileType, and familyId are required" }, { status: 400 });
+  if (!fileName || !fileType || !familyId || typeof fileSize !== "number" || !Number.isFinite(fileSize) || fileSize <= 0) {
+    return NextResponse.json({ error: "fileName, fileType, fileSize, and familyId are required" }, { status: 400 });
   }
 
   // Ensure requester can only upload to their own family
@@ -119,32 +119,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Validate file size if provided
-  if (fileSize !== undefined) {
-    const maxSize = getMaxSize(fileType);
-    if (fileSize > maxSize) {
-      const maxMB = Math.round(maxSize / 1024 / 1024);
-      return NextResponse.json(
-        { error: `File too large. Max size for this type is ${maxMB}MB` },
-        { status: 413 }
-      );
-    }
+  const maxSize = getMaxSize(fileType);
+  if (fileSize > maxSize) {
+    const maxMB = Math.round(maxSize / 1024 / 1024);
+    return NextResponse.json(
+      { error: `File too large. Max size for this type is ${maxMB}MB` },
+      { status: 413 }
+    );
+  }
 
-    // Check storage limit
-    const storage = await convexQuery("ourfable:getOurFableStorageUsage", { familyId }) as {
-      used: number; limit: number; planType: string;
-    } | null;
+  const storage = await convexQuery("ourfable:getOurFableStorageUsage", { familyId }) as {
+    used: number; limit: number; planType: string;
+  } | null;
 
-    if (storage && (storage.used + fileSize) > storage.limit) {
-      const limitGB = Math.round(storage.limit / (1024 * 1024 * 1024));
-      const isStandard = storage.planType !== "plus";
-      return NextResponse.json(
-        {
-          error: `Storage limit reached (${limitGB}GB).${isStandard ? " Upgrade to Our Fable+ for 25GB of storage." : " Contact support for additional storage."}`,
-        },
-        { status: 413 }
-      );
-    }
+  if (storage && (storage.used + fileSize) > storage.limit) {
+    const limitGB = Math.round(storage.limit / (1024 * 1024 * 1024));
+    const isStandard = storage.planType !== "plus";
+    return NextResponse.json(
+      {
+        error: `Storage limit reached (${limitGB}GB).${isStandard ? " Upgrade to Our Fable+ for 25GB of storage." : " Contact support for additional storage."}`,
+      },
+      { status: 413 }
+    );
   }
 
   // Check storage warnings and block if at capacity
@@ -168,6 +164,7 @@ export async function POST(req: NextRequest) {
       Bucket: R2_BUCKET,
       Key: r2Key,
       ContentType: fileType,
+      ContentLength: fileSize,
       // Optional: tag with metadata for S3-compatible filtering
       Metadata: {
         familyId,
@@ -181,11 +178,9 @@ export async function POST(req: NextRequest) {
     const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 900 });
 
     // Track storage usage
-    if (fileSize) {
-      convexMutation("ourfable:incrementOurFableStorage", { familyId, bytes: fileSize }).catch((err) => {
-        console.warn("[ourfable/upload] Failed to increment storage (non-fatal):", err);
-      });
-    }
+    convexMutation("ourfable:incrementOurFableStorage", { familyId, bytes: fileSize }).catch((err) => {
+      console.warn("[ourfable/upload] Failed to increment storage (non-fatal):", err);
+    });
 
     return NextResponse.json({
       uploadUrl,
