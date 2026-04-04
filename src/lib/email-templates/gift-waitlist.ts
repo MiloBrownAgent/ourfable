@@ -76,15 +76,15 @@ function renderShell({
           <tr>
             <td style="padding:0 0 40px;text-align:center;">
               <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</p>
-              <div style="width:40px;height:2px;background:#C8A87A;margin:14px auto 0;"></div>
+              <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
             </td>
           </tr>
           <tr>
             <td style="background:#FFFFFF !important;border-radius:20px;padding:52px 52px 44px;border:1px solid #E8E2D8;box-shadow:0 8px 40px rgba(0,0,0,0.06);">
               <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">${escapeHtml(eyebrow)}</p>
-              <h1 style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:800;line-height:1.15;letter-spacing:-0.02em;color:#1A1A18;">${title}</h1>
-              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">${intro}</p>
-              <p style="margin:0 0 32px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">${body}</p>
+              <h1 style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;line-height:1.25;color:#1A1A18;">${title}</h1>
+              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">${intro}</p>
+              <p style="margin:0 0 32px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">${body}</p>
               <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
                 <tr>
                   <td style="background:#4A5E4C;border-radius:100px;padding:16px 36px;">

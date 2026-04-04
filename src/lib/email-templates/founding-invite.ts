@@ -44,7 +44,7 @@ export function foundingInviteEmail({
           <tr>
             <td style="padding:0 0 40px;text-align:center;">
               <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</p>
-              <div style="width:40px;height:2px;background:#C8A87A;margin:14px auto 0;"></div>
+              <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
             </td>
           </tr>
 
@@ -53,21 +53,21 @@ export function foundingInviteEmail({
             <td style="background:#FFFFFF !important;border-radius:20px;padding:52px 52px 44px;border:1px solid #E8E2D8;box-shadow:0 8px 40px rgba(0,0,0,0.06);">
 
               <!-- Headline -->
-              <h1 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:800;line-height:1.15;letter-spacing:-0.02em;color:#1A1A18;">
+              <h1 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;line-height:1.25;color:#1A1A18;">
                 It's time,<br />
                 <em style="color:#4A5E4C;font-style:italic;">${escapeHtml(name)}.</em>
               </h1>
 
               <!-- Opening -->
-              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">
+              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">
                 We've been building. Testing. Rewriting. And now we're ready.
               </p>
 
-              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">
+              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">
                 Our Fable is live. Real families are using it. Vaults are filling up with letters, voice memos, photos — sealed until their children are old enough to read them.
               </p>
 
-              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">
+              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">
                 You signed up early. You believed in this before it existed. That matters.
               </p>
 
@@ -89,7 +89,7 @@ export function foundingInviteEmail({
               <div style="width:100%;height:1px;background:#E8E2D8;margin:36px 0;"></div>
 
               <!-- CTA -->
-              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.75;color:#4A4A45;">
+              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">
                 ${child
                   ? `${escapeHtml(child)}'s vault is waiting. Everything you write, everyone you invite — it all starts now.`
                   : "Your child's vault is waiting. Everything you write, everyone you invite — it all starts now."

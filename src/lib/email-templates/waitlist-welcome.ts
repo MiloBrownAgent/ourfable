@@ -25,7 +25,7 @@ export function waitlistWelcomeEmail(email?: string, unsubscribeUrl?: string): {
           <tr>
             <td style="padding:0 0 40px;text-align:center;">
               <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</p>
-              <div style="width:40px;height:2px;background:#C8A87A;margin:14px auto 0;"></div>
+              <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
             </td>
           </tr>
 
@@ -34,19 +34,19 @@ export function waitlistWelcomeEmail(email?: string, unsubscribeUrl?: string): {
             <td style="background:#FFFFFF !important;border-radius:20px;padding:52px 52px 44px;border:1px solid #E8E2D8;box-shadow:0 8px 40px rgba(0,0,0,0.06);">
 
               <!-- Headline -->
-              <h1 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:34px;font-weight:800;line-height:1.15;letter-spacing:-0.02em;color:#1A1A18;">
+              <h1 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;line-height:1.25;color:#1A1A18;">
                 Your vault<br />
                 <em style="color:#4A5E4C;font-style:italic;">is waiting.</em>
               </h1>
 
               <!-- Intro -->
-              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">
+              <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">
                 You just did something most parents never think to do —
                 you started building a record of everyone who loves your child,
                 before they&apos;re old enough to ask.
               </p>
 
-              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:17px;line-height:1.8;color:#4A4A45;">
+              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">
                 Every month, Our Fable asks the people in your child&apos;s circle a question
                 tailored to who they are. Grandma gets a different question than the uncle.
                 The old family friend gets a different question than the neighbor.
@@ -128,7 +128,7 @@ export function waitlistWelcomeEmail(email?: string, unsubscribeUrl?: string): {
               <div style="width:100%;height:1px;background:#E8E2D8;margin:36px 0;"></div>
 
               <!-- CTA -->
-              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.75;color:#4A4A45;">
+              <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.8;color:#4A4A45;">
                 We&apos;re opening Our Fable to founding families first. Your place is saved, and we&apos;ll be in touch as soon as your vault is ready.
               </p>
 

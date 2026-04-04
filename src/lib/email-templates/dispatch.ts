@@ -158,7 +158,7 @@ export function dispatchEmail({
                 <tr>
                   <td class="card-pad" style="padding:36px 44px 24px;">
                     <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">For ${escapeHtml(rFirst)}</p>
-                    <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:400;color:#1A1A18;line-height:1.25;">
+                    <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">
                       Hi — it&rsquo;s ${escapeHtml(cFirst)}.
                     </h1>
                     <p style="margin:14px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">
