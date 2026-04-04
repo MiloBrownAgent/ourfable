@@ -519,6 +519,7 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_familyId", ["familyId"])
     .index("by_stripeCustomerId", ["stripeCustomerId"])
+    .index("by_stripeSubscriptionId", ["stripeSubscriptionId"])
     .index("by_subscriptionStatus", ["subscriptionStatus"]),
 
   // ---------------------------------------------------------------------------

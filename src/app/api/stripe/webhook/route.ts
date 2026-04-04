@@ -449,11 +449,16 @@ export async function POST(req: NextRequest) {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = typeof invoice.customer === "string" ? invoice.customer : (invoice.customer as Stripe.Customer)?.id;
+        const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
         console.log(`[webhook] Payment succeeded: invoice=${invoice.id} customer=${customerId}`);
 
-        if (customerId) {
+        if (customerId || subscriptionId) {
           // Reset consecutive payment failures on successful payment
-          const family = await internalConvexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as {
+          const family = ((customerId
+            ? await internalConvexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }).catch(() => null)
+            : null) || (subscriptionId
+            ? await internalConvexQuery("ourfable:getOurFableFamilyByStripeSubscription", { stripeSubscriptionId: subscriptionId }).catch(() => null)
+            : null)) as {
             familyId: string;
             email?: string;
             childName?: string;

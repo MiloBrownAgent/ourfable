@@ -2355,6 +2355,16 @@ export const getOurFableFamilyByStripeCustomer = internalQuery({
   },
 });
 
+export const getOurFableFamilyByStripeSubscription = internalQuery({
+  args: { stripeSubscriptionId: v.string() },
+  handler: async (ctx, { stripeSubscriptionId }) => {
+    return await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_stripeSubscriptionId", (q) => q.eq("stripeSubscriptionId", stripeSubscriptionId))
+      .first();
+  },
+});
+
 export const updateOurFableSubscriptionStatus = internalMutation({
   args: {
     familyId: v.optional(v.string()),
@@ -2381,6 +2391,7 @@ export const updateOurFableSubscriptionStatus = internalMutation({
 
     const patch: Record<string, unknown> = { subscriptionStatus: args.subscriptionStatus };
     if (args.planType) patch.planType = args.planType;
+    if (typeof args.stripeCustomerId !== "undefined") patch.stripeCustomerId = args.stripeCustomerId;
     if (args.stripeSubscriptionId) patch.stripeSubscriptionId = args.stripeSubscriptionId;
     await ctx.db.patch(family._id, patch);
     return family._id;
