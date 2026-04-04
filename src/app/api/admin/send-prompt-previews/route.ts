@@ -162,8 +162,8 @@ async function sendPreviewEmail(args: {
   total: number;
 }) {
   const childFirst = args.childName.split(" ")[0];
-  const submitUrl = `${BASE_URL}/respond/preview-${index + 1}`;
-  const skipUrl = `${BASE_URL}/api/ourfable/skip-prompt?token=preview-${index + 1}`;
+  const submitUrl = `${BASE_URL}/respond/preview-${args.index + 1}`;
+  const skipUrl = `${BASE_URL}/api/ourfable/skip-prompt?token=preview-${args.index + 1}`;
   const unlockLine = args.promptUnlocksAtEvent
     ? `${childFirst} will open this on ${args.promptUnlocksAtEvent}.`
     : args.promptUnlocksAtAge
