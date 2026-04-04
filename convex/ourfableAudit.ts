@@ -599,7 +599,7 @@ async function writeShadowLedger(entry: {
 
 async function sendAlert(message: string): Promise<boolean> {
   // Layer 1: Try Telegram
-  const BOT_TOKEN=proces...KEN;
+  const BOT_TOKEN = process.env.TELEGRAM_ALERT_BOT_TOKEN;
   const CHAT_ID = process.env.TELEGRAM_ALERT_CHAT_ID;
   let delivered = false;
 

@@ -348,7 +348,7 @@ export default function SignupClient({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 characters"
+                  placeholder={`Min ${MIN_PASSWORD_LENGTH} characters`}
                   autoComplete="new-password"
                 />
               </div>
