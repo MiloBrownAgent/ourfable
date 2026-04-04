@@ -320,12 +320,26 @@ const PROMPT_TEMPLATES: PromptTemplate[] = [
   },
 ];
 
+function normalizePromptForComparison(text: string, childFirst: string) {
+  return text
+    .toLowerCase()
+    .replaceAll(childFirst.toLowerCase(), "child")
+    .replace(/\b(8|13|16|18)(st|nd|rd|th)?\s+birthday\b/g, "future milestone")
+    .replace(/\bwhen they are\s+\d+\b/g, "future milestone")
+    .replace(/\bturn\s+\d+\b/g, "future milestone")
+    .replace(/\b(graduation|wedding day|wedding|sweet 16)\b/g, "future milestone")
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function buildPromptForCycle(args: {
   member: { _id: string; name: string; relationshipKey?: string };
   family: { parentNames?: string | null };
   child: ChildTarget;
   cycleNumber: number;
   priorPromptTexts: string[];
+  recentTemplateKeys: string[];
   siblingTemplateKeys: string[];
   deliveryMilestones: Array<{ milestoneName: string; milestoneDate: number; deliveryStatus?: string }>;
 }) {
@@ -349,17 +363,20 @@ function buildPromptForCycle(args: {
     `${args.member._id}:${args.child.childId ?? "first"}:${args.cycleNumber}`,
   );
 
-  const candidateTemplates = seededTemplates.length > 0
-    ? seededTemplates
-    : sortBySeed(
-        PROMPT_TEMPLATES.filter((template) => template.groups.includes(relationshipGroup)),
-        `${args.member._id}:${args.child.childId ?? "first"}:${args.cycleNumber}:fallback`,
-      );
+  const allRelationshipTemplates = sortBySeed(
+    PROMPT_TEMPLATES.filter((template) => template.groups.includes(relationshipGroup)),
+    `${args.member._id}:${args.child.childId ?? "first"}:${args.cycleNumber}:fallback`,
+  );
+  const candidateTemplates = seededTemplates.length > 0 ? seededTemplates : allRelationshipTemplates;
+  const recentTemplateBases = new Set(args.recentTemplateKeys.map((key) => key.split(":")[0]));
+  const priorNormalizedTexts = new Set(args.priorPromptTexts.map((text) => normalizePromptForComparison(text, childFirst)));
 
-  for (const template of candidateTemplates) {
+  for (const template of [...candidateTemplates, ...allRelationshipTemplates]) {
     if (args.siblingTemplateKeys.includes(template.key)) continue;
+    if (recentTemplateBases.has(template.key)) continue;
     const text = template.render(context);
     if (args.priorPromptTexts.includes(text)) continue;
+    if (priorNormalizedTexts.has(normalizePromptForComparison(text, childFirst))) continue;
     return {
       templateKey: template.key,
       promptText: text,
@@ -369,7 +386,7 @@ function buildPromptForCycle(args: {
     };
   }
 
-  const fallback = candidateTemplates[0] ?? PROMPT_TEMPLATES[0];
+  const fallback = allRelationshipTemplates.find((template) => !args.siblingTemplateKeys.includes(template.key)) ?? candidateTemplates[0] ?? PROMPT_TEMPLATES[0];
   return {
     templateKey: `${fallback.key}:fallback`,
     promptText: `${fallback.render(context)} Focus on what feels true this month.`,
@@ -510,12 +527,18 @@ export const ensureMemberPromptChains = internalAction({
         .map((entry) => entry.templateKey)
         .filter((value): value is string => Boolean(value));
       const priorPromptTexts = childHistory.map((entry) => entry.promptText);
+      const recentTemplateKeys = childHistory
+        .sort((a, b) => (b.cycleNumber ?? -1) - (a.cycleNumber ?? -1))
+        .slice(0, 4)
+        .map((entry) => entry.templateKey)
+        .filter((value): value is string => Boolean(value));
       const prompt = buildPromptForCycle({
         member,
         family,
         child,
         cycleNumber,
         priorPromptTexts,
+        recentTemplateKeys,
         siblingTemplateKeys,
         deliveryMilestones,
       });
