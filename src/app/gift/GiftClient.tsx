@@ -30,6 +30,7 @@ export default function GiftClient() {
   const [selectedTier, setSelectedTier] = useState<GiftTier>("standard");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [gifterName, setGifterName] = useState("");
+  const [gifterEmail, setGifterEmail] = useState("");
   const [gifterMessage, setGifterMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,6 +51,7 @@ export default function GiftClient() {
     e.preventDefault();
     if (!recipientEmail.trim()) { setError("Recipient's email is required."); return; }
     if (!gifterName.trim()) { setError("Your name is required."); return; }
+    if (!gifterEmail.trim()) { setError("Your email is required."); return; }
     setLoading(true);
     setError("");
     try {
@@ -59,6 +61,7 @@ export default function GiftClient() {
         body: JSON.stringify({
           recipientEmail: recipientEmail.trim(),
           gifterName: gifterName.trim(),
+          gifterEmail: gifterEmail.trim(),
           gifterMessage: gifterMessage.trim() || undefined,
           planType: selectedTier,
         }),
@@ -119,13 +122,13 @@ export default function GiftClient() {
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: 56 }}>
           <div style={{ marginBottom: 20, animation: "revealUp 0.5s ease both" }}>
-            <span className="chip chip-green" style={{ fontSize: 12 }}>The best baby shower gift</span>
+            <span className="chip chip-green" style={{ fontSize: 12 }}>For grandparents, godparents, aunts, uncles, and family friends</span>
           </div>
           <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 800, fontSize: "clamp(2.8rem, 6vw, 4.4rem)", lineHeight: 1.08, letterSpacing: "-0.025em", marginBottom: 24, animation: "revealUp 0.5s ease 0.08s both" }}>
-            Give them <em style={{ color: "var(--green)", fontStyle: "italic" }}>Our Fable.</em>
+            Give a child <em style={{ color: "var(--green)", fontStyle: "italic" }}>something lasting.</em>
           </h1>
-          <p style={{ fontSize: 18, lineHeight: 1.75, color: "var(--text-2)", marginBottom: 16, maxWidth: 520, margin: "0 auto 16px", animation: "revealUp 0.5s ease 0.16s both" }}>
-            The gift is a private vault for a child&apos;s future. Our Fable+ also includes Dispatches, unlimited circle members, and one additional child included.
+          <p style={{ fontSize: 18, lineHeight: 1.75, color: "var(--text-2)", marginBottom: 16, maxWidth: 640, margin: "0 auto 16px", animation: "revealUp 0.5s ease 0.16s both" }}>
+            Our Fable is a private family vault where the people who love a child leave letters, voice notes, photos, and videos for their future. It feels less like software and more like helping a family begin an heirloom.
           </p>
         </div>
 
@@ -231,6 +234,21 @@ export default function GiftClient() {
               />
             </div>
 
+            <div>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>
+                Your email *
+              </label>
+              <input
+                value={gifterEmail}
+                onChange={e => setGifterEmail(e.target.value)}
+                type="email"
+                placeholder="you@example.com"
+                className="input"
+                required
+              />
+              <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>We&apos;ll send you the confirmation and receipt here.</p>
+            </div>
+
             {/* Personal message */}
             <div>
               <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>
@@ -252,7 +270,7 @@ export default function GiftClient() {
 
             <button
               type="submit"
-              disabled={loading || !recipientEmail.trim() || !gifterName.trim()}
+              disabled={loading || !recipientEmail.trim() || !gifterName.trim() || !gifterEmail.trim()}
               className="btn-primary"
               style={{ fontSize: 15, padding: "16px", justifyContent: "center" }}
             >
@@ -266,6 +284,16 @@ export default function GiftClient() {
               Secure checkout via Stripe · Recipient gets a beautiful email with their redemption code
             </p>
           </form>
+        </div>
+
+        <div style={{ marginBottom: 48, padding: "24px 28px", background: "var(--bg-2)", borderRadius: 16, border: "1px solid var(--border)" }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: "0 0 10px" }}>Why gifting works</p>
+          <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--text-2)", margin: "0 0 10px" }}>
+            If you&apos;re a grandparent or someone close to the family, this is a beautiful way to give more than a present. You&apos;re helping create a place where your voice, your stories, and the voices of the rest of the circle can stay with the child for years.
+          </p>
+          <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--text-3)", margin: 0 }}>
+            The family receives a polished gift email and redeems when they&apos;re ready. You cover the first year. They receive something thoughtful, private, and easy to begin.
+          </p>
         </div>
 
         {/* Features — pillar layout */}
