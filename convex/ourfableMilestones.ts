@@ -58,10 +58,10 @@ function milestonePromptEmail(opts: {
       <p style="margin:0 0 8px;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a9c7e;">
         ${firstName}'s milestone
       </p>
-      <h1 style="margin:0 0 24px;font-size:26px;font-weight:700;color:#2c3e2d;line-height:1.2;">
+      <h1 style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">
         ${opts.title}
       </h1>
-      <p style="margin:0 0 28px;font-size:16px;color:#555;line-height:1.7;">
+      <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#555;line-height:1.8;">
         ${opts.promptText}
       </p>
       <a href="${vaultUrl}" style="display:inline-block;padding:14px 28px;background:#4A5E4C;color:#fff;text-decoration:none;border-radius:100px;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;letter-spacing:-0.01em;">
