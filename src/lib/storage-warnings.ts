@@ -56,10 +56,12 @@ function warningEmailHtml({
   childFirst,
   percent,
   isAlmostFull,
+  unsubscribeUrl,
 }: {
   childFirst: string;
   percent: number;
   isAlmostFull: boolean;
+  unsubscribeUrl: string;
 }): string {
   const headline = isAlmostFull
     ? `${childFirst}'s vault is almost full`
@@ -85,7 +87,8 @@ function warningEmailHtml({
           <!-- Wordmark -->
           <tr>
             <td align="center" style="padding-bottom:28px;">
-              <span style="font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:400;color:#6B7C6E;letter-spacing:0.2em;text-transform:uppercase;">Our Fable</span>
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+              <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
             </td>
           </tr>
 
@@ -125,7 +128,7 @@ function warningEmailHtml({
                 Our Fable &middot; ourfable.ai
               </p>
               <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#B0A9A0;">
-                <a href="${escapeHtml(buildUnsubscribeUrl(to))}" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a>
+                <a href="${escapeHtml(unsubscribeUrl)}" style="color:#B0A9A0;text-decoration:underline;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -181,7 +184,7 @@ export async function checkStorageWarnings(
       const sent = await sendEmail({
         to: parentEmail,
         subject: `${childFirst}'s vault is almost full`,
-        html: warningEmailHtml({ childFirst, percent, isAlmostFull: true }),
+        html: warningEmailHtml({ childFirst, percent, isAlmostFull: true, unsubscribeUrl: buildUnsubscribeUrl(parentEmail) }),
       });
       if (sent) {
         await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned95: true });
@@ -192,7 +195,7 @@ export async function checkStorageWarnings(
       const sent = await sendEmail({
         to: parentEmail,
         subject: `${childFirst}'s vault is filling up`,
-        html: warningEmailHtml({ childFirst, percent, isAlmostFull: false }),
+        html: warningEmailHtml({ childFirst, percent, isAlmostFull: false, unsubscribeUrl: buildUnsubscribeUrl(parentEmail) }),
       });
       if (sent) {
         await convexMutation("ourfable:patchOurFableFamily", { familyId, storageWarned80: true });

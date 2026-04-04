@@ -51,8 +51,9 @@ function notifyHtml({
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
 
           <tr>
-            <td align="center" style="padding-bottom:32px;">
-              <span style="font-family:Georgia,'Times New Roman',serif;font-size:12px;color:#6B7C6E;letter-spacing:0.22em;text-transform:uppercase;">${escapeHtml(childFirst)}</span>
+            <td align="center" style="padding-bottom:28px;">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+              <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
             </td>
           </tr>
 

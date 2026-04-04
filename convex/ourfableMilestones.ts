@@ -50,6 +50,10 @@ function milestonePromptEmail(opts: {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9f6f2;font-family:Georgia,serif;">
   <div style="max-width:560px;margin:0 auto;padding:48px 24px;">
+    <div style="text-align:center;padding:0 0 24px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+      <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
+    </div>
     <div style="background:#fff;border-radius:16px;padding:40px 36px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <p style="margin:0 0 8px;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a9c7e;">
         ${firstName}'s milestone
@@ -85,6 +89,10 @@ function guardianInactivityEmail(opts: {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9f6f2;font-family:Georgia,serif;">
   <div style="max-width:560px;margin:0 auto;padding:48px 24px;">
+    <div style="text-align:center;padding:0 0 24px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+      <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
+    </div>
     <div style="background:#fff;border-radius:16px;padding:40px 36px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <p style="margin:0 0 8px;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a9c7e;">
         Our Fable
@@ -123,6 +131,10 @@ function parentInactivityEmail(opts: {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9f6f2;font-family:Georgia,serif;">
   <div style="max-width:560px;margin:0 auto;padding:48px 24px;">
+    <div style="text-align:center;padding:0 0 24px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+      <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
+    </div>
     <div style="background:#fff;border-radius:16px;padding:40px 36px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <p style="margin:0 0 8px;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a9c7e;">
         Our Fable
