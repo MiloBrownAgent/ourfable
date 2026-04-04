@@ -23,7 +23,7 @@ function generateToken(): string {
   return token;
 }
 
-async function sendResendEmail(apiKey: string, to: string, subject: string, html: string) {
+async function sendResendEmail(apiKey: string, to: string, subject: string, html: string, replyTo?: string) {
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -35,6 +35,7 @@ async function sendResendEmail(apiKey: string, to: string, subject: string, html
       to,
       subject,
       html,
+      reply_to: replyTo,
       headers: {
         "List-Unsubscribe": "<https://ourfable.ai/unsubscribe>",
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -269,7 +270,7 @@ export const checkCircleReEngagement = internalAction({
             </div>
           `);
 
-          await sendResendEmail(RESEND_API_KEY, member.email, `${childFirst}'s vault misses your voice`, html);
+          await sendResendEmail(RESEND_API_KEY, member.email, `${childFirst}'s vault misses your voice`, html, family.email);
           // Reset missed count after re-engagement email
           await ctx.runMutation(internal.ourfable.updateOurFableCircleMemberMissedPrompts, {
             memberId: member._id as any,
@@ -519,7 +520,7 @@ export const sendVaultReceipt = internalAction({
       </div>
     `);
 
-    await sendResendEmail(RESEND_API_KEY, memberEmail, `Your ${typeLabel} for ${childFirst} is sealed`, html);
+    await sendResendEmail(RESEND_API_KEY, memberEmail, `Your ${typeLabel} for ${childFirst} is sealed`, html, family.email);
     console.log(`[ourfableDelivery] Sent vault receipt to ${memberFirst} (${memberEmail})`);
   },
 });
@@ -652,6 +653,7 @@ export const sendDispatchEmails = internalAction({
             to: member.email,
             subject: `${parentNames} sent an update about ${childFirst}`,
             html,
+            reply_to: fam.email || "hello@ourfable.ai",
           }),
         });
         sent++;

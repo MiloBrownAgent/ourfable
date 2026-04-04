@@ -236,6 +236,8 @@ export async function POST(req: NextRequest) {
     // Parent names for footer — pulled from familyName or hardcoded for Sweeney
     const parentNames = family.parentNames ?? "the family";
 
+    const parentReplyTo = family.email || "hello@ourfable.ai";
+
     const html = ourfableInviteHtml({
       recipientName: member.name,
       relationship: member.relationship,
@@ -252,7 +254,7 @@ export async function POST(req: NextRequest) {
       to: toEmail,
       subject: `${isTest ? "[TEST] " : ""}Hi — it's ${childFirst}`,
       html,
-      replyTo: `hello@ourfable.ai`,
+      replyTo: parentReplyTo,
         headers: buildUnsubscribeHeaders(toEmail),
       });
 

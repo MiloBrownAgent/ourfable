@@ -382,6 +382,7 @@ async function sendPromptEmail(args: {
   memberName: string;
   relationshipKey?: string;
   childName: string;
+  parentEmail?: string;
   promptText: string;
   promptCategory: string;
   promptUnlocksAtAge?: number;
@@ -446,6 +447,7 @@ async function sendPromptEmail(args: {
       to: args.email,
       subject: `${childFirst} has a question for you`,
       html,
+      reply_to: args.parentEmail ?? "hello@ourfable.ai",
       tags: [
         { name: "monthly_prompt", value: "true" },
         { name: "relationship", value: args.relationshipKey ?? "unknown" },
@@ -569,6 +571,7 @@ export const processDueMonthlyPrompts = internalAction({
             memberName: member.name,
             relationshipKey: member.relationshipKey,
             childName: child.childName,
+            parentEmail: family.email,
             promptText: prompt.promptText,
             promptCategory: prompt.promptCategory,
             promptUnlocksAtAge: prompt.promptUnlocksAtAge,

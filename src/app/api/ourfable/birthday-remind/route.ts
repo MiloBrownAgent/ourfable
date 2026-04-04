@@ -5,7 +5,7 @@ import { escapeHtml } from "@/lib/email-templates/escape-html";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY ?? "";
 
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(to: string, subject: string, html: string, replyTo?: string) {
   if (!RESEND_API_KEY) throw new Error("RESEND_FULL_API_KEY not configured");
   await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -18,6 +18,7 @@ async function sendEmail(to: string, subject: string, html: string) {
       to,
       subject,
       html,
+      reply_to: replyTo,
       headers: {
         ...buildUnsubscribeHeaders(to),
       },
@@ -86,6 +87,8 @@ export async function GET(req: NextRequest) {
   }
 
   const family = await internalConvexQuery<{ childName: string } | null>("ourfable:getFamily", { familyId });
+  const accountFamily = await internalConvexQuery<{ email?: string } | null>("ourfable:getOurFableFamilyById", { familyId }).catch(() => null);
+  const parentReplyTo = accountFamily?.email || "hello@ourfable.ai";
   if (!family) {
     return new NextResponse(renderPage("Family not found", "We couldn't find this family."), {
       status: 404,
@@ -197,7 +200,7 @@ export async function POST(req: NextRequest) {
   </table>
 </body></html>`;
       try {
-        await sendEmail(member.email!, `${childFirst}'s birthday is coming up`, html);
+        await sendEmail(member.email!, `${childFirst}'s birthday is coming up`, html, parentReplyTo);
         sent++;
       } catch (error) {
         console.error(`[birthday-remind] Failed to email ${member.name}:`, error);

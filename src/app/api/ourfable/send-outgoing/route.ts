@@ -54,11 +54,16 @@ export async function POST(req: NextRequest) {
     let isPlus = family.planType === "plus" || family.plan === "plus" || family.plan === "pilot";
     if (!isPlus) {
       // Fall back to ourfable_families for planType
-      const accountData = await internalConvexQuery<{ planType?: string } | null>(
+      const accountData = await internalConvexQuery<{ planType?: string; email?: string } | null>(
         "ourfable:getOurFableFamilyById", { familyId }
       );
       isPlus = accountData?.planType === "plus" || accountData?.planType === "pilot";
     }
+
+    const accountData = await internalConvexQuery<{ planType?: string; email?: string } | null>(
+      "ourfable:getOurFableFamilyById", { familyId }
+    ).catch(() => null);
+    const parentReplyTo = accountData?.email || session.email || "hello@ourfable.ai";
 
     // ── Fetch circle ──────────────────────────────────────────────────────────
     let allMembers = await convexQuery<Array<{
@@ -125,7 +130,7 @@ export async function POST(req: NextRequest) {
           subject: emailSubject,
           html,
           text,
-          replyTo: "hello@ourfable.ai",
+          replyTo: parentReplyTo,
           headers: buildUnsubscribeHeaders(member.email!),
         });
 
