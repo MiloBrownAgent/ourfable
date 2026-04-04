@@ -137,11 +137,11 @@ export function HeroSection() {
           <AnimatedHeadline />
           {/* Desktop sub-headline */}
           <p className="hero-sub-desktop" style={{ fontSize: 19, lineHeight: 1.8, color: "var(--text-2)", marginBottom: 40, maxWidth: 440, animation: "fadeUp 0.5s ease 0.7s both", opacity: 0 }}>
-            Our Fable has two parts: a private Vault for your child&apos;s letters, voice notes, photos, and videos, plus private family Dispatches in Our Fable+. Every month, the people who love your child are invited to leave something worth keeping.
+            A private vault for your child&apos;s letters, voice notes, photos, and videos. Every month, the people who love them are invited to add something worth keeping.
           </p>
           {/* Mobile sub-headline — matches desktop */}
           <p className="hero-sub-mobile" style={{ fontSize: 17, lineHeight: 1.7, color: "var(--text-2)", marginBottom: 24, maxWidth: 440, animation: "fadeUp 0.5s ease 0.7s both", opacity: 0 }}>
-            The Vault keeps letters, voice notes, photos, and videos for your child. Our Fable+ adds Dispatches, private family updates to your whole circle.
+            A private vault for your child&apos;s letters, voice notes, photos, and videos. Every month, family can add something worth keeping.
           </p>
           <div id="waitlist" style={{ maxWidth: 480, animation: "fadeUp 0.5s ease 0.85s both", opacity: 0 }}>
             <Link href="/reserve" className="btn-primary" style={{ display: "inline-flex", padding: "15px 32px", fontSize: 16, textDecoration: "none" }}>
