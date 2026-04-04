@@ -46,6 +46,23 @@ async function sendResendEmail(to: string, subject: string, html: string, extraH
   });
 }
 
+function formatAmount(cents: number | null | undefined, currency: string | null | undefined): string {
+  if (typeof cents !== "number") return "";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: (currency || "USD").toUpperCase(),
+  }).format(cents / 100);
+}
+
+function formatDate(timestampSeconds: number | null | undefined): string {
+  if (!timestampSeconds) return "";
+  return new Date(timestampSeconds * 1000).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function emailFooter(lightMode = true): string {
   if (lightMode) {
     return `<tr><td align="center" style="padding-top:24px;">
@@ -65,6 +82,55 @@ function hasUsablePasswordHash(passwordHash: string | undefined | null): passwor
 
 function normalizePlanType(value: unknown): "standard" | "plus" | undefined {
   return value === "standard" || value === "plus" ? value : undefined;
+}
+
+async function sendBillingReceiptEmail(args: {
+  email: string;
+  childFirst: string;
+  planLabel: string;
+  amountCents: number;
+  currency: string;
+  billingPeriodLabel: string;
+  paidAt?: number | null;
+  nextBillingAt?: number | null;
+}) {
+  await sendResendEmail(
+    args.email,
+    `Payment received for ${args.childFirst}'s vault`,
+    `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><title>Payment received</title></head>
+<body style="margin:0;padding:0;background:#F5F2ED;">
+  <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#F5F2ED" style="padding:64px 20px 80px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+        <tr><td align="center" style="padding-bottom:28px;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+          <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
+        </td></tr>
+        <tr><td style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
+          <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
+          <table width="100%"><tr><td style="padding:44px;">
+            <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Payment received</p>
+            <p style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${escapeHtml(args.childFirst)}'s vault is all set.</p>
+            <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">We received your ${escapeHtml(args.billingPeriodLabel)} payment successfully. Your family&apos;s vault stays active and ready to keep growing.</p>
+            <div style="background:#F8F5F0;border:1px solid #E8E4DE;border-radius:14px;padding:20px 24px;margin:0 0 28px;">
+              <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A8880;">Billing summary</p>
+              <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:400;color:#1A1A18;line-height:1.5;">${escapeHtml(args.planLabel)} · ${escapeHtml(formatAmount(args.amountCents, args.currency))}</p>
+              <p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6B6860;line-height:1.75;">Paid on ${escapeHtml(formatDate(args.paidAt ?? undefined))}</p>
+              ${args.nextBillingAt ? `<p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6B6860;line-height:1.75;">Next billing date: ${escapeHtml(formatDate(args.nextBillingAt))}</p>` : ""}
+            </div>
+            <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#9A9590;line-height:1.75;">Thank you for keeping this record going. Every month it stays active gives your family more time to add what will matter years from now.</p>
+            <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
+              <a href="https://ourfable.ai/login" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Open your account →</a>
+            </td></tr></table>
+          </td></tr></table>
+        </td></tr>
+        ${emailFooter(true)}
+      </table>
+    </td></tr>
+  </table>
+</body></html>`
+  );
 }
 
 async function sendPasswordSetupEmail(email: string) {
@@ -389,6 +455,10 @@ export async function POST(req: NextRequest) {
           // Reset consecutive payment failures on successful payment
           const family = await internalConvexQuery("ourfable:getOurFableFamilyByStripeCustomer", { stripeCustomerId: customerId }) as {
             familyId: string;
+            email?: string;
+            childName?: string;
+            planType?: string;
+            lastPaymentReceiptInvoiceId?: string;
           } | null;
 
           if (family) {
@@ -396,6 +466,30 @@ export async function POST(req: NextRequest) {
               familyId: family.familyId,
               consecutivePaymentFailures: 0,
             }).catch(() => {});
+
+            if (invoice.id && family.lastPaymentReceiptInvoiceId !== invoice.id && family.email && family.childName) {
+              const line = invoice.lines?.data?.[0];
+              const interval = line?.pricing?.recurring?.interval ?? line?.plan?.interval ?? null;
+              const nextBillingAt = line?.period?.end ?? null;
+              const billingPeriodLabel = interval === "year" ? "annual" : "monthly";
+              const planLabel = family.planType === "plus" ? "Our Fable+" : "Our Fable";
+              await sendBillingReceiptEmail({
+                email: family.email,
+                childFirst: family.childName.split(" ")[0],
+                planLabel,
+                amountCents: invoice.amount_paid ?? 0,
+                currency: invoice.currency ?? "usd",
+                billingPeriodLabel,
+                paidAt: invoice.status_transitions?.paid_at ?? invoice.created,
+                nextBillingAt,
+              }).catch((err) => {
+                console.warn("[webhook] Billing receipt email failed (non-fatal):", err);
+              });
+              await internalConvexMutation("ourfable:updateOurFableBillingEmailState", {
+                familyId: family.familyId,
+                lastPaymentReceiptInvoiceId: invoice.id,
+              }).catch(() => {});
+            }
           }
         }
         break;

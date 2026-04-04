@@ -2387,6 +2387,26 @@ export const updateOurFableSubscriptionStatus = internalMutation({
   },
 });
 
+export const updateOurFableBillingEmailState = internalMutation({
+  args: {
+    familyId: v.string(),
+    lastPaymentReceiptInvoiceId: v.optional(v.string()),
+    lastAnnualRenewalReminderFor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const family = await ctx.db
+      .query("ourfable_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", args.familyId))
+      .first();
+    if (!family) return null;
+    const patch: Record<string, unknown> = {};
+    if (typeof args.lastPaymentReceiptInvoiceId !== "undefined") patch.lastPaymentReceiptInvoiceId = args.lastPaymentReceiptInvoiceId;
+    if (typeof args.lastAnnualRenewalReminderFor !== "undefined") patch.lastAnnualRenewalReminderFor = args.lastAnnualRenewalReminderFor;
+    await ctx.db.patch(family._id, patch);
+    return family._id;
+  },
+});
+
 export const updateOurFableEmail = internalMutation({
   args: {
     oldEmail: v.string(),

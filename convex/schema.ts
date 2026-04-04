@@ -499,6 +499,8 @@ export default defineSchema({
     notifyFacilitatorOnLapse: v.optional(v.boolean()),
     consecutivePaymentFailures: v.optional(v.number()),
     lastFacilitatorBillingNotification: v.optional(v.number()),
+    lastPaymentReceiptInvoiceId: v.optional(v.string()),
+    lastAnnualRenewalReminderFor: v.optional(v.string()),
     foundingMember: v.optional(v.boolean()),
     foundingPriceLockedAt: v.optional(v.number()),
     foundingSource: v.optional(v.string()),
