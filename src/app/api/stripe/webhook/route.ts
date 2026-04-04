@@ -913,7 +913,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
   const meta = session.metadata ?? {};
-  const { giftCode, recipientEmail, gifterName, gifterEmail, gifterMessage, planType } = meta;
+  const { giftCode, recipientEmail, gifterName, gifterEmail, gifterMessage, planType, giftMode } = meta;
 
   if (!giftCode || !recipientEmail || !gifterName) {
     console.error("[webhook] gift checkout — missing metadata", meta);
@@ -925,12 +925,17 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
     giftCode,
     status: "paid",
     stripeSessionId: session.id,
+    stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
+    stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : session.subscription?.id,
   });
 
   console.log(`[webhook] ✅ Gift paid: code=${giftCode} recipient=${recipientEmail} plan=${planType}`);
 
   const redeemUrl = `https://ourfable.ai/redeem/${giftCode}`;
   const planLabel = planType === "plus" ? "Our Fable+" : "Our Fable";
+  const sponsorshipLine = giftMode === "annual_sponsorship"
+    ? "This gift is being sponsored annually, so the vault can keep going without interruption until the giver cancels."
+    : "Your first year is fully covered, and the family can decide what they&apos;d like to do after that.";
 
   // 2. Send gift notification email to recipient
   await sendResendEmail(
@@ -954,7 +959,7 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
             <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">A gift from ${escapeHtml(gifterName)}</p>
             <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Someone who loves your family just gave you something extraordinary.</p>
             <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
-              ${escapeHtml(gifterName)} has given you <strong>${escapeHtml(planLabel)}</strong> — a private memory vault where the people who love your child leave letters, voice notes, photos, and video, all sealed until your child is old enough to read them.
+              We&apos;ll email ${escapeHtml(recipientEmail)} with their gift code and a link to redeem ${escapeHtml(planLabel)}.${giftMode === "annual_sponsorship" ? " This sponsorship will renew each year until you cancel it." : ""}
             </p>
             ${gifterMessage ? `
             <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
@@ -965,8 +970,11 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
                 </td>
               </tr>
             </table>` : ""}
-            <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
+            <p style="margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
               Our Fable is a sealed vault where the people who love your child leave letters, voice notes, photos, and video — all sealed until your child is old enough to read them.
+            </p>
+            <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#8A8880;line-height:1.75;">
+              ${sponsorshipLine}
             </p>
             <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;"><tr><td style="border-radius:100px;background:#4A5E4C;">
               <a href="${escapeHtml(redeemUrl)}" style="display:inline-block;padding:15px 32px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">Open your gift →</a>

@@ -2,11 +2,11 @@ import Link from "next/link";
 import { Check, ArrowLeft } from "lucide-react";
 
 interface PageProps {
-  searchParams: Promise<{ code?: string; email?: string }>;
+  searchParams: Promise<{ code?: string; email?: string; mode?: string }>;
 }
 
 export default async function GiftSuccessPage({ searchParams }: PageProps) {
-  const { code, email } = await searchParams;
+  const { code, email, mode } = await searchParams;
 
   return (
     <div style={{ background: "var(--bg)", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -47,14 +47,14 @@ export default async function GiftSuccessPage({ searchParams }: PageProps) {
           </h1>
 
           {email && (
-            <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 32, maxWidth: 400, margin: "0 auto 32px" }}>
-              We&apos;ve sent a beautiful email to <strong style={{ color: "var(--text)" }}>{email}</strong> with everything they need to get started.
+            <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 32, maxWidth: 420, margin: "0 auto 32px" }}>
+              We&apos;ve sent a beautiful email to <strong style={{ color: "var(--text)" }}>{email}</strong> with everything they need to get started.{mode === "annual_sponsorship" ? " You&apos;re also sponsoring the vault each year until you cancel." : ""}
             </p>
           )}
 
           {!email && (
-            <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 32, maxWidth: 400, margin: "0 auto 32px" }}>
-              We&apos;ve sent a beautiful email to the recipient with everything they need to get started.
+            <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.75, marginBottom: 32, maxWidth: 420, margin: "0 auto 32px" }}>
+              We&apos;ve sent a beautiful email to the recipient with everything they need to get started.{mode === "annual_sponsorship" ? " This gift will renew yearly until cancelled." : ""}
             </p>
           )}
 

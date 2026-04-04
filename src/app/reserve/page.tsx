@@ -511,7 +511,7 @@ function ReservePageInner() {
               Reserve a gift now and we’ll notify both of you when gifting opens. Founding-family pricing will apply.
             </p>
             <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6, margin: 0 }}>
-              Our Fable is the private vault for one child. Our Fable+ adds Dispatches, unlimited circle members, and one additional child included.
+              Our Fable is the private vault for one child with unlimited circle members. Our Fable+ adds Dispatches, one additional child included, and more storage.
             </p>
           </div>
 
@@ -534,7 +534,7 @@ function ReservePageInner() {
                     $99/yr
                   </p>
                   <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0, lineHeight: 1.5 }}>
-                    The private vault for one child, with up to 10 circle members.
+                    The private vault for one child, with unlimited circle members.
                   </p>
                 </button>
                 <button

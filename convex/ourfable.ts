@@ -1930,6 +1930,7 @@ export const createStripeGift = internalMutation({
     recipientEmail: v.string(),
     planType: v.string(),
     billingPeriod: v.string(),
+    giftMode: v.optional(v.string()),
     stripeSessionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -1949,6 +1950,7 @@ export const createStripeGift = internalMutation({
       planType: args.planType,
       billingPeriod: args.billingPeriod,
       status: "pending",
+      giftMode: args.giftMode,
       stripeSessionId: args.stripeSessionId,
       createdAt: Date.now(),
     });
@@ -1962,13 +1964,15 @@ export const updateGiftStatus = internalMutation({
     giftCode: v.string(),
     status: v.string(),
     stripeSessionId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
   },
-  handler: async (ctx, { giftCode, status, stripeSessionId, stripeSubscriptionId }) => {
+  handler: async (ctx, { giftCode, status, stripeSessionId, stripeCustomerId, stripeSubscriptionId }) => {
     const gift = await ctx.db.query("ourfable_gifts").withIndex("by_giftCode", (q) => q.eq("giftCode", giftCode)).first();
     if (!gift) return { error: "Gift not found" };
     const patch: Record<string, unknown> = { status };
     if (stripeSessionId) patch.stripeSessionId = stripeSessionId;
+    if (typeof stripeCustomerId !== "undefined") patch.stripeCustomerId = stripeCustomerId;
     if (stripeSubscriptionId) patch.stripeSubscriptionId = stripeSubscriptionId;
     await ctx.db.patch(gift._id, patch);
     return { success: true };

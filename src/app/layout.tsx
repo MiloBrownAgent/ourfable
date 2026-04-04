@@ -91,7 +91,7 @@ const softwareApplicationSchema = {
       price: "12.00",
       priceCurrency: "USD",
       billingIncrement: "P1M",
-      description: "Founding price. The Vault, up to 10 circle members, monthly prompts, 5 GB storage",
+      description: "Founding price. The Vault, unlimited circle members, monthly prompts, 5 GB storage",
     },
     {
       "@type": "Offer",
@@ -99,7 +99,7 @@ const softwareApplicationSchema = {
       price: "99.00",
       priceCurrency: "USD",
       billingIncrement: "P1Y",
-      description: "Founding price. The Vault, up to 10 circle members, monthly prompts, 5 GB storage",
+      description: "Founding price. The Vault, unlimited circle members, monthly prompts, 5 GB storage",
     },
     {
       "@type": "Offer",

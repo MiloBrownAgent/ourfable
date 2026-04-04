@@ -5,6 +5,7 @@ import { ArrowRight, Gift, Lock, Users, Newspaper, Check, Loader2, Sparkles } fr
 import { trackGiftPageView } from "../../lib/analytics";
 
 type GiftTier = "standard" | "plus";
+type GiftMode = "one_year" | "annual_sponsorship";
 
 const TIERS = {
   standard: {
@@ -13,7 +14,7 @@ const TIERS = {
     originalPrice: 149,
     monthlyEquiv: "$8.25/mo",
     tagline: "The Vault for one child",
-    features: ["The Vault", "Up to 10 circle members", "Monthly prompts", "5GB storage"],
+    features: ["The Vault", "Unlimited circle members", "Monthly prompts", "5GB storage"],
   },
   plus: {
     name: "Our Fable+",
@@ -28,6 +29,7 @@ const TIERS = {
 export default function GiftClient() {
   const [scrolled, setScrolled] = useState(false);
   const [selectedTier, setSelectedTier] = useState<GiftTier>("standard");
+  const [giftMode, setGiftMode] = useState<GiftMode>("one_year");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [gifterName, setGifterName] = useState("");
   const [gifterEmail, setGifterEmail] = useState("");
@@ -64,6 +66,7 @@ export default function GiftClient() {
           gifterEmail: gifterEmail.trim(),
           gifterMessage: gifterMessage.trim() || undefined,
           planType: selectedTier,
+          giftMode,
         }),
       });
       const data = await res.json();
@@ -202,7 +205,19 @@ export default function GiftClient() {
         {/* Gift form */}
         <div className="card" style={{ padding: "36px 32px", marginBottom: 56, animation: "revealUp 0.5s ease 0.24s both" }}>
           <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>Gift {tier.name}</h2>
-          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 28 }}>${tier.annualPrice}/year · Annual gift · Founding member rate locked in</p>
+          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 18 }}>{giftMode === "annual_sponsorship" ? `${tier.annualPrice}/year · Annual sponsorship · Renews yearly until cancelled` : `${tier.annualPrice}/year · One year gifted upfront · Founding member rate locked in`}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+            <button type="button" onClick={() => setGiftMode("one_year")} style={{ padding: "16px 14px", borderRadius: 12, border: `2px solid ${giftMode === "one_year" ? "var(--green)" : "var(--border)"}`, background: giftMode === "one_year" ? "var(--green-light)" : "#fff", textAlign: "left", cursor: "pointer" }}>
+              <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Gift 1 year</p>
+              <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "var(--text)" }}>${tier.annualPrice} today</p>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: "var(--text-3)" }}>Best default. A beautiful one-time gift that gets the family started.</p>
+            </button>
+            <button type="button" onClick={() => setGiftMode("annual_sponsorship")} style={{ padding: "16px 14px", borderRadius: 12, border: `2px solid ${giftMode === "annual_sponsorship" ? "var(--green)" : "var(--border)"}`, background: giftMode === "annual_sponsorship" ? "var(--green-light)" : "#fff", textAlign: "left", cursor: "pointer" }}>
+              <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Sponsor annually</p>
+              <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "var(--text)" }}>${tier.annualPrice}/year</p>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: "var(--text-3)" }}>Keeps the gift going each year. You can cancel anytime.</p>
+            </button>
+          </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Recipient email */}
             <div>
@@ -276,12 +291,12 @@ export default function GiftClient() {
             >
               {loading
                 ? <><Loader2 size={15} strokeWidth={2} style={{ animation: "spin 1s linear infinite" }} /> Redirecting to checkout…</>
-                : <>Gift this plan — ${tier.annualPrice}/year <ArrowRight size={16} strokeWidth={2.5} /></>
+                : <>{giftMode === "annual_sponsorship" ? `Sponsor this annually — $${tier.annualPrice}/year` : `Gift this year — $${tier.annualPrice}`} <ArrowRight size={16} strokeWidth={2.5} /></>
               }
             </button>
 
             <p style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center" }}>
-              Secure checkout via Stripe · Recipient gets a beautiful email with their redemption code
+              Secure checkout via Stripe · Recipient gets a beautiful email with their redemption code{giftMode === "annual_sponsorship" ? " · Annual sponsorship renews until cancelled" : ""}
             </p>
           </form>
         </div>

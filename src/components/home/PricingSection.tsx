@@ -22,7 +22,7 @@ const TIERS = [
     intro: "A private vault for one child.",
     features: [
       "The Vault with letters, voice notes, photos, and videos",
-      "Up to 10 circle members",
+      "Unlimited circle members",
       "Monthly prompts to circle",
       "Milestone opening at 13, 18, graduation, wedding, or your chosen date",
       "All response types — text, voice, photo, and video",

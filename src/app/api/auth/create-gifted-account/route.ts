@@ -68,6 +68,9 @@ export async function POST(req: NextRequest) {
       redeemedAt?: number;
       planType?: string;
       billingPeriod?: string;
+      stripeCustomerId?: string;
+      stripeSubscriptionId?: string;
+      giftMode?: string;
     } | null;
 
     if (!gift) {
@@ -133,6 +136,8 @@ export async function POST(req: NextRequest) {
       childName,
       parentNames,
       planType,
+      stripeCustomerId: gift.stripeCustomerId,
+      stripeSubscriptionId: gift.stripeSubscriptionId,
       birthDate: childDob,
     });
 

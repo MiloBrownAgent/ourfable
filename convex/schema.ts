@@ -362,7 +362,9 @@ export default defineSchema({
     planType: v.optional(v.string()),     // "standard" | "plus"
     billingPeriod: v.optional(v.string()), // "annual"
     status: v.optional(v.string()),        // "pending" | "paid" | "redeemed" | "expired"
+    giftMode: v.optional(v.string()),      // "one_year" | "annual_sponsorship"
     stripeSessionId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
     createdAt: v.optional(v.number()),
   })

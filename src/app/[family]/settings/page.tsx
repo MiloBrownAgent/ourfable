@@ -76,7 +76,7 @@ function formatBytes(bytes: number): string {
 
 const STANDARD_FEATURES = [
   "5 GB storage",
-  "Up to 10 circle members",
+  "Unlimited circle members",
   "Letters, photos & voice memos",
   "Monthly world snapshots",
   "Add more children anytime for $7/mo or $59/yr during founders",

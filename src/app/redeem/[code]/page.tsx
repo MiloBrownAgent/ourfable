@@ -118,7 +118,7 @@ export default async function RedeemPage({ params }: { params: Promise<{ code: s
                 <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 6, paddingLeft: 16 }}>
                   {planType === "plus"
                     ? "Full vault, monthly prompts, Dispatches, unlimited circle members, 25GB storage, and one additional child included"
-                    : "Full vault, monthly prompts, up to 10 circle members, and 5GB storage"}
+                    : "Full vault, monthly prompts, unlimited circle members, and 5GB storage"}
                 </p>
               </div>
 

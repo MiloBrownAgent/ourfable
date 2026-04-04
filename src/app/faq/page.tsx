@@ -33,7 +33,7 @@ export const FAQS = [
   },
   {
     q: "What does Our Fable cost?",
-    a: "Founding pricing is live now. Our Fable is $12/month or $99/year — it includes the Vault, up to 10 circle members, monthly prompts, and 5 GB of storage. Our Fable+ is $19/month or $149/year — it includes everything in Our Fable, plus Dispatches, unlimited circle members, one additional child included, and 25 GB of storage. Additional children are $7/month or $59/year during founders, then $9/month or $79/year after founders. Each child gets their own vault and can share the same circle or have a completely separate one. After the founding period, pricing becomes $16/month or $149/year for Our Fable and $25/month or $199/year for Our Fable+.",
+    a: "Founding pricing is live now. Our Fable is $12/month or $99/year — it includes the Vault, unlimited circle members, monthly prompts, and 5 GB of storage. Our Fable+ is $19/month or $149/year — it includes everything in Our Fable, plus Dispatches, unlimited circle members, one additional child included, and 25 GB of storage. Additional children are $7/month or $59/year during founders, then $9/month or $79/year after founders. Each child gets their own vault and can share the same circle or have a completely separate one.",
   },
   {
     q: "Is my family's content private?",

@@ -597,7 +597,7 @@ export default function SignupClient({
                 </p>
                 <div style={{ fontSize: 11, color: "var(--text-3)", lineHeight: 1.7 }}>
                   <p>The Vault for one child</p>
-                  <p>Up to 10 circle members · 5GB</p>
+                  <p>Unlimited circle members · 5GB</p>
                   <p>Add another child later for ${FOUNDING_CHILD_ADDON_PRICES.monthly}/mo or ${FOUNDING_CHILD_ADDON_PRICES.annual}/yr</p>
                 </div>
                 {planType === "standard" && (

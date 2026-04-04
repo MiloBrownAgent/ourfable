@@ -11,6 +11,7 @@ function getStripe() {
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://ourfable.ai";
 
 type PlanType = "standard" | "plus";
+type GiftMode = "one_year" | "annual_sponsorship";
 
 // Founding member pricing — one-time annual gift (always annual)
 const GIFT_PRICE_MAP: Record<PlanType, string> = {
@@ -29,12 +30,14 @@ export async function POST(req: NextRequest) {
       gifterEmail,
       gifterMessage,
       planType = "standard",
+      giftMode = "one_year",
     } = body as {
       recipientEmail: string;
       gifterName: string;
       gifterEmail?: string;
       gifterMessage?: string;
       planType?: PlanType;
+      giftMode?: GiftMode;
     };
 
     if (!recipientEmail || !gifterName) {
@@ -57,13 +60,14 @@ export async function POST(req: NextRequest) {
       recipientEmail,
       planType: resolvedPlanType,
       billingPeriod,
+      giftMode,
     });
 
     if (!giftCode) {
       return NextResponse.json({ error: "Failed to create gift record" }, { status: 500 });
     }
 
-    // 2. Create Stripe Checkout session (payment mode for one-time annual gift)
+    // 2. Create Stripe Checkout session
     const stripe = getStripe();
     const priceId = GIFT_PRICE_MAP[resolvedPlanType];
     const recurringPrice = await stripe.prices.retrieve(priceId);
@@ -73,32 +77,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Gift pricing is not configured correctly" }, { status: 500 });
     }
 
+    const commonMetadata = {
+      type: "gift",
+      giftCode,
+      recipientEmail,
+      gifterName,
+      gifterEmail: gifterEmail ?? "",
+      gifterMessage: gifterMessage?.slice(0, 499) ?? "",
+      planType: resolvedPlanType,
+      billingPeriod,
+      giftMode,
+    };
+
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [{
-        price_data: {
-          currency,
-          unit_amount: amount,
-          product_data: {
-            name: resolvedPlanType === "plus" ? "Our Fable+ gift (annual)" : "Our Fable gift (annual)",
-          },
-        },
-        quantity: 1,
-      }],
+      mode: giftMode === "annual_sponsorship" ? "subscription" : "payment",
+      line_items: giftMode === "annual_sponsorship"
+        ? [{ price: priceId, quantity: 1 }]
+        : [{
+            price_data: {
+              currency,
+              unit_amount: amount,
+              product_data: {
+                name: resolvedPlanType === "plus" ? "Our Fable+ gift (annual)" : "Our Fable gift (annual)",
+              },
+            },
+            quantity: 1,
+          }],
       allow_promotion_codes: true,
-      success_url: `${BASE_URL}/gift/success?code=${giftCode}&email=${encodeURIComponent(recipientEmail)}`,
+      success_url: `${BASE_URL}/gift/success?code=${giftCode}&email=${encodeURIComponent(recipientEmail)}&mode=${giftMode}`,
       cancel_url: `${BASE_URL}/gift`,
       customer_email: gifterEmail || undefined,
-      metadata: {
-        type: "gift",
-        giftCode,
-        recipientEmail,
-        gifterName,
-        gifterEmail: gifterEmail ?? "",
-        gifterMessage: gifterMessage?.slice(0, 499) ?? "",
-        planType: resolvedPlanType,
-        billingPeriod,
-      },
+      metadata: commonMetadata,
+      subscription_data: giftMode === "annual_sponsorship" ? { metadata: commonMetadata } : undefined,
     });
 
     // 3. Update the gift with the Stripe session ID
