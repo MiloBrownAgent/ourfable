@@ -423,7 +423,7 @@ async function sendPromptEmail(args: {
       <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:24px;margin:0 0 20px;">
         <p style="margin:0;font-family:Georgia,serif;font-size:18px;color:#1A1A1A;line-height:1.6;font-style:italic;">"${args.promptText}"</p>
       </div>
-      <p style="margin:0 0 10px;font-size:15px;color:#4A4A4A;line-height:1.7;">${mediaNote}</p>
+      <p style="margin:0 0 10px;font-size:15px;color:#4A4A4A;line-height:1.7;">Every answer becomes part of ${childFirst}'s future vault. ${mediaNote}</p>
       <p style="margin:0 0 24px;font-size:13px;color:#8A8880;line-height:1.7;font-style:italic;">${unlockLine}</p>
       <a href="${submitUrl}" style="display:inline-block;padding:13px 28px;background:#4A5E4C;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">Answer now</a>
       <p style="margin:20px 0 0;"><a href="${args.skipUrl}" style="font-size:12px;color:#9A9590;text-decoration:none;">Skip this month</a></p>

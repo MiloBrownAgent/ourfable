@@ -445,13 +445,13 @@ export const sendBirthdayLetterReminderForFamily = internalAction({
     const html = emailWrapper(`
       <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A87A;">One week away</p>
       <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${childFirst}'s birthday is ${birthdayDate}</p>
-      <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Now's a great time to write a birthday letter for ${childFirst}. Open the Letters page in your dashboard — there's a Birthday Letters tab waiting for you.</p>
+      <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Now's a great time to write a birthday letter for ${childFirst}. Birthdays are one of the clearest ways the vault becomes more valuable over time — each year adds another layer they will one day open.</p>
       <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;"><tr><td style="border-radius:10px;background:#4A5E4C;">
         <a href="https://ourfable.ai/${familyId}/letters" style="display:inline-block;padding:13px 28px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Write a birthday letter →</a>
       </td></tr></table>
       <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:24px;margin:0 0 28px;">
         <p style="margin:0 0 12px;font-family:Georgia,serif;font-size:17px;color:#1A1A1A;">Want us to nudge the circle?</p>
-        <p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:14px;color:#6B6860;line-height:1.7;">We can send a gentle reminder to ${childFirst}'s circle members that the birthday is coming up — in case they'd like to write something too.</p>
+        <p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:14px;color:#6B6860;line-height:1.7;">We can send a gentle reminder to ${childFirst}'s circle members that the birthday is coming up — in case they'd like to add another memory too. Those small additions are what make the vault feel rich years from now.</p>
         <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#C8A87A;">
           <a href="${remindUrl}" style="display:inline-block;padding:12px 24px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Yes, gently remind them →</a>
         </td></tr></table>

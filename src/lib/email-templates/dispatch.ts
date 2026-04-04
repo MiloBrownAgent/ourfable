@@ -162,7 +162,7 @@ export function dispatchEmail({
                       Hi — it&rsquo;s ${escapeHtml(cFirst)}.
                     </h1>
                     <p style="margin:14px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">
-                      ${escapeHtml(sentByName)} wanted you to see this.
+                      ${escapeHtml(sentByName)} wanted you to see this — one more piece of the everyday record they&apos;re building for ${escapeHtml(cFirst)}.
                     </p>
                   </td>
                 </tr>
