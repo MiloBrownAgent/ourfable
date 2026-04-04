@@ -14,6 +14,7 @@ interface Gift {
   status?: string;
   planType?: string;
   billingPeriod?: string;
+  giftMode?: string;
 }
 
 export default async function RedeemPage({ params }: { params: Promise<{ code: string }> }) {
@@ -26,6 +27,7 @@ export default async function RedeemPage({ params }: { params: Promise<{ code: s
   const personalMessage = gift?.gifterMessage || gift?.message;
   const planType = gift?.planType ?? "standard";
   const planLabel = planType === "plus" ? "Our Fable+" : "Our Fable";
+  const giftMode = gift?.giftMode ?? "one_year";
 
   // Determine gift status
   const isRedeemed = !!(gift?.redeemedAt || gift?.status === "redeemed");
@@ -112,7 +114,7 @@ export default async function RedeemPage({ params }: { params: Promise<{ code: s
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--green)", flexShrink: 0 }} />
                   <p style={{ fontSize: 14, fontWeight: 600, color: "var(--green)" }}>
-                    {planLabel} · 1 year included
+                    {planLabel} · {giftMode === "annual_sponsorship" ? "Annual sponsorship" : "1 year included"}
                   </p>
                 </div>
                 <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 6, paddingLeft: 16 }}>

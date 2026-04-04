@@ -959,7 +959,7 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
             <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">A gift from ${escapeHtml(gifterName)}</p>
             <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Someone who loves your family just gave you something extraordinary.</p>
             <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
-              We&apos;ll email ${escapeHtml(recipientEmail)} with their gift code and a link to redeem ${escapeHtml(planLabel)}.${giftMode === "annual_sponsorship" ? " This sponsorship will renew each year until you cancel it." : ""}
+              ${escapeHtml(gifterName)} has given your family ${escapeHtml(planLabel)} — a private vault where the people who love your child can leave letters, voice notes, photos, and videos for the future.${giftMode === "annual_sponsorship" ? " This sponsorship will renew each year until the giver cancels it." : ""}
             </p>
             ${gifterMessage ? `
             <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">

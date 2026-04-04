@@ -131,7 +131,7 @@ export default function GiftClient() {
             Give a child <em style={{ color: "var(--green)", fontStyle: "italic" }}>something lasting.</em>
           </h1>
           <p style={{ fontSize: 18, lineHeight: 1.75, color: "var(--text-2)", marginBottom: 16, maxWidth: 640, margin: "0 auto 16px", animation: "revealUp 0.5s ease 0.16s both" }}>
-            Our Fable is a private family vault where the people who love a child leave letters, voice notes, photos, and videos for their future. It feels less like software and more like helping a family begin an heirloom.
+            Our Fable is a private place where family can leave letters, voice notes, photos, and videos for a child to open years from now.
           </p>
         </div>
 
@@ -210,12 +210,12 @@ export default function GiftClient() {
             <button type="button" onClick={() => setGiftMode("one_year")} style={{ padding: "16px 14px", borderRadius: 12, border: `2px solid ${giftMode === "one_year" ? "var(--green)" : "var(--border)"}`, background: giftMode === "one_year" ? "var(--green-light)" : "#fff", textAlign: "left", cursor: "pointer" }}>
               <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Gift 1 year</p>
               <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "var(--text)" }}>${tier.annualPrice} today</p>
-              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: "var(--text-3)" }}>Best default. A beautiful one-time gift that gets the family started.</p>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: "var(--text-3)" }}>Pay once. The family gets their first year.</p>
             </button>
             <button type="button" onClick={() => setGiftMode("annual_sponsorship")} style={{ padding: "16px 14px", borderRadius: 12, border: `2px solid ${giftMode === "annual_sponsorship" ? "var(--green)" : "var(--border)"}`, background: giftMode === "annual_sponsorship" ? "var(--green-light)" : "#fff", textAlign: "left", cursor: "pointer" }}>
               <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Sponsor annually</p>
               <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "var(--text)" }}>${tier.annualPrice}/year</p>
-              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: "var(--text-3)" }}>Keeps the gift going each year. You can cancel anytime.</p>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: "var(--text-3)" }}>You pay each year so the gift stays active. Cancel anytime.</p>
             </button>
           </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -304,10 +304,10 @@ export default function GiftClient() {
         <div style={{ marginBottom: 48, padding: "24px 28px", background: "var(--bg-2)", borderRadius: 16, border: "1px solid var(--border)" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: "0 0 10px" }}>Why gifting works</p>
           <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--text-2)", margin: "0 0 10px" }}>
-            If you&apos;re a grandparent or someone close to the family, this is a beautiful way to give more than a present. You&apos;re helping create a place where your voice, your stories, and the voices of the rest of the circle can stay with the child for years.
+            This is a simple gift with lasting value. The family gets a private place to save letters, voice notes, photos, and videos for their child.
           </p>
           <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--text-3)", margin: 0 }}>
-            The family receives a polished gift email and redeems when they&apos;re ready. You cover the first year. They receive something thoughtful, private, and easy to begin.
+            We email them the gift. They redeem when ready. You either pay once for the first year or keep it going each year.
           </p>
         </div>
 

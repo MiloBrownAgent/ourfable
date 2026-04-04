@@ -429,8 +429,8 @@ async function sendPromptEmail(args: {
       <p style="margin:20px 0 0;"><a href="${args.skipUrl}" style="font-size:12px;color:#9A9590;text-decoration:none;">Skip this month</a></p>
       <div style="margin-top:24px;background:#F8F5F0;border:1px solid #E0DDD7;border-radius:16px;padding:20px 22px;">
         <p style="margin:0 0 8px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">For your own family</p>
-        <p style="margin:0 0 16px;font-size:14px;color:#6B6860;line-height:1.75;">If answering for ${childFirst} makes you wish you had a private place like this for your own child, you can reserve a vault for your family too.</p>
-        <a href="${getOurFableUrl()}/reserve" style="display:inline-block;padding:12px 20px;background:#FFFFFF;color:#4A5E4C;border-radius:999px;text-decoration:none;font-weight:600;font-size:13px;border:1px solid #D8D2C7;">Reserve your family's spot</a>
+        <p style="margin:0 0 16px;font-size:14px;color:#6B6860;line-height:1.75;">If this makes you wish you had a private place like this for your own child, you can start one too.</p>
+        <a href="${getOurFableUrl()}/for-your-family" style="display:inline-block;padding:12px 20px;background:#FFFFFF;color:#4A5E4C;border-radius:999px;text-decoration:none;font-weight:600;font-size:13px;border:1px solid #D8D2C7;">Start your family's vault</a>
       </div>
     </div>
   </div>
