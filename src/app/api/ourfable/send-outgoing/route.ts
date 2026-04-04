@@ -61,12 +61,21 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Fetch circle ──────────────────────────────────────────────────────────
-    const allMembers = await convexQuery<Array<{
+    let allMembers = await convexQuery<Array<{
       _id: string; name: string; email?: string; isInnerRing?: boolean;
     }>>(
       childId && dispatchTarget !== "family" ? "ourfable:listOurFableCircleMembersForChild" : "ourfable:listCircle",
       childId && dispatchTarget !== "family" ? { familyId, childId } : { familyId }
     ).catch(() => []);
+
+    // Child-scoped circle data is still being migrated. If a child-targeted lookup
+    // returns nothing, fall back to the legacy family-level circle so Dispatches
+    // keep working for existing families.
+    if (allMembers.length === 0 && childId && dispatchTarget !== "family") {
+      allMembers = await convexQuery<Array<{
+        _id: string; name: string; email?: string; isInnerRing?: boolean;
+      }>>("ourfable:listCircle", { familyId }).catch(() => []);
+    }
 
     // ── Tier gating ───────────────────────────────────────────────────────────
     // Base plan: inner ring members only
