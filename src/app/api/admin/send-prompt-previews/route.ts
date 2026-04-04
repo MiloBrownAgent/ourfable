@@ -265,22 +265,25 @@ export async function POST(req: NextRequest) {
 
   const total = Math.min(12, Math.max(1, count));
   const sent = [];
-  for (let i = 0; i < total; i++) {
-    const prompt = buildGrandparentPrompt(childName, childDob, parentNames, i);
-    const result = await sendPreviewEmail({
-      to,
-      replyTo: replyTo ?? to,
-      childName,
-      memberName,
-      promptText: prompt.text,
-      promptCategory: prompt.category,
-      promptUnlocksAtAge: prompt.unlocksAtAge,
-      promptUnlocksAtEvent: prompt.unlocksAtEvent,
-      index: i,
-      total,
-    });
-    sent.push({ index: i + 1, prompt: prompt.text, result });
+  try {
+    for (let i = 0; i < total; i++) {
+      const prompt = buildGrandparentPrompt(childName, childDob, parentNames, i);
+      const result = await sendPreviewEmail({
+        to,
+        replyTo: replyTo ?? to,
+        childName,
+        memberName,
+        promptText: prompt.text,
+        promptCategory: prompt.category,
+        promptUnlocksAtAge: prompt.unlocksAtAge,
+        promptUnlocksAtEvent: prompt.unlocksAtEvent,
+        index: i,
+        total,
+      });
+      sent.push({ index: i + 1, prompt: prompt.text, result });
+    }
+    return NextResponse.json({ success: true, sent: sent.length, prompts: sent.map((item) => item.prompt) });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to send previews", sent: sent.length }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true, sent: sent.length, prompts: sent.map((item) => item.prompt) });
 }
