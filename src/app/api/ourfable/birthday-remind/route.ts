@@ -96,7 +96,8 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const childFirst = family.childName.split(" ")[0];
+  const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId });
+  const childFirst = (activeChild?.childName ?? family.childName).split(" ")[0];
   return new NextResponse(
     renderPage(
       "Ready to remind the circle?",

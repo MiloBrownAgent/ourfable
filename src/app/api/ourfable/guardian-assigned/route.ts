@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery } from "@/lib/convex";
+import { internalConvexQuery } from "@/lib/convex-internal";
 import { guardianAssignedEmail } from "@/lib/email-templates/guardian-assigned";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, skipped: true, sent: 0 });
     }
 
+    const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId });
+    const resolvedChildName = activeChild?.childName ?? family.childName;
     const parentNames = family.parentNames?.trim() || session.name || "A parent";
     let sent = 0;
 
@@ -48,7 +51,7 @@ export async function POST(req: NextRequest) {
       const { subject, html } = guardianAssignedEmail({
         guardianName: guardian.name?.trim() || "Vault Guardian",
         guardianRelationship: guardian.relationship?.trim(),
-        childName: family.childName,
+        childName: resolvedChildName,
         parentNames,
         unsubscribeUrl: buildUnsubscribeUrl(email),
       });
