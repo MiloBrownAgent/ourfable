@@ -121,7 +121,7 @@ export const checkDeliveryMilestones = internalAction({
         if (daysUntil <= 30 && daysUntil > 0 && milestone.deliveryStatus === "pending") {
           const html = emailWrapper(`
             <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">30 days away</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${childFirst}'s ${milestone.milestoneName} is 30 days away</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${childFirst}'s ${milestone.milestoneName} is 30 days away</p>
             <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${childFirst} turns ${age} in 30 days. Their vault is almost ready — letters, photos, and voice memos from the people who love them most, waiting to be opened.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Now's the time to preview what's inside and schedule the delivery.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
@@ -142,7 +142,7 @@ export const checkDeliveryMilestones = internalAction({
         else if (daysUntil <= 0 && daysAfter < 1 && milestone.deliveryStatus === "notified_30d") {
           const html = emailWrapper(`
             <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Today's the day</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${childFirst}'s vault is ready to open.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${childFirst}'s vault is ready to open.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Happy ${milestone.milestoneName} to ${childFirst}. The letters, the photos, the voice memos — everything the people who love them wrote, sealed since before they could read — it's all waiting.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">This is the moment you've been building toward.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
@@ -172,7 +172,7 @@ export const checkDeliveryMilestones = internalAction({
 
           const html = emailWrapper(`
             <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Vault Guardian</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">You're needed — ${childFirst}'s vault is waiting</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">You're needed — ${childFirst}'s vault is waiting</p>
             <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${family.parentNames ?? "The family"} hasn't delivered ${childFirst}'s vault yet. Their ${milestone.milestoneName} was 60 days ago.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">As a designated vault guardian, you can trigger the delivery. You won't be able to see any sealed content — only ensure ${childFirst} receives what was written for them.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
@@ -202,7 +202,7 @@ export const checkDeliveryMilestones = internalAction({
 
           const html = emailWrapper(`
             <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Vault Guardian</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">You're needed — ${childFirst}'s vault is waiting</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">You're needed — ${childFirst}'s vault is waiting</p>
             <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${childFirst}'s ${milestone.milestoneName} was 90 days ago, and their vault hasn't been delivered yet.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">As a designated vault guardian, you can trigger the delivery. You won't be able to see any sealed content — only ensure ${childFirst} receives what was written for them.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
@@ -256,7 +256,7 @@ export const checkCircleReEngagement = internalAction({
         if ((member.missedPrompts ?? 0) >= 2) {
           const html = emailWrapper(`
             <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">We miss you</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${childFirst}'s vault misses your voice</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${childFirst}'s vault misses your voice</p>
             <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Life gets busy. We get it. But ${childFirst} will read these someday — your words, your stories, your voice. It doesn't have to be long. Just real.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Write something now?</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
@@ -325,7 +325,7 @@ export const sendAnnualRecap = internalAction({
 
       const html = emailWrapper(`
         <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Happy Birthday</p>
-        <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">One year of ${childFirst}'s vault</p>
+        <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">One year of ${childFirst}'s vault</p>
         <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Another year of ${childFirst}'s story, preserved by the people who love them most.</p>
         <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:24px;margin:0 0 28px;">
           <p style="margin:0 0 12px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#1A1A1A;">This year in the vault:</p>
@@ -443,7 +443,7 @@ export const sendBirthdayLetterReminderForFamily = internalAction({
 
     const html = emailWrapper(`
       <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A87A;">One week away</p>
-      <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${childFirst}'s birthday is ${birthdayDate}</p>
+      <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${childFirst}'s birthday is ${birthdayDate}</p>
       <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Now's a great time to write a birthday letter for ${childFirst}. Open the Letters page in your dashboard — there's a Birthday Letters tab waiting for you.</p>
       <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;"><tr><td style="border-radius:10px;background:#4A5E4C;">
         <a href="https://ourfable.ai/${familyId}/letters" style="display:inline-block;padding:13px 28px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Write a birthday letter →</a>
@@ -506,7 +506,7 @@ export const sendVaultReceipt = internalAction({
       : `It's sealed until the time is right.`;
 
     const html = emailWrapper(`
-      <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">Sealed. ✓</p>
+      <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Sealed. ✓</p>
       <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Your ${typeLabel} for ${childFirst} has been sealed in the vault. It's safe, it's private, and it's waiting.</p>
       <p style="margin:0 0 28px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${unlockLine}</p>
       <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:20px 24px;margin:0 0 28px;">

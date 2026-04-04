@@ -41,8 +41,8 @@ function buildEmailHtml(friend: Friend): string {
   const childFirst = friend.childName.split(" ")[0];
 
   const content = `
-            <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">A gift for ${childFirst}</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">Dave &amp; Amanda set up a vault for ${friend.childName}.</p>
+            <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">A gift for ${childFirst}</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Dave &amp; Amanda set up a vault for ${friend.childName}.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Hey ${friend.parentNames} — we&rsquo;ve been building something called <strong>Our Fable</strong>, and we want you to have it. It&rsquo;s a private vault where the people who love ${childFirst} can write letters, record voice memos, and share photos &mdash; all sealed until a milestone you choose. Think of it as a time capsule, built by everyone who matters.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">We set everything up for you. ${childFirst}&rsquo;s vault is ready to go.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
@@ -62,9 +62,8 @@ function buildEmailHtml(friend: Friend): string {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
         <tr><td align="center" style="padding-bottom:28px;">
-          <div style="width:56px;height:56px;border-radius:50%;border:1.5px solid #C8D4C9;background:#F0F5F0;display:inline-flex;align-items:center;justify-content:center;">
-            <span style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#4A5E4C;">OF</span>
-          </div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+          <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
         </td></tr>
         <tr><td style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>

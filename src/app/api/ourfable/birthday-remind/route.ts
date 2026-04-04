@@ -46,8 +46,8 @@ function renderPage(title: string, message: string, form?: { token: string; fami
     <div style="width:56px;height:56px;border-radius:50%;border:1.5px solid #C8D4C9;background:#F0F5F0;display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px;">
       <span style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#4A5E4C;">OF</span>
     </div>
-    <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:24px;color:#1A1A18;font-weight:400;">${title}</h1>
-    <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.7;">${message}</p>
+    <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:28px;color:#1A1A18;font-weight:400;line-height:1.25;">${title}</h1>
+    <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">${message}</p>
     ${action}
   </div>
 </body>
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
         </td></tr></table>
         <table width="100%"><tr><td style="padding:32px 44px 44px;">
           <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A87A;">Birthday coming up</p>
-          <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">${escapeHtml(childFirst)}'s birthday is ${escapeHtml(birthdayDate)}</p>
+          <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${escapeHtml(childFirst)}'s birthday is ${escapeHtml(birthdayDate)}</p>
           <p style="margin:0 0 20px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Hi ${escapeHtml(memberFirst)} — just a little heads up that ${escapeHtml(childFirst)}'s birthday is coming up on ${escapeHtml(birthdayDate)}.</p>
           <p style="margin:0 0 28px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">If you'd like to write a birthday message, share a memory, or leave a voice note, it'll be sealed in ${escapeHtml(childFirst)}'s vault and waiting for them when they're older.</p>
           <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">

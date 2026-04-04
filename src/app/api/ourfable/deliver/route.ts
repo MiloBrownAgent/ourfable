@@ -106,8 +106,8 @@ export async function POST(req: NextRequest) {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
         <tr><td align="center" style="padding-bottom:40px;">
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;color:#F5F2ED;letter-spacing:-0.01em;">Our Fable</div>
-          <div style="width:36px;height:1.5px;background:#C8A87A;margin:12px auto 0;"></div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#F5F2ED;letter-spacing:-0.01em;">Our Fable</div>
+          <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
         </td></tr>
         <tr><td style="background:rgba(255,255,255,0.04);border-radius:20px;border:1px solid rgba(255,255,255,0.08);overflow:hidden;">
           <table width="100%"><tr><td style="background:linear-gradient(135deg,#4A5E4C,#6B8F6F);height:2px;font-size:0;">&nbsp;</td></tr></table>

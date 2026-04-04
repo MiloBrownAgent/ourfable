@@ -418,7 +418,7 @@ async function sendPromptEmail(args: {
     <div style="background:#4A5E4C;height:3px;"></div>
     <div style="padding:40px;">
       <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Monthly Prompt</p>
-      <h2 style="margin:0 0 24px;font-family:Georgia,serif;font-size:24px;color:#1A1A1A;line-height:1.3;">${childFirst} has a question for you, ${memberFirst}</h2>
+      <h2 style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${childFirst} has a question for you, ${memberFirst}</h2>
       <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:24px;margin:0 0 20px;">
         <p style="margin:0;font-family:Georgia,serif;font-size:18px;color:#1A1A1A;line-height:1.6;font-style:italic;">"${args.promptText}"</p>
       </div>

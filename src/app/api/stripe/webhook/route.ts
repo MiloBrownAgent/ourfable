@@ -95,7 +95,7 @@ async function sendPasswordSetupEmail(email: string) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">One more step</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A1A;line-height:1.3;">Set your password</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Set your password</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">Your payment went through and your account is ready. We just need you to choose a password to finish securing it.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">This link expires in 24 hours.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">We're sorry to see you go</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">Your vault is safe — for now</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Your vault is safe — for now</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">${escapeHtml(childFirst)}'s vault content — every letter, photo, and voice memo — will be preserved for 30 days. After that, it may be permanently removed.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">The letters don't disappear. But new ones stop coming.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Changed your mind? You can reactivate anytime within 30 days and pick up right where you left off.</p>
@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Action needed</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">Payment failed</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Payment failed</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">We weren't able to process your latest payment for Our Fable. Please update your payment method to keep ${escapeHtml(family.childName)}'s vault active.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">If your payment isn't updated within 7 days, your subscription will be paused.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
@@ -347,7 +347,7 @@ export async function POST(req: NextRequest) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Vault Guardian Notice</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${escapeHtml(childFirst)}'s vault needs attention</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${escapeHtml(childFirst)}'s vault needs attention</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Hi ${escapeHtml(facilitatorName)},</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">You were designated as a vault guardian for ${escapeHtml(childFirst)}'s Our Fable vault. The account's payments have lapsed for an extended period.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">If you'd like to keep ${escapeHtml(childFirst)}'s vault active — preserving every letter, photo, and voice memo sealed inside — you can take over billing.</p>
@@ -870,7 +870,7 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
             </td></tr></table>
             <div style="background:#F8F5F0;border:1px solid #E8E4DE;border-radius:14px;padding:20px 24px;text-align:center;">
               <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#9A9590;">Your gift code</p>
-              <p style="margin:0;font-family:Georgia,'Playfair Display',serif;font-size:30px;font-weight:700;color:#4A5E4C;letter-spacing:0.08em;">${escapeHtml(giftCode)}</p>
+              <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:700;color:#4A5E4C;letter-spacing:0.08em;">${escapeHtml(giftCode)}</p>
               <p style="margin:8px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#A09890;">Keep this code safe — you can also use it at ourfable.ai/redeem/${escapeHtml(giftCode)}</p>
             </div>
           </td></tr></table>
@@ -991,7 +991,7 @@ async function handleChildAddonCompleted(session: Stripe.Checkout.Session) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Child added</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${escapeHtml(childFirst)}'s vault is ready.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${escapeHtml(childFirst)}'s vault is ready.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">${escapeHtml(childFirst)} has been added to your family's Our Fable vault. You can now add circle members for ${escapeHtml(childFirst)} and start collecting memories.</p>
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:100px;background:#4A5E4C;">
               <a href="https://ourfable.ai/${escapeHtml(familyId)}/children" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Set up ${escapeHtml(childFirst)}'s circle →</a>

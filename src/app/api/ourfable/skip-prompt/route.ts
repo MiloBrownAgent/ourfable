@@ -20,9 +20,10 @@ function page(title: string, message: string, token?: string) {
   <div style="background:#fff;border-radius:20px;border:1px solid #EAE7E1;max-width:480px;width:100%;overflow:hidden;">
     <div style="background:#4A5E4C;height:3px;"></div>
     <div style="padding:48px 40px;text-align:center;">
-      <p style="font-family:Georgia,serif;font-size:20px;color:#4A5E4C;font-weight:700;margin:0 0 32px;">Our Fable</p>
-      <h1 style="font-family:Georgia,serif;font-size:24px;color:#1A1A1A;line-height:1.4;margin:0 0 16px;">${title}</h1>
-      <p style="font-size:15px;color:#6A6560;line-height:1.7;margin:0;">${message}</p>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;margin:0 0 10px;">Our Fable</div>
+      <div style="width:32px;height:1.5px;background:#C8A87A;margin:0 auto 32px;"></div>
+      <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;margin:0 0 16px;">${title}</h1>
+      <p style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6A6560;line-height:1.8;margin:0;">${message}</p>
       ${action}
     </div>
   </div>

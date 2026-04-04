@@ -97,7 +97,7 @@ function guardianInactivityEmail(opts: {
       <p style="margin:0 0 8px;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a9c7e;">
         Our Fable
       </p>
-      <h1 style="margin:0 0 20px;font-size:24px;font-weight:700;color:#2c3e2d;line-height:1.2;">
+      <h1 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">
         Just checking in
       </h1>
       <p style="margin:0 0 16px;font-size:15px;color:#555;line-height:1.7;">
@@ -139,7 +139,7 @@ function parentInactivityEmail(opts: {
       <p style="margin:0 0 8px;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a9c7e;">
         Our Fable
       </p>
-      <h1 style="margin:0 0 20px;font-size:24px;font-weight:700;color:#2c3e2d;line-height:1.2;">
+      <h1 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">
         ${childFirst}'s circle misses your voice
       </h1>
       <p style="margin:0 0 16px;font-size:15px;color:#555;line-height:1.7;">
