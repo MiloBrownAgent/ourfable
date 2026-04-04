@@ -160,6 +160,7 @@ export default defineSchema({
     acceptedAt: v.optional(v.number()),
     lastActiveAt: v.optional(v.number()),
     contributionCount: v.optional(v.number()),
+    lastInactivityCheckInCycle: v.optional(v.number()),
     promptFrequency: v.optional(v.union(
       v.literal("monthly"),
       v.literal("quarterly"),

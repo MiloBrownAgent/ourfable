@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 
+const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MONTHLY_INTERVAL_DAYS = 30;
 const QUARTERLY_INTERVAL_DAYS = 90;
@@ -756,6 +758,10 @@ export const expirePromptBatch = internalMutation({
           familyId: prompt.familyId,
           memberId: prompt.memberId,
         });
+        await ctx.scheduler.runAfter(0, internal.ourfablePrompts.maybeSendInactivityCheckIn, {
+          familyId: prompt.familyId,
+          memberId: prompt.memberId,
+        });
       }
     }
 
@@ -813,6 +819,10 @@ export const expirePromptBatch = internalMutation({
         if (responseWindowEndsAt <= now) {
           expiredPromptIds.add(String(prompt._id));
           await ctx.scheduler.runAfter(0, internal.ourfablePrompts.ensureMemberPromptChains, {
+            familyId: prompt.familyId,
+            memberId: prompt.memberId,
+          });
+          await ctx.scheduler.runAfter(0, internal.ourfablePrompts.maybeSendInactivityCheckIn, {
             familyId: prompt.familyId,
             memberId: prompt.memberId,
           });
@@ -877,7 +887,7 @@ export const markPromptStatus = internalMutation({
   },
 });
 
-export const skipPromptByToken = internalMutation({
+export const skipPromptByToken=internalMutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const prompt = await ctx.db
@@ -888,6 +898,10 @@ export const skipPromptByToken = internalMutation({
 
     await ctx.db.patch(prompt._id, { status: "skipped" });
     await ctx.scheduler.runAfter(0, internal.ourfablePrompts.ensureMemberPromptChains, {
+      familyId: prompt.familyId,
+      memberId: prompt.memberId,
+    });
+    await ctx.scheduler.runAfter(0, internal.ourfablePrompts.maybeSendInactivityCheckIn, {
       familyId: prompt.familyId,
       memberId: prompt.memberId,
     });
@@ -946,6 +960,113 @@ export const getMemberHistory = internalQuery({
       .withIndex("by_memberId", (q) => q.eq("memberId", memberId))
       .order("desc")
       .take(24);
+  },
+});
+
+export const listPromptHistoryForMember = internalQuery({
+  args: { memberId: v.id("ourfable_vault_circle") },
+  handler: async (ctx, { memberId }) => {
+    return await ctx.db
+      .query("ourfable_vault_prompt_queue")
+      .withIndex("by_memberId", (q) => q.eq("memberId", memberId))
+      .collect();
+  },
+});
+
+export const setMemberInactivityCheckInCycle = internalMutation({
+  args: {
+    memberId: v.id("ourfable_vault_circle"),
+    cycleNumber: v.number(),
+  },
+  handler: async (ctx, { memberId, cycleNumber }) => {
+    await ctx.db.patch(memberId, { lastInactivityCheckInCycle: cycleNumber });
+  },
+});
+
+export const maybeSendInactivityCheckIn = internalAction({
+  args: {
+    familyId: v.string(),
+    memberId: v.id("ourfable_vault_circle"),
+  },
+  handler: async (ctx, { familyId, memberId }) => {
+    if (!RESEND_API_KEY) return { sent: false, reason: "missing_resend_key" };
+
+    const member = await ctx.runQuery(internal.ourfable.getCircleMember, { memberId });
+    if (!member?.email) return { sent: false, reason: "member_missing_email" };
+
+    const family = await ctx.runQuery(internal.ourfable.getFamily, { familyId });
+    if (!family?.parentEmail) return { sent: false, reason: "family_missing_parent_email" };
+
+    const promptHistory = await ctx.runQuery(internal.ourfablePrompts.listPromptHistoryForMember, { memberId });
+    const ordered = [...promptHistory]
+      .filter((prompt: { cycleNumber?: number; status?: string }) => prompt.cycleNumber !== undefined)
+      .sort((a: { cycleNumber?: number }, b: { cycleNumber?: number }) => (b.cycleNumber ?? -1) - (a.cycleNumber ?? -1));
+
+    let streak = 0;
+    let latestCycle: number | null = null;
+    for (const prompt of ordered) {
+      if (latestCycle === null) latestCycle = prompt.cycleNumber ?? null;
+      if (prompt.status === "skipped" || prompt.status === "expired") {
+        streak += 1;
+        continue;
+      }
+      if (prompt.status === "responded") break;
+      if (prompt.status === "sent" || prompt.status === "pending") break;
+    }
+
+    if (streak < 2 || latestCycle === null) {
+      return { sent: false, reason: "streak_below_threshold", streak };
+    }
+    if ((member.lastInactivityCheckInCycle ?? -1) >= latestCycle) {
+      return { sent: false, reason: "already_sent", cycleNumber: latestCycle };
+    }
+
+    const childFirst = (family.childName ?? "your child").split(" ")[0];
+    const dashboardUrl = `${getOurFableUrl()}/${familyId}/circle`;
+    const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 24px;background:#F5F2ED;">
+      <div style="text-align:center;padding-bottom:24px;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+        <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
+      </div>
+      <div style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
+        <div style="background:#4A5E4C;height:3px;"></div>
+        <div style="padding:40px;">
+          <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Circle check-in</p>
+          <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">It may be worth checking in on ${member.name}.</h2>
+          <p style="margin:0 0 16px;font-size:15px;color:#4A4A4A;line-height:1.8;">They've skipped or missed the last two monthly prompts for ${childFirst}. Sometimes life simply gets busy, so this is just a gentle heads-up in case you want to reach out.</p>
+          <p style="margin:0 0 28px;font-size:14px;color:#6B6860;line-height:1.75;">A quick personal nudge often brings people back in. If anything has changed for them, this is also a chance to make sure everything is okay.</p>
+          <a href="${dashboardUrl}" style="display:inline-block;padding:13px 28px;background:#4A5E4C;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">Open ${childFirst}'s circle →</a>
+        </div>
+      </div>
+    </div>`;
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Our Fable <hello@ourfable.ai>",
+        to: family.parentEmail,
+        subject: `A quick check-in on ${member.name}`,
+        html,
+      }),
+    });
+    if (!response.ok) {
+      console.error("[ourfable-prompts] Failed to send inactivity check-in", await response.text());
+      return { sent: false, reason: "email_failed" };
+    }
+
+    await ctx.runMutation(internal.ourfablePrompts.setMemberInactivityCheckInCycle, { memberId, cycleNumber: latestCycle });
+    await ctx.runMutation(internal.ourfable.createNotification, {
+      familyId,
+      type: "circle_member_unresponsive",
+      memberName: member.name,
+      preview: "Skipped or missed the last two monthly prompts.",
+    });
+
+    return { sent: true, cycleNumber: latestCycle, streak };
   },
 });
 
