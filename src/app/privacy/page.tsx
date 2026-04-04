@@ -141,7 +141,7 @@ export default function PrivacyPage() {
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontFamily: "var(--font-playfair)", fontSize: 18, fontWeight: 700, color: "var(--green)" }}>Our Fable</span>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <Link href="/reserve" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
+            <Link href="/gift" className="nav-link" style={{ fontSize: 13 }}>Give as a gift</Link>
             <Link href="/faq" className="nav-link" style={{ fontSize: 13 }}>FAQ</Link>
             <Link href="/journal" className="nav-link" style={{ fontSize: 13 }}>Journal</Link>
             <Link href="/partners" className="nav-link" style={{ fontSize: 13 }}>Partner with us</Link>

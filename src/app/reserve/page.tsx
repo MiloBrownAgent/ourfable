@@ -20,10 +20,11 @@ function ReservePageInner() {
   const searchParams = useSearchParams();
   const [isGift, setIsGift] = useState(false);
 
-  // Auto-check gift mode if ?gift=true + capture UTMs
+  // Capture UTMs and route old gift links to the dedicated gift page
   useEffect(() => {
     if (searchParams.get("gift") === "true") {
-      setIsGift(true);
+      window.location.href = "/gift";
+      return;
     }
     captureUtmParams();
   }, [searchParams]);
@@ -340,15 +341,12 @@ function ReservePageInner() {
             fontFamily: "var(--font-playfair)", fontSize: 25, fontWeight: 700,
             color: "var(--text)", marginBottom: 8,
           }}>
-            {isGift ? "Give Our Fable as a gift" : "Reserve your family’s vault"}
+            Reserve your family’s vault
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 12 }}>
-            {isGift
-              ? "Reserve a founding-family gift and we’ll notify both of you when gifting opens."
-              : "Reserve free now, lock in founding pricing for life, and we’ll invite you in as onboarding opens."}
+            Reserve free now, lock in founding pricing for life, and we’ll invite you in as onboarding opens.
           </p>
-          {!isGift && (
-            <div style={{
+          <div style={{
               padding: "14px 16px",
               background: "var(--bg-2, #F9F7F4)",
               borderRadius: 12,
@@ -375,40 +373,23 @@ function ReservePageInner() {
                 Additional children are $7/mo or $59/yr during founders, then $9/mo or $79/yr. Each child gets their own vault and can share the same circle or have a completely separate one.
               </p>
             </div>
-          )}
         </div>
 
-        {/* Gift toggle */}
-        <div
-          style={{
-            display: "flex", alignItems: "center", gap: 12,
-            padding: "14px 16px",
-            background: isGift ? "var(--green-light)" : "var(--bg-2, #F9F7F4)",
-            borderRadius: 10,
-            border: `1.5px solid ${isGift ? "var(--green-border)" : "var(--border)"}`,
-            cursor: "pointer",
-            marginBottom: 24,
-            transition: "all 0.2s",
-            userSelect: "none",
-          }}
-          onClick={() => handleToggleGift(!isGift)}
-          role="checkbox"
-          aria-checked={isGift}
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); handleToggleGift(!isGift); } }}
-        >
-          <div className={`gift-toggle-track ${isGift ? "on" : ""}`}>
-            <div className="gift-toggle-thumb" />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Gift size={15} color={isGift ? "var(--green)" : "var(--text-3)"} strokeWidth={2} aria-hidden="true" />
-            <span style={{
-              fontSize: 14, fontWeight: 600,
-              color: isGift ? "var(--green)" : "var(--text-2)",
-            }}>
-              Give this as a gift
-            </span>
-          </div>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "14px 16px",
+          background: "var(--bg-2, #F9F7F4)",
+          borderRadius: 10,
+          border: "1.5px solid var(--border)",
+          marginBottom: 24,
+        }}>
+          <Gift size={15} color="var(--text-3)" strokeWidth={2} aria-hidden="true" />
+          <span style={{ fontSize: 14, color: "var(--text-2)" }}>
+            Looking for a gift instead?
+          </span>
+          <Link href="/gift" style={{ marginLeft: "auto", fontSize: 14, fontWeight: 600, color: "var(--green)", textDecoration: "none" }}>
+            Open gift page →
+          </Link>
         </div>
 
         {/* ── WAITLIST MODE ── */}
