@@ -3650,6 +3650,36 @@ export const getChild = internalQuery({
   },
 });
 
+export const getActiveChildProfile = internalQuery({
+  args: {
+    familyId: v.string(),
+    childId: v.optional(v.string()),
+  },
+  handler: async (ctx, { familyId, childId }) => {
+    const children = await ctx.db
+      .query("ourfable_children")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .collect();
+    const activeChildren = children.filter((child) => child.isActive !== false);
+    const selected = childId
+      ? activeChildren.find((child) => child.childId === childId || String(child._id) === childId)
+      : undefined;
+    const primary = activeChildren.find((child) => child.isFirst) ?? activeChildren[0];
+    const fallbackFamily = await ctx.db
+      .query("ourfable_vault_families")
+      .withIndex("by_familyId", (q) => q.eq("familyId", familyId))
+      .first();
+
+    const resolved = selected ?? primary;
+    return {
+      childId: resolved?.childId,
+      childName: resolved?.childName ?? fallbackFamily?.childName,
+      childDob: resolved?.childDob ?? fallbackFamily?.childDob,
+      isPrimary: resolved ? resolved.isFirst === true : true,
+    };
+  },
+});
+
 // ── Add Child ─────────────────────────────────────────────────────────────────
 
 export const addChild = internalMutation({

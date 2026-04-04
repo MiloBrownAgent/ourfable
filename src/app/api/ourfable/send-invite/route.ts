@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery } from "@/lib/convex";
+import { internalConvexQuery } from "@/lib/convex-internal";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 import { escapeHtml } from "@/lib/email-templates/escape-html";
 import { circleGrowthHtml } from "@/lib/email-templates/circle-growth";
@@ -227,8 +228,11 @@ export async function POST(req: NextRequest) {
     const toEmail = testEmail ?? member.email;
     if (!toEmail) return NextResponse.json({ error: "No email address" }, { status: 400 });
 
+    const activeChild = await internalConvexQuery<{ childName?: string; childDob?: string }>("ourfable:getActiveChildProfile", { familyId });
+    const resolvedChildName = activeChild?.childName ?? family.childName;
+    const resolvedChildDob = activeChild?.childDob ?? family.childDob;
     const isTest = !!testEmail;
-    const childFirst = childFirstName(family.childName);
+    const childFirst = childFirstName(resolvedChildName);
 
     const baseUrl = `https://ourfable.ai`;
     // Use client-provided invite URL (includes #key fragment for E2E encryption) if available
@@ -241,8 +245,8 @@ export async function POST(req: NextRequest) {
     const html = ourfableInviteHtml({
       recipientName: member.name,
       relationship: member.relationship,
-      childName: family.childName,
-      childDob: family.childDob,
+      childName: resolvedChildName,
+      childDob: resolvedChildDob,
       parentNames,
       inviteUrl,
       unsubscribeUrl: buildUnsubscribeUrl(toEmail),

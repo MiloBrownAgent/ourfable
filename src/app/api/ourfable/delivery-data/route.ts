@@ -43,8 +43,9 @@ export async function GET(req: NextRequest) {
     internalConvexQuery("ourfable:listOurFableLetters", { familyId: tokenData.familyId }).catch(() => []),
   ]);
 
+  const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId });
   return NextResponse.json({
-    childName: family.childName,
+    childName: activeChild?.childName ?? family.childName,
     parentNames: family.parentNames,
     familyId: tokenData.familyId,
     firstUsedAt: tokenData.usedAt ?? now,

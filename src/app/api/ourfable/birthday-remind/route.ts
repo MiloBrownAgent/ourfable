@@ -154,7 +154,8 @@ export async function POST(req: NextRequest) {
     }> | null>("ourfable:listOurFableCircleMembers", { familyId });
 
     const emailMembers = members?.filter((member) => member.email) ?? [];
-    const childFirst = family.childName.split(" ")[0];
+    const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId });
+    const childFirst = (activeChild?.childName ?? family.childName).split(" ")[0];
     const dob = family.birthDate ? new Date(`${family.birthDate}T00:00:00`) : null;
     const now = new Date();
     let birthdayDate = "soon";

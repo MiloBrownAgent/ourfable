@@ -107,6 +107,8 @@ export async function POST(req: NextRequest) {
 
     const viewToken = generateViewToken();
     const viewUrl = `https://ourfable.ai/view/${viewToken}`;
+    const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId, childId: childId ?? undefined });
+    const resolvedChildName = activeChild?.childName ?? family.childName;
     const results: Array<{ name: string; success: boolean; error?: string }> = [];
 
     // ── Send to each recipient ────────────────────────────────────────────────
@@ -114,7 +116,7 @@ export async function POST(req: NextRequest) {
       try {
         const { subject: emailSubject, html, text } = dispatchEmail({
           recipientName: member.name,
-          childName: family.childName,
+          childName: resolvedChildName,
           sentByName,
           subject,
           body: messageBody ?? "",

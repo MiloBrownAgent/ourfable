@@ -160,7 +160,8 @@ export async function POST(req: NextRequest) {
       console.log("[notify-parents] No parentEmail for family — skipping notification");
       return NextResponse.json({ success: true, skipped: true, reason: "No parent email" });
     }
-    const childFirst = family.childName.split(" ")[0];
+    const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId });
+    const childFirst = (activeChild?.childName ?? family.childName).split(" ")[0];
     const vaultUrl = `https://ourfable.ai/${familyId}/vault`;
 
     const html = notifyHtml({

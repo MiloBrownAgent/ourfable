@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery, convexMutation } from "@/lib/convex";
+import { internalConvexQuery } from "@/lib/convex-internal";
 import { escapeHtml } from "@/lib/email-templates/escape-html";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 
@@ -63,7 +64,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Family not found" }, { status: 404 });
   }
 
-  const childFirst = family.childName.split(" ")[0];
+  const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId });
+  const childFirst = (activeChild?.childName ?? family.childName).split(" ")[0];
   const token = crypto.randomBytes(16).toString("hex");
 
   // Create delivery token

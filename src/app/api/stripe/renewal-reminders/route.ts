@@ -126,9 +126,10 @@ export async function GET(req: NextRequest) {
       if (secondsUntilRenewal < remindWindowStart || secondsUntilRenewal > remindWindowEnd) continue;
       const reminderKey = String(currentPeriodEnd);
       if (family.lastAnnualRenewalReminderFor === reminderKey) continue;
+      const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId: family.familyId });
       await sendReminderEmail({
         email: family.email,
-        childFirst: family.childName.split(" ")[0],
+        childFirst: (activeChild?.childName ?? family.childName).split(" ")[0],
         planLabel: family.planType === "plus" ? "Our Fable+" : "Our Fable",
         amountLabel: formatAmount(item?.price?.unit_amount ?? 0, item?.price?.currency ?? "usd"),
         renewsOn: formatDate(currentPeriodEnd),

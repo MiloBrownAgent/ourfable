@@ -63,6 +63,11 @@ function formatDate(timestampSeconds: number | null | undefined): string {
   });
 }
 
+async function resolvePrimaryChildFirst(familyId: string, fallbackChildName?: string | null) {
+  const activeChild = await internalConvexQuery<{ childName?: string }>("ourfable:getActiveChildProfile", { familyId }).catch(() => null);
+  return (activeChild?.childName ?? fallbackChildName ?? "your child").split(" ")[0];
+}
+
 function emailFooter(lightMode = true): string {
   if (lightMode) {
     return `<tr><td align="center" style="padding-top:24px;">
@@ -381,7 +386,7 @@ export async function POST(req: NextRequest) {
               const now = Date.now();
               const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
               const lastNotified = family.lastFacilitatorBillingNotification ?? 0;
-              const childFirst = family.childName.split(" ")[0];
+              const childFirst = await resolvePrimaryChildFirst(family.familyId, family.childName);
 
               // Determine which facilitator to notify
               let facilitatorEmail: string | undefined;
@@ -480,7 +485,7 @@ export async function POST(req: NextRequest) {
               const planLabel = family.planType === "plus" ? "Our Fable+" : "Our Fable";
               await sendBillingReceiptEmail({
                 email: family.email,
-                childFirst: family.childName.split(" ")[0],
+                childFirst: await resolvePrimaryChildFirst(family.familyId, family.childName),
                 planLabel,
                 amountCents: invoice.amount_paid ?? 0,
                 currency: invoice.currency ?? "usd",
