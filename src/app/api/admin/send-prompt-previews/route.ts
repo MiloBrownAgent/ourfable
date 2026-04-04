@@ -252,6 +252,8 @@ export async function POST(req: NextRequest) {
     parentNames,
     memberName = "Dave",
     count = 10,
+    startIndex = 0,
+    overallTotal,
     replyTo,
   } = body as {
     to: string;
@@ -260,14 +262,18 @@ export async function POST(req: NextRequest) {
     parentNames: string;
     memberName?: string;
     count?: number;
+    startIndex?: number;
+    overallTotal?: number;
     replyTo?: string;
   };
 
   const total = Math.min(12, Math.max(1, count));
+  const displayTotal = overallTotal ?? (startIndex + total);
   const sent = [];
   try {
     for (let i = 0; i < total; i++) {
-      const prompt = buildGrandparentPrompt(childName, childDob, parentNames, i);
+      const promptIndex = startIndex + i;
+      const prompt = buildGrandparentPrompt(childName, childDob, parentNames, promptIndex);
       const result = await sendPreviewEmail({
         to,
         replyTo: replyTo ?? to,
@@ -277,8 +283,8 @@ export async function POST(req: NextRequest) {
         promptCategory: prompt.category,
         promptUnlocksAtAge: prompt.unlocksAtAge,
         promptUnlocksAtEvent: prompt.unlocksAtEvent,
-        index: i,
-        total,
+        index: promptIndex,
+        total: displayTotal,
       });
       sent.push({ index: i + 1, prompt: prompt.text, result });
     }
