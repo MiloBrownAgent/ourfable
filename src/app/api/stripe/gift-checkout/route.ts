@@ -64,11 +64,27 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Create Stripe Checkout session (payment mode for one-time annual gift)
+    const stripe = getStripe();
     const priceId = GIFT_PRICE_MAP[resolvedPlanType];
+    const recurringPrice = await stripe.prices.retrieve(priceId);
+    const amount = recurringPrice.unit_amount;
+    const currency = recurringPrice.currency;
+    if (!amount || !currency) {
+      return NextResponse.json({ error: "Gift pricing is not configured correctly" }, { status: 500 });
+    }
 
-    const session = await getStripe().checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{
+        price_data: {
+          currency,
+          unit_amount: amount,
+          product_data: {
+            name: resolvedPlanType === "plus" ? "Our Fable+ gift (annual)" : "Our Fable gift (annual)",
+          },
+        },
+        quantity: 1,
+      }],
       allow_promotion_codes: true,
       success_url: `${BASE_URL}/gift/success?code=${giftCode}&email=${encodeURIComponent(recipientEmail)}`,
       cancel_url: `${BASE_URL}/gift`,
