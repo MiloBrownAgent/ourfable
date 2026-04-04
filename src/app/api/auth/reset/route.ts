@@ -50,9 +50,8 @@ export async function POST(req: NextRequest) {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
         <tr><td align="center" style="padding-bottom:28px;">
-          <div style="width:56px;height:56px;border-radius:50%;border:1.5px solid #C8D4C9;background:#F0F5F0;display:inline-flex;align-items:center;justify-content:center;">
-            <span style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#4A5E4C;">Our Fable</span>
-          </div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+          <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
         </td></tr>
         <tr><td style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
