@@ -1,4 +1,5 @@
 import { escapeHtml } from "./escape-html";
+import { circleGrowthHtml, circleGrowthText } from "./circle-growth";
 
 /**
  * dispatch.ts — Email template for Dispatches (parent → circle member)
@@ -190,6 +191,9 @@ export function dispatchEmail({
                         </tr>
                       </table>
                     ` : ""}
+                    ${circleGrowthHtml({
+                      body: `If getting these notes about ${cFirst} makes you wish you had the same kind of place for your own child, you can reserve a private vault of your own.`,
+                    })}
                   </td>
                 </tr>
               </table>
@@ -239,7 +243,11 @@ export function dispatchEmail({
     return "";
   })();
 
-  const text = `Hi ${rFirst} — ${sentByName} shared something from ${cFirst}'s family.\n\n${subject}\n\n${body}${mediaTextBlock}\n\n---\nThis is private — just for ${cFirst}'s circle.\nSent by ${sentByName} via Our Fable · ourfable.ai\nUnsubscribe: ${unsubscribeUrl}`;
+  const growthText = circleGrowthText(
+    `If getting these notes about ${cFirst} makes you wish you had the same kind of place for your own child, you can reserve a private vault of your own.`
+  );
+
+  const text = `Hi ${rFirst} — ${sentByName} shared something from ${cFirst}'s family.\n\n${subject}\n\n${body}${mediaTextBlock}\n\n${growthText}\n\n---\nThis is private — just for ${cFirst}'s circle.\nSent by ${sentByName} via Our Fable · ourfable.ai\nUnsubscribe: ${unsubscribeUrl}`;
 
   return { subject: emailSubject, html, text };
 }

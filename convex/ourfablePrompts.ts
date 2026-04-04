@@ -410,6 +410,10 @@ async function sendPromptEmail(args: {
     : "Write, record, or send a photo if that serves the memory better.";
 
   const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 24px;background:#F5F2ED;">
+  <div style="text-align:center;padding-bottom:24px;">
+    <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+    <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
+  </div>
   <div style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
     <div style="background:#4A5E4C;height:3px;"></div>
     <div style="padding:40px;">
@@ -422,6 +426,11 @@ async function sendPromptEmail(args: {
       <p style="margin:0 0 24px;font-size:13px;color:#8A8880;line-height:1.7;font-style:italic;">${unlockLine}</p>
       <a href="${submitUrl}" style="display:inline-block;padding:13px 28px;background:#4A5E4C;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">Answer now</a>
       <p style="margin:20px 0 0;"><a href="${args.skipUrl}" style="font-size:12px;color:#9A9590;text-decoration:none;">Skip this month</a></p>
+      <div style="margin-top:24px;background:#F8F5F0;border:1px solid #E0DDD7;border-radius:16px;padding:20px 22px;">
+        <p style="margin:0 0 8px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">For your own family</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#6B6860;line-height:1.75;">If answering for ${childFirst} makes you wish you had a private place like this for your own child, you can reserve a vault for your family too.</p>
+        <a href="${getOurFableUrl()}/reserve" style="display:inline-block;padding:12px 20px;background:#FFFFFF;color:#4A5E4C;border-radius:999px;text-decoration:none;font-weight:600;font-size:13px;border:1px solid #D8D2C7;">Reserve your family's spot</a>
+      </div>
     </div>
   </div>
 </div>`;

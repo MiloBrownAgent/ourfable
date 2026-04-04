@@ -3,6 +3,7 @@ import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery } from "@/lib/convex";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 import { escapeHtml } from "@/lib/email-templates/escape-html";
+import { circleGrowthHtml } from "@/lib/email-templates/circle-growth";
 
 
 // Resend API for sending emails from hello@ourfable.ai
@@ -154,6 +155,11 @@ function ourfableInviteHtml({
               </table>
 
 
+
+              ${circleGrowthHtml({
+                body: `If writing to ${childFirst} makes you wish you had a place like this for your own child, you can reserve a private vault for your family too.`,
+                ctaLabel: "Reserve your family's spot",
+              })}
 
               <!-- Footer note inside card -->
               <table width="100%" cellpadding="0" cellspacing="0">

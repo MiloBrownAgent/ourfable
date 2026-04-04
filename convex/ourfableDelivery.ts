@@ -51,9 +51,8 @@ function emailWrapper(content: string, footerName?: string): string {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
         <tr><td align="center" style="padding-bottom:28px;">
-          <div style="width:56px;height:56px;border-radius:50%;border:1.5px solid #C8D4C9;background:#F0F5F0;display:inline-flex;align-items:center;justify-content:center;">
-            <span style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#4A5E4C;">OF</span>
-          </div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+          <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
         </td></tr>
         <tr><td style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
@@ -263,6 +262,11 @@ export const checkCircleReEngagement = internalAction({
             <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#4A5E4C;">
               <a href="https://ourfable.ai/login" style="display:inline-block;padding:13px 28px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;">Contribute to ${childFirst}'s vault →</a>
             </td></tr></table>
+            <div style="margin-top:24px;background:#F8F5F0;border:1px solid #E0DDD7;border-radius:16px;padding:20px 22px;">
+              <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">For your own family</p>
+              <p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:14px;color:#6B6860;line-height:1.75;">If these reminders make you wish you had the same kind of place for your own child, you can reserve a private vault for your family too.</p>
+              <a href="https://ourfable.ai/reserve" style="display:inline-block;padding:12px 20px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#4A5E4C;text-decoration:none;border-radius:999px;background:#FFFFFF;border:1px solid #D8D2C7;">Reserve your family's spot</a>
+            </div>
           `);
 
           await sendResendEmail(RESEND_API_KEY, member.email, `${childFirst}'s vault misses your voice`, html);
@@ -507,6 +511,11 @@ export const sendVaultReceipt = internalAction({
       <p style="margin:0 0 28px;font-family:-apple-system,sans-serif;font-size:15px;color:#4A4A4A;line-height:1.8;">${unlockLine}</p>
       <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:12px;padding:20px 24px;margin:0 0 28px;">
         <p style="margin:0;font-family:-apple-system,sans-serif;font-size:13px;color:#6B6860;line-height:1.7;">This is your confirmation that the entry was received and stored. No action needed — ${childFirst} will find it when the time comes.</p>
+      </div>
+      <div style="background:#F8F5F0;border:1px solid #E0DDD7;border-radius:16px;padding:20px 22px;">
+        <p style="margin:0 0 8px;font-family:-apple-system,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">For your own family</p>
+        <p style="margin:0 0 16px;font-family:-apple-system,sans-serif;font-size:14px;color:#6B6860;line-height:1.75;">If sealing this for ${childFirst} makes you wish you had the same kind of place for your own child, you can reserve a private vault for your family too.</p>
+        <a href="https://ourfable.ai/reserve" style="display:inline-block;padding:12px 20px;font-family:-apple-system,sans-serif;font-size:13px;font-weight:600;color:#4A5E4C;text-decoration:none;border-radius:999px;background:#FFFFFF;border:1px solid #D8D2C7;">Reserve your family's spot</a>
       </div>
     `);
 
