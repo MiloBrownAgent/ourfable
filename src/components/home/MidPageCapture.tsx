@@ -155,7 +155,7 @@ export function MidPageCapture() {
             marginBottom: 32,
           }}
         >
-          Know someone who would love Our Fable?<br />Share it with them.
+          If another family comes to mind,<br />you can share Our Fable with them.
         </p>
 
         <div style={{ maxWidth: 420, margin: "0 auto 16px" }}>

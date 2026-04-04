@@ -129,20 +129,15 @@ export function waitlistWelcomeEmail(email?: string, unsubscribeUrl?: string): {
 
               <!-- CTA -->
               <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.75;color:#4A4A45;">
-                We're opening Our Fable to founding families first — limited to 1,000 families.
-                As a founding member, your rate is locked for life: <strong style="color:#1A1A18;">$99/year</strong> (regular $149/year) for Our Fable, or <strong style="color:#1A1A18;">$149/year</strong> (regular $199/year) for Our Fable+.
-                You're on the list. We'll be in touch when your vault is ready.
+                We&apos;re opening Our Fable to founding families first. Your place is saved, and we&apos;ll be in touch as soon as your vault is ready.
               </p>
 
-              <table cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="background:#4A5E4C;border-radius:100px;padding:16px 36px;">
-                    <a href="mailto:?subject=${encodeURIComponent("You need to see this — Our Fable")}&body=${encodeURIComponent("I just signed up for Our Fable — it's a vault where the people who love your child leave letters, voice memos, photos, and video, all sealed until they're old enough to read them.\n\nThey're only opening it to 1,000 founding families and the rate is locked for life.\n\nCheck it out: https://ourfable.ai")}" style="font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
-                      Know someone who'd love this? →
-                    </a>
-                  </td>
-                </tr>
-              </table>
+              <div style="padding:22px 24px;background:#F7F4EE;border:1px solid #E8E2D8;border-radius:14px;">
+                <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A8880;">If someone comes to mind</p>
+                <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.75;color:#6B6B65;">
+                  If you know another family who would treasure something like this, you can simply forward them to <a href="https://ourfable.ai" style="color:#4A5E4C;text-decoration:underline;">ourfable.ai</a> when the time feels right.
+                </p>
+              </div>
 
             </td>
           </tr>
@@ -185,9 +180,9 @@ What's being built for them:
 
 "Imagine your child at 18, opening a voice memo from their great-grandmother — recorded when they were 9 months old. Their great-grandmother, who is no longer alive. Telling them how she wants to be remembered."
 
-We're opening Our Fable to founding families first — limited to 1,000 families. As a founding member, your rate is locked for life: $99/year for Our Fable (regular $149/year) or $149/year for Our Fable+ (regular $199/year). You're on the list. We'll be in touch when your vault is ready.
+We're opening Our Fable to founding families first. Your place is saved, and we'll be in touch when your vault is ready.
 
-Know someone who'd love this? Forward this email or send them to https://ourfable.ai
+If someone comes to mind, you can always send them to https://ourfable.ai when the time feels right.
 
 —
 Our Fable · ourfable.ai
