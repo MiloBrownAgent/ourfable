@@ -112,10 +112,10 @@ export async function POST(req: NextRequest) {
         <tr><td style="background:rgba(255,255,255,0.04);border-radius:20px;border:1px solid rgba(255,255,255,0.08);overflow:hidden;">
           <table width="100%"><tr><td style="background:linear-gradient(135deg,#4A5E4C,#6B8F6F);height:2px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:56px 44px;">
-            <p style="margin:0 0 32px;font-family:Georgia,serif;font-size:32px;color:#F5F2ED;line-height:1.3;letter-spacing:-0.01em;">Someone&rsquo;s been writing to you.</p>
-            <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:rgba(245,242,237,0.7);line-height:1.8;">Before you could read. Before you could walk. Before you knew any of their names — the people who love you most have been leaving you letters, photos, and voice memos.</p>
-            <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:rgba(245,242,237,0.7);line-height:1.8;">They sealed them away, waiting for this exact moment.</p>
-            <p style="margin:0 0 40px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;color:rgba(245,242,237,0.7);line-height:1.8;">Your vault is ready, ${escapeHtml(childFirst)}.</p>
+            <p style="margin:0 0 32px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#F5F2ED;line-height:1.25;">Someone&rsquo;s been writing to you.</p>
+            <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:rgba(245,242,237,0.7);line-height:1.8;">Before you could read. Before you could walk. Before you knew any of their names — the people who love you most have been leaving you letters, photos, and voice memos.</p>
+            <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:rgba(245,242,237,0.7);line-height:1.8;">They sealed them away, waiting for this exact moment.</p>
+            <p style="margin:0 0 40px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:rgba(245,242,237,0.7);line-height:1.8;">Your vault is ready, ${escapeHtml(childFirst)}.</p>
             <table cellpadding="0" cellspacing="0" width="100%"><tr><td align="center">
               <a href="https://ourfable.ai/delivery/${token}" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#4A5E4C,#6B8F6F);color:#F5F2ED;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;letter-spacing:0.02em;">Open your vault</a>
             </td></tr></table>

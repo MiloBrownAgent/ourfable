@@ -449,15 +449,14 @@ async function handleUpgradeCompleted(session: Stripe.Checkout.Session) {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
         <tr><td align="center" style="padding-bottom:28px;">
-          <div style="width:56px;height:56px;border-radius:50%;border:1.5px solid #C8D4C9;background:#F0F5F0;display:inline-flex;align-items:center;justify-content:center;">
-            <span style="font-family:Georgia,serif;font-size:14px;font-weight:700;color:#4A5E4C;">Our Fable+</span>
-          </div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#4A5E4C;letter-spacing:-0.01em;">Our Fable</div>
+          <div style="width:32px;height:1.5px;background:#C8A87A;margin:10px auto 0;"></div>
         </td></tr>
         <tr><td style="background:#FFFFFF;border-radius:20px;border:1px solid #EAE7E1;overflow:hidden;">
           <table width="100%"><tr><td style="background:linear-gradient(135deg,#4A5E4C,#6B8F6F);height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Upgrade complete</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">Welcome to Our Fable+</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Welcome to Our Fable+</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Your upgrade is live. Here's what you've unlocked:</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
               <tr><td style="padding:10px 0;border-bottom:1px solid #F0ECE6;">
@@ -784,7 +783,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:44px;">
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">Welcome</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;color:#1A1A18;line-height:1.3;">${escapeHtml(childFirst)}'s story starts now.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${escapeHtml(childFirst)}'s story starts now.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">Welcome to Our Fable. ${escapeHtml(childFirst)}'s vault is ready — and the people who love them most can start contributing right away.</p>
             <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#1A1A18;">Your first step: invite your circle.</p>
             <p style="margin:0 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6A6660;line-height:1.7;">Add grandparents, aunts, uncles, godparents — anyone whose voice matters. They'll each get monthly prompts to write, record, or photograph something for ${escapeHtml(childFirst)}.</p>
@@ -850,7 +849,7 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:48px 44px;">
             <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">A gift from ${escapeHtml(gifterName)}</p>
-            <p style="margin:0 0 28px;font-family:Georgia,'Playfair Display',serif;font-size:28px;font-weight:700;color:#1A1A18;line-height:1.25;">Someone who loves your family just gave you something extraordinary.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Someone who loves your family just gave you something extraordinary.</p>
             <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
               ${escapeHtml(gifterName)} has given you <strong>${escapeHtml(planLabel)}</strong> — a private memory vault where the people who love your child leave letters, voice notes, photos, and video, all sealed until your child is old enough to read them.
             </p>
@@ -859,7 +858,7 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
               <tr>
                 <td style="border-left:3px solid #C8D4C9;padding:14px 20px;background:#F8FAF8;border-radius:0 10px 10px 0;">
                   <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A9E8C;">From ${escapeHtml(gifterName)}</p>
-                  <p style="margin:0;font-family:Georgia,'Playfair Display',serif;font-size:15px;color:#4A4A48;line-height:1.75;font-style:italic;">"${escapeHtml(gifterMessage)}"</p>
+                  <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#4A4A48;line-height:1.75;font-style:italic;">"${escapeHtml(gifterMessage)}"</p>
                 </td>
               </tr>
             </table>` : ""}
@@ -906,7 +905,7 @@ async function handleGiftCheckoutCompleted(session: Stripe.Checkout.Session) {
           <table width="100%"><tr><td style="background:#4A5E4C;height:3px;font-size:0;">&nbsp;</td></tr></table>
           <table width="100%"><tr><td style="padding:48px 44px;">
             <p style="margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A9E8C;">Gift confirmation</p>
-            <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:26px;font-weight:700;color:#1A1A18;line-height:1.3;">Your gift is on its way, ${escapeHtml(gifterName)}.</p>
+            <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Your gift is on its way, ${escapeHtml(gifterName)}.</p>
             <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#5A5650;line-height:1.8;">
               You've given someone a beautiful thing. We've sent a gift notification to <strong>${escapeHtml(recipientEmail)}</strong> with everything they need to get started.
             </p>
