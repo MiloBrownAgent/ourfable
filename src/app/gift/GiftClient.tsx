@@ -345,7 +345,7 @@ export default function GiftClient() {
             <div>
               <Gift size={18} color="var(--green)" strokeWidth={1.75} style={{ marginBottom: 8 }} />
               <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>They pay nothing</p>
-              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>You cover the full year upfront. Recipient just redeems the code and starts their vault.</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>{giftMode === "annual_sponsorship" ? "You sponsor the vault each year. The recipient just redeems the code and starts their vault." : "You cover the full year upfront. The recipient just redeems the code and starts their vault."}</p>
             </div>
             <div>
               <Users size={18} color="var(--green)" strokeWidth={1.75} style={{ marginBottom: 8 }} />
