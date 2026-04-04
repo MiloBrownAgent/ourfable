@@ -327,14 +327,14 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
         // API returns { family, member, prompt } or flat PromptData
         let promptData: PromptData;
         if (val.prompt) {
-          const { prompt, member, family } = val;
+          const { prompt, member, family, childName } = val;
           promptData = {
             promptText: prompt.promptText,
             promptCategory: prompt.promptCategory,
             promptUnlocksAtAge: prompt.promptUnlocksAtAge,
             promptUnlocksAtEvent: prompt.promptUnlocksAtEvent,
             memberName: member.name,
-            childName: family.childName,
+            childName: childName ?? family.childName,
             familyId: family.familyId,
             memberId: member._id,
             status: prompt.status,
@@ -648,7 +648,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
               color: "var(--text)",
             }}
           >
-            Hi, {memberFirst}.
+            A question for you, {memberFirst}.
           </h1>
         </div>
 
@@ -1025,7 +1025,7 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
                 Sealing…
               </>
             ) : (
-              "Seal this in the Vault →"
+              "Save your answer →"
             )}
           </button>
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
