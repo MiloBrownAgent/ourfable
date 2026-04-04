@@ -589,7 +589,9 @@ export const sendDeletionReminders = internalAction({
   },
 });
 
-// ── Send dispatch emails to circle members ──────────────────────────────────
+// ── Legacy dispatch email path (deprecated) ─────────────────────────────────
+// Prefer src/app/api/ourfable/send-outgoing/route.ts + src/lib/email-templates/dispatch.ts.
+// This action remains only to avoid breaking older callers until they are removed.
 export const sendDispatchEmails = internalAction({
   args: {
     familyId: v.string(),
