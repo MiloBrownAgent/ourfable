@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
+const CRON_SECRET = process.env.CRON_SECRET;
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
 const BASE_URL = process.env.OURFABLE_BASE_URL ?? "https://ourfable.ai";
 
@@ -228,14 +229,18 @@ async function sendPreviewEmail(args: {
 }
 
 export async function POST(req: NextRequest) {
-  if (!ADMIN_SECRET || !RESEND_API_KEY) {
+  if ((!ADMIN_SECRET && !CRON_SECRET) || !RESEND_API_KEY) {
     return NextResponse.json({ error: "Admin preview route not configured" }, { status: 503 });
   }
 
-  const authHeader = req.headers.get("x-admin-secret") ?? "";
-  const secretBuf = Buffer.from(ADMIN_SECRET);
-  const headerBuf = Buffer.from(authHeader);
-  if (secretBuf.length !== headerBuf.length || !crypto.timingSafeEqual(secretBuf, headerBuf)) {
+  const authHeader = req.headers.get("x-admin-secret") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const candidates = [ADMIN_SECRET, CRON_SECRET].filter((value): value is string => Boolean(value));
+  const authorized = candidates.some((candidate) => {
+    const secretBuf = Buffer.from(candidate);
+    const headerBuf = Buffer.from(authHeader);
+    return secretBuf.length === headerBuf.length && crypto.timingSafeEqual(secretBuf, headerBuf);
+  });
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
