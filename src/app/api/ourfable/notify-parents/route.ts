@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, COOKIE } from "@/lib/auth";
 import { convexQuery, convexMutation } from "@/lib/convex";
+import { internalConvexQuery } from "@/lib/convex-internal";
 import { buildUnsubscribeHeaders, buildUnsubscribeUrl } from "@/lib/unsubscribe-token";
 import { escapeHtml } from "@/lib/email-templates/escape-html";
 
@@ -24,6 +25,9 @@ function notifyHtml({
   contentType,
   vaultUrl,
   unsubscribeUrl,
+  totalEntries,
+  contributorCount,
+  memberEntryCount,
 }: {
   childFirst: string;
   memberName: string;
@@ -31,6 +35,9 @@ function notifyHtml({
   contentType: string;
   vaultUrl: string;
   unsubscribeUrl: string;
+  totalEntries: number;
+  contributorCount: number;
+  memberEntryCount: number;
 }) {
   const typeLabel = contentType === "voice" ? "a voice memo" : contentType === "photo" ? "a photo" : contentType === "video" ? "a video" : "a letter";
   const memberFirst = memberName.split(" ")[0];
@@ -65,17 +72,25 @@ function notifyHtml({
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding:48px 44px 44px;">
-                    <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">${escapeHtml(memberFirst)} wrote to ${escapeHtml(childFirst)} today.</p>
+                    <p style="margin:0 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;color:#1A1A18;line-height:1.25;">Another piece of ${escapeHtml(childFirst)}'s story was just added.</p>
                     <p style="margin:0 0 20px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6B6860;line-height:1.8;">
-                      <strong style="color:#1A1A18;">${escapeHtml(memberName)}</strong> — ${escapeHtml(childFirst)}'s ${escapeHtml(relationship.toLowerCase())} — left ${escapeHtml(typeLabel)} for the vault.
+                      <strong style="color:#1A1A18;">${escapeHtml(memberName)}</strong> — ${escapeHtml(childFirst)}'s ${escapeHtml(relationship.toLowerCase())} — left ${escapeHtml(typeLabel)} for the vault today.
                     </p>
-                    <p style="margin:0 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6A6660;line-height:1.8;font-style:italic;">
-                      It's sealed. ${escapeHtml(childFirst)} will find it waiting when the time comes.
+                    <p style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#6A6660;line-height:1.8;">
+                      It&apos;s sealed now, and it&apos;s part of what ${escapeHtml(childFirst)} will one day receive. This is the quiet compounding value of the vault — one voice at a time.
+                    </p>
+                    <div style="background:#F8F5F0;border:1px solid #E8E4DE;border-radius:14px;padding:20px 24px;margin:0 0 28px;">
+                      <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8A8880;">Vault progress</p>
+                      <p style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:400;color:#1A1A18;line-height:1.5;">${totalEntries} sealed ${totalEntries === 1 ? "memory" : "memories"} · ${contributorCount} ${contributorCount === 1 ? "person" : "people"} contributing</p>
+                      <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6B6860;line-height:1.75;">${escapeHtml(memberFirst)} has contributed ${memberEntryCount} ${memberEntryCount === 1 ? "time" : "times"} so far.</p>
+                    </div>
+                    <p style="margin:0 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#9A9590;line-height:1.75;">
+                      The more often this happens, the richer ${escapeHtml(childFirst)}'s future vault becomes.
                     </p>
                     <table cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="border-radius:100px;background-color:#4A5E4C;">
-                          <a href="${escapeHtml(vaultUrl)}" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">See the vault →</a>
+                          <a href="${escapeHtml(vaultUrl)}" style="display:inline-block;padding:13px 28px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:0.02em;">Open the vault →</a>
                         </td>
                       </tr>
                     </table>
@@ -127,6 +142,16 @@ export async function POST(req: NextRequest) {
     const family = await convexQuery("ourfable:getFamily", { familyId }) as Record<string, unknown> | null;
     if (!family) return NextResponse.json({ error: "Family not found" }, { status: 404 });
 
+    const entries = await internalConvexQuery<Array<{ memberName?: string }>>("ourfable:listVaultEntries", {
+      familyId,
+      includeSealed: true,
+    }).catch(() => []);
+    const totalEntries = entries.length;
+    const uniqueContributors = new Set(entries.map((entry) => entry.memberName).filter(Boolean));
+    const contributorCount = uniqueContributors.size;
+    const memberFirst = memberName.split(" ")[0];
+    const memberEntryCount = entries.filter((entry) => (entry.memberName || "").split(" ")[0] === memberFirst).length || 1;
+
     // Save notification
     await convexMutation("ourfable:createNotification", { familyId, type: "contribution_received", memberName, preview: `${contentType} · sealed` });
 
@@ -145,6 +170,9 @@ export async function POST(req: NextRequest) {
       contentType: contentType ?? "letter",
       vaultUrl,
       unsubscribeUrl: buildUnsubscribeUrl(parentEmail),
+      totalEntries,
+      contributorCount,
+      memberEntryCount,
     });
 
     await sendEmail({
