@@ -198,6 +198,7 @@ export default defineSchema({
     openedByParent: v.optional(v.boolean()),
     prompt: v.optional(v.string()),
     promptId: v.optional(v.string()),
+    submissionToken: v.optional(v.string()),
     submittedAt: v.number(),
     // Vault encryption fields
     encryptedBody: v.optional(v.string()),   // JSON-encoded EncryptedText { ciphertext, iv, tag }
