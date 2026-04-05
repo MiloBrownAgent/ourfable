@@ -457,15 +457,17 @@ export default function WritingBlock({ childFirst, familyId, dispatchChildId, lo
       })
       if (!res.ok) throw new Error('Failed to seal')
       setSealed(true)
+      setDispatchMsg(`${childFirst}'s vault is a little more alive now. This is sealed for their future.`)
       setTimeout(() => {
         setSealed(false)
+        setDispatchMsg('')
         setText('')
         setPhotos([]); photoFilesRef.current = []
         setVideo(null)
         setVideoBlob(null)
         removeAudio()
         onSealed?.()
-      }, 2000)
+      }, 2400)
     } catch {
       setSealError('Something went wrong. Please try again.')
     } finally {

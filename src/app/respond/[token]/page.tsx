@@ -423,13 +423,14 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       // Encrypt text content if invite key is available
       const plaintext = tab === "write" ? body : (tab === "photo" && caption.trim() ? caption.trim() : "");
       if (tab === "write" || (tab === "photo" && caption.trim())) {
+        if (!inviteKey && plaintext) {
+          throw new Error("missing_invite_key");
+        }
         if (inviteKey && plaintext) {
           const encrypted = await encryptText(plaintext, inviteKey);
           entryArgs.encryptedBody = serializeEncryptedText(encrypted);
           entryArgs.contentHash = await hashContent(plaintext);
           entryArgs.encryptionVersion = 1;
-        } else if (plaintext) {
-          entryArgs.body = plaintext;
         }
       }
       if (tab === "photo") {
@@ -481,8 +482,12 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
       }
 
       setSubmitted(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      if (err instanceof Error && err.message === "missing_invite_key") {
+        setError("This response needs to be opened from your original invite link on this device so we can unlock the private key first.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
