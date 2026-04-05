@@ -336,6 +336,7 @@ export async function POST(req: NextRequest) {
         total: displayTotal,
       });
       sent.push({ index: i + 1, prompt: prompt.text, result });
+      await new Promise((resolve) => setTimeout(resolve, 250));
     }
     return NextResponse.json({ success: true, sent: sent.length, prompts: sent.map((item) => item.prompt) });
   } catch (error) {
