@@ -43,8 +43,26 @@ function LoginForm() {
           setFamilyId2fa(data.familyId);
           setEmail2fa(data.email ?? email.trim().toLowerCase());
           setChallengeToken(data.challengeToken ?? "");
+          try {
+            sessionStorage.setItem(`ourfable_parent_pw_${data.familyId}`, password);
+            if (data.encryptionKeys?.encryptedFamilyKey) {
+              sessionStorage.setItem(`ourfable_enc_key_${data.familyId}`, data.encryptionKeys.encryptedFamilyKey);
+            }
+            if (data.encryptionKeys?.keySalt) {
+              sessionStorage.setItem(`ourfable_key_salt_${data.familyId}`, data.encryptionKeys.keySalt);
+            }
+          } catch {}
           setLoading(false);
         } else {
+          try {
+            sessionStorage.setItem(`ourfable_parent_pw_${data.familyId}`, password);
+            if (data.encryptionKeys?.encryptedFamilyKey) {
+              sessionStorage.setItem(`ourfable_enc_key_${data.familyId}`, data.encryptionKeys.encryptedFamilyKey);
+            }
+            if (data.encryptionKeys?.keySalt) {
+              sessionStorage.setItem(`ourfable_key_salt_${data.familyId}`, data.encryptionKeys.keySalt);
+            }
+          } catch {}
           window.location.href = data.redirect;
         }
       } else {
@@ -78,6 +96,15 @@ function LoginForm() {
       });
       const data = await res.json();
       if (res.ok) {
+        try {
+          sessionStorage.setItem(`ourfable_parent_pw_${data.familyId}`, password);
+          if (data.encryptionKeys?.encryptedFamilyKey) {
+            sessionStorage.setItem(`ourfable_enc_key_${data.familyId}`, data.encryptionKeys.encryptedFamilyKey);
+          }
+          if (data.encryptionKeys?.keySalt) {
+            sessionStorage.setItem(`ourfable_key_salt_${data.familyId}`, data.encryptionKeys.keySalt);
+          }
+        } catch {}
         window.location.href = data.redirect;
       } else {
         setTwoFaError(data.error ?? "Invalid code");

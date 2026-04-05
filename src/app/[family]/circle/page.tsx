@@ -231,8 +231,18 @@ function HeadsUpNudge({ text, memberName, sent }: { text: string; memberName: st
 
 function MemberCard({ member, familyId, activeChildId }: { member: CircleMember; familyId: string; activeChildId?: string }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const { familyKey } = useVaultKey();
+  const { familyKey, unlockFamilyKey } = useVaultKey();
   const [inviteKeyFragment, setInviteKeyFragment] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (familyKey || typeof window === "undefined") return;
+    const password = sessionStorage.getItem(`ourfable_parent_pw_${familyId}`);
+    const encryptedFamilyKey = sessionStorage.getItem(`ourfable_enc_key_${familyId}`);
+    const keySalt = sessionStorage.getItem(`ourfable_key_salt_${familyId}`);
+    if (password && encryptedFamilyKey && keySalt) {
+      void unlockFamilyKey(password, keySalt, encryptedFamilyKey);
+    }
+  }, [familyId, familyKey, unlockFamilyKey]);
 
   async function persistInviteKeyBackup(rawB64: string) {
     try {
@@ -375,10 +385,20 @@ const REL_OPTIONS = [
 ];
 
 function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: () => void; onAdded: () => void }) {
-  const { familyKey } = useVaultKey();
+  const { familyKey, unlockFamilyKey } = useVaultKey();
   const [name, setName] = useState(""); const [rel, setRel] = useState(REL_OPTIONS[0].label);
   const [email, setEmail] = useState(""); const [city, setCity] = useState("");
   const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (familyKey || typeof window === "undefined") return;
+    const password = sessionStorage.getItem(`ourfable_parent_pw_${familyId}`);
+    const encryptedFamilyKey = sessionStorage.getItem(`ourfable_enc_key_${familyId}`);
+    const keySalt = sessionStorage.getItem(`ourfable_key_salt_${familyId}`);
+    if (password && encryptedFamilyKey && keySalt) {
+      void unlockFamilyKey(password, keySalt, encryptedFamilyKey);
+    }
+  }, [familyId, familyKey, unlockFamilyKey]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
