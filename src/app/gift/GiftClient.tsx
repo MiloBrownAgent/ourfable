@@ -84,7 +84,7 @@ export default function GiftClient() {
 
   const FEATURES = [
     { icon: Lock, title: "The Vault", body: "Every letter, photo, voice memo, and video from every circle member — sealed and waiting." },
-    { icon: Users, title: "Monthly Prompts", body: "Our Fable interviews the people in the child's life automatically. They just reply." },
+    { icon: Users, title: "Monthly Prompts", body: "Each month, family gets a gentle question and can simply reply." },
     { icon: Newspaper, title: "Day They Were Born", body: "A permanent front page for their birthday — headlines, weather, the #1 song." },
   ];
 
@@ -139,7 +139,7 @@ export default function GiftClient() {
         <div style={{ textAlign: "center", marginBottom: 32, animation: "revealUp 0.5s ease 0.18s both" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #FFF8EC, #FFF3E0)", border: "1px solid #F0C060", borderRadius: 100, padding: "8px 20px" }}>
             <Sparkles size={14} color="#C8890A" strokeWidth={2} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#A06B08", letterSpacing: "0.06em" }}>Founding Member Rate — Limited to 1,000 founding families</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#A06B08", letterSpacing: "0.06em" }}>Founding price available now</span>
           </div>
         </div>
 
@@ -205,7 +205,7 @@ export default function GiftClient() {
         {/* Gift form */}
         <div className="card" style={{ padding: "36px 32px", marginBottom: 56, animation: "revealUp 0.5s ease 0.24s both" }}>
           <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>Gift {tier.name}</h2>
-          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 18 }}>{giftMode === "annual_sponsorship" ? `${tier.annualPrice}/year · Annual sponsorship · Renews yearly until cancelled` : `${tier.annualPrice}/year · One year gifted upfront · Founding member rate locked in`}</p>
+          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 18 }}>{giftMode === "annual_sponsorship" ? `${tier.annualPrice}/year · Annual sponsorship · Renews yearly until cancelled` : `${tier.annualPrice}/year · One-time gift for the first year`}</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
             <button type="button" onClick={() => setGiftMode("one_year")} style={{ padding: "16px 14px", borderRadius: 12, border: `2px solid ${giftMode === "one_year" ? "var(--green)" : "var(--border)"}`, background: giftMode === "one_year" ? "var(--green-light)" : "#fff", textAlign: "left", cursor: "pointer" }}>
               <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Gift 1 year</p>
@@ -350,7 +350,7 @@ export default function GiftClient() {
             <div>
               <Users size={18} color="var(--green)" strokeWidth={1.75} style={{ marginBottom: 8 }} />
               <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>Built for 18 years</p>
-              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>Not a subscription trap. Priced to stay in a family&apos;s life from birth to adulthood.</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>Made to stay with a family from birth to adulthood.</p>
             </div>
           </div>
         </div>
