@@ -168,6 +168,8 @@ export default defineSchema({
     )),
     // E2E encryption: invite key wrapped with family key (JSON-encoded WrappedKey)
     encryptedInviteKey: v.optional(v.string()),
+    // Server-side encrypted backup of the raw invite key so prompt emails can restore it on fresh devices.
+    serverEncryptedInviteKey: v.optional(v.string()),
   })
     .index("by_familyId", ["familyId"])
     .index("by_inviteToken", ["inviteToken"])

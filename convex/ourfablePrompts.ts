@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import crypto from "node:crypto";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
 
@@ -38,7 +39,31 @@ type ChildTarget = {
 };
 
 function getOurFableUrl(): string {
-  return process.env.OURFABLE_BASE_URL ?? "https://ourfable.ai";
+  return process.env.OURFABLE_APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://ourfable.ai";
+}
+
+function getServerEncryptionKey(): Buffer {
+  const key = process.env.TOTP_ENCRYPTION_KEY;
+  if (!key) {
+    const fallback = process.env.SESSION_SECRET;
+    if (!fallback) throw new Error("TOTP_ENCRYPTION_KEY or SESSION_SECRET required");
+    return crypto.createHash("sha256").update(`invite-key-backup:${fallback}`).digest();
+  }
+  const buf = Buffer.from(key, "base64");
+  if (buf.length < 32) throw new Error("TOTP_ENCRYPTION_KEY must be at least 32 bytes");
+  return buf.subarray(0, 32);
+}
+
+function decryptInviteKeyBackup(stored?: string): string | null {
+  if (!stored) return null;
+  if (!stored.startsWith("enc:")) return stored;
+  const packed = Buffer.from(stored.slice(4), "base64");
+  const iv = packed.subarray(0, 12);
+  const tag = packed.subarray(packed.length - 16);
+  const ciphertext = packed.subarray(12, packed.length - 16);
+  const decipher = crypto.createDecipheriv("aes-256-gcm", getServerEncryptionKey(), iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
 }
 
 function generateToken(): string {
@@ -408,6 +433,7 @@ async function sendPromptEmail(args: {
   promptUnlocksAtEvent?: string;
   token: string;
   skipUrl: string;
+  serverEncryptedInviteKey?: string;
 }) {
   const resendKey = process.env.RESEND_API_KEY ?? process.env.RESEND_FULL_API_KEY;
   if (!resendKey) {
@@ -417,7 +443,10 @@ async function sendPromptEmail(args: {
 
   const childFirst = args.childName.split(" ")[0];
   const memberFirst = args.memberName.split(" ")[0];
-  const submitUrl = `${getOurFableUrl()}/respond/${args.token}`;
+  const inviteKey = decryptInviteKeyBackup(args.serverEncryptedInviteKey);
+  const submitUrl = inviteKey
+    ? `${getOurFableUrl()}/respond/${args.token}#key=${encodeURIComponent(inviteKey)}`
+    : `${getOurFableUrl()}/respond/${args.token}`;
   const unlockLine = args.promptUnlocksAtEvent
     ? `${childFirst} will open this on ${args.promptUnlocksAtEvent}.`
     : args.promptUnlocksAtAge
@@ -603,6 +632,7 @@ export const processDueMonthlyPrompts = internalAction({
             promptUnlocksAtEvent: prompt.promptUnlocksAtEvent,
             token: prompt.submissionToken ?? generateToken(),
             skipUrl: `${getOurFableUrl()}/api/ourfable/skip-prompt?token=${encodeURIComponent(prompt.submissionToken ?? "")}`,
+            serverEncryptedInviteKey: member.serverEncryptedInviteKey,
           })
         : false;
 

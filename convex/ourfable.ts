@@ -553,9 +553,13 @@ export const setMemberInviteKey = internalMutation({
   args: {
     memberId: v.id("ourfable_vault_circle"),
     encryptedInviteKey: v.string(),
+    serverEncryptedInviteKey: v.optional(v.string()),
   },
-  handler: async (ctx, { memberId, encryptedInviteKey }) => {
-    await ctx.db.patch(memberId, { encryptedInviteKey });
+  handler: async (ctx, { memberId, encryptedInviteKey, serverEncryptedInviteKey }) => {
+    await ctx.db.patch(memberId, {
+      encryptedInviteKey,
+      ...(serverEncryptedInviteKey ? { serverEncryptedInviteKey } : {}),
+    });
   },
 });
 

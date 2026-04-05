@@ -14,6 +14,7 @@ interface CircleMember {
   inviteToken: string; shareToken: string; hasAccepted: boolean;
   contributionCount?: number; lastActiveAt?: number;
   encryptedInviteKey?: string;
+  serverEncryptedInviteKey?: string;
 }
 
 function CopyBtn({ text }: { text: string }) {
@@ -233,6 +234,18 @@ function MemberCard({ member, familyId, activeChildId }: { member: CircleMember;
   const { familyKey } = useVaultKey();
   const [inviteKeyFragment, setInviteKeyFragment] = useState<string | null>(null);
 
+  async function persistInviteKeyBackup(rawB64: string) {
+    try {
+      await fetch("/api/ourfable/store-invite-key-backup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: member._id, rawKey: rawB64, encryptedInviteKey: member.encryptedInviteKey }),
+      });
+    } catch (err) {
+      console.error("[circle] Failed to store invite key backup for", member.name, err);
+    }
+  }
+
   // Unwrap the invite key to build the full invite URL with fragment
   useEffect(() => {
     if (!familyKey || !member.encryptedInviteKey) return;
@@ -241,11 +254,14 @@ function MemberCard({ member, familyId, activeChildId }: { member: CircleMember;
         const inviteKey = await unwrapInviteKey(member.encryptedInviteKey!, familyKey);
         const rawB64 = await exportKey(inviteKey);
         setInviteKeyFragment(rawB64);
+        if (!member.serverEncryptedInviteKey) {
+          void persistInviteKeyBackup(rawB64);
+        }
       } catch (err) {
         console.error("[circle] Failed to unwrap invite key for", member.name, err);
       }
     })();
-  }, [familyKey, member.encryptedInviteKey, member.name]);
+  }, [familyKey, member.encryptedInviteKey, member.name, member.serverEncryptedInviteKey]);
 
   const inviteUrl = inviteKeyFragment
     ? `${origin}/join/${member.inviteToken}#key=${encodeURIComponent(inviteKeyFragment)}`
@@ -391,6 +407,11 @@ function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: (
                 args: { memberId: d.value, encryptedInviteKey: wrappedJson },
                 type: "mutation",
               }),
+            });
+            await fetch("/api/ourfable/store-invite-key-backup", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ memberId: d.value, rawKey, encryptedInviteKey: wrappedJson }),
             });
           } catch (keyErr) {
             console.error("[circle] Failed to generate invite key:", keyErr);
