@@ -366,12 +366,17 @@ function ReservePageInner() {
                   Our Fable+: <strong>$19/mo or $149/yr</strong>
                 </p>
               </div>
-              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
-                After founders, pricing becomes $16/mo or $149/yr for Our Fable and $25/mo or $199/yr for Our Fable+.
-              </p>
-              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
-                Additional children are $7/mo or $59/yr during founders, then $9/mo or $79/yr. Each child gets their own vault and can share the same circle or have a completely separate one.
-              </p>
+              <details style={{ marginTop: 2 }}>
+                <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--text-3)" }}>See later pricing and additional-child details</summary>
+                <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                  <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
+                    After founders, pricing becomes $16/mo or $149/yr for Our Fable and $25/mo or $199/yr for Our Fable+.
+                  </p>
+                  <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
+                    Additional children are $7/mo or $59/yr during founders, then $9/mo or $79/yr. Each child gets their own vault and can share the same circle or have a completely separate one.
+                  </p>
+                </div>
+              </details>
             </div>
         </div>
 

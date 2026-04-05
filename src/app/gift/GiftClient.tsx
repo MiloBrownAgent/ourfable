@@ -311,6 +311,32 @@ export default function GiftClient() {
           </p>
         </div>
 
+        <div style={{ marginBottom: 48, padding: "24px 28px", background: "var(--bg-2)", borderRadius: 16, border: "1px solid var(--border)" }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: "0 0 12px" }}>Common questions</p>
+          <div style={{ display: "grid", gap: 12 }}>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>What does the family receive?</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.65, margin: "4px 0 0" }}>A private Our Fable vault for their child, where family can leave letters, voice notes, photos, and videos over time.</p>
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>Do they have to pay anything?</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.65, margin: "4px 0 0" }}>{giftMode === "annual_sponsorship" ? "No. You pay each year until you cancel. They just redeem the gift and start their vault." : "No. You cover the first year. They just redeem the gift and start their vault."}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>Do they need to start right away?</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.65, margin: "4px 0 0" }}>No. They can redeem when they are ready.</p>
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>What if they are not very technical?</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.65, margin: "4px 0 0" }}>That is exactly who this is built for. The family gets a simple email and starts from there.</p>
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>Why is this better than a normal baby gift?</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.65, margin: "4px 0 0" }}>Because it keeps growing. A normal gift is opened once. This becomes more meaningful every time someone adds to it.</p>
+            </div>
+          </div>
+        </div>
+
         {/* Features — pillar layout */}
         <div style={{ borderTop: "1px solid var(--border)", marginBottom: 56 }}>
           {FEATURES.map((f) => {
