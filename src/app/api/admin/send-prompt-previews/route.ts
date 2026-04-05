@@ -95,34 +95,73 @@ function buildUnlockAnchor(childDob: string, cycleNumber: number) {
 
 const GRANDPARENT_TEMPLATES: PromptTemplate[] = [
   {
-    key: "gp-explicit-house",
+    key: "gp-childhood-story",
     category: "letter",
     explicitAnchor: true,
     render: ({ childFirst, explicitAnchor }) =>
       `What from your own childhood do you want ${childFirst} to carry with them when they read this on their ${explicitAnchor}? Tell the story only a grandparent would think to preserve.`,
   },
   {
-    key: "gp-explicit-voice",
+    key: "gp-family-story-voice",
     category: "voice",
     explicitAnchor: true,
     render: ({ childFirst, explicitAnchor }) =>
       `Record yourself telling ${childFirst} the family story you would most want in their hands on their ${explicitAnchor}. Say it the way you would across a kitchen table.`,
   },
   {
-    key: "gp-subtle-lineage",
+    key: "gp-lineage-trait",
     category: "letter",
     explicitAnchor: false,
     render: ({ childFirst, childAgeLabel, ageDetail, subtleAnchor }) =>
       `${childFirst} is ${childAgeLabel}, and ${ageDetail}. What do you see in them already that makes you think of your side of the family, especially for ${subtleAnchor}?`,
   },
   {
-    key: "gp-subtle-photo",
+    key: "gp-old-photo",
     category: "photo",
     explicitAnchor: false,
     render: ({ childFirst, gentleFutureCue }) =>
       `Send one old family photo that ${childFirst} should have someday, then write the story behind it the way you would want them to hear it ${gentleFutureCue}.`,
   },
+  {
+    key: "gp-parent-as-baby",
+    category: "letter",
+    explicitAnchor: false,
+    render: ({ childFirst, parentNames, gentleFutureCue }) =>
+      `What do you remember about ${parentNames.split('&')[0].trim()} when they were small that you hope ${childFirst} will love hearing ${gentleFutureCue}?`,
+  },
+  {
+    key: "gp-house-sounds",
+    category: "voice",
+    explicitAnchor: false,
+    render: ({ childFirst, gentleFutureCue }) =>
+      `Record the sounds, phrases, or little sayings from your home that you would want ${childFirst} to hear ${gentleFutureCue}.`,
+  },
+  {
+    key: "gp-hard-won-advice",
+    category: "letter",
+    explicitAnchor: true,
+    render: ({ childFirst, explicitAnchor }) =>
+      `By ${explicitAnchor}, what is one hard-won lesson from your life that you would want ${childFirst} to receive from you directly?`,
+  },
+  {
+    key: "gp-place-memory",
+    category: "photo",
+    explicitAnchor: false,
+    render: ({ childFirst, gentleFutureCue }) =>
+      `Share a photo of a place that shaped you, then tell ${childFirst} why it still matters and why you would want them to know that story ${gentleFutureCue}.`,
+  },
 ];
+
+function normalizePrompt(text: string, childFirst: string) {
+  return text
+    .toLowerCase()
+    .replaceAll(childFirst.toLowerCase(), 'child')
+    .replace(/\b(8|13|16|18)(st|nd|rd|th)?\s+birthday\b/g, 'future milestone')
+    .replace(/\bwhen they are\s+\d+\b/g, 'future milestone')
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 function buildGrandparentPrompt(childName: string, childDob: string, parentNames: string, cycleNumber: number) {
   const childFirst = childName.split(" ")[0];
@@ -270,10 +309,20 @@ export async function POST(req: NextRequest) {
   const total = Math.min(12, Math.max(1, count));
   const displayTotal = overallTotal ?? (startIndex + total);
   const sent = [];
+  const seen = new Set<string>();
   try {
     for (let i = 0; i < total; i++) {
-      const promptIndex = startIndex + i;
-      const prompt = buildGrandparentPrompt(childName, childDob, parentNames, promptIndex);
+      let attempt = 0;
+      let promptIndex = startIndex + i;
+      let prompt = buildGrandparentPrompt(childName, childDob, parentNames, promptIndex);
+      let normalized = normalizePrompt(prompt.text, childName.split(" ")[0]);
+      while (seen.has(normalized) && attempt < 24) {
+        attempt += 1;
+        promptIndex += 1;
+        prompt = buildGrandparentPrompt(childName, childDob, parentNames, promptIndex + attempt);
+        normalized = normalizePrompt(prompt.text, childName.split(" ")[0]);
+      }
+      seen.add(normalized);
       const result = await sendPreviewEmail({
         to,
         replyTo: replyTo ?? to,
@@ -283,7 +332,7 @@ export async function POST(req: NextRequest) {
         promptCategory: prompt.category,
         promptUnlocksAtAge: prompt.unlocksAtAge,
         promptUnlocksAtEvent: prompt.unlocksAtEvent,
-        index: promptIndex,
+        index: startIndex + i,
         total: displayTotal,
       });
       sent.push({ index: i + 1, prompt: prompt.text, result });
