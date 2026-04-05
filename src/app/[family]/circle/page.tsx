@@ -264,15 +264,6 @@ function MemberCard({ member, familyId, activeChildId }: { member: CircleMember;
         if (!member.encryptedInviteKey) {
           const rawB64 = generateInviteKeyRaw();
           const wrappedJson = await wrapInviteKey(rawB64, familyKey);
-          await fetch(`/api/ourfable/data`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              path: "ourfable:setMemberInviteKey",
-              args: { memberId: member._id, encryptedInviteKey: wrappedJson },
-              type: "mutation",
-            }),
-          });
           await persistInviteKeyBackup(rawB64, wrappedJson);
           setInviteKeyFragment(rawB64);
           return;
@@ -436,15 +427,6 @@ function AddModal({ familyId, onClose, onAdded }: { familyId: string; onClose: (
           try {
             const rawKey = generateInviteKeyRaw();
             const wrappedJson = await wrapInviteKey(rawKey, familyKey);
-            await fetch(`/api/ourfable/data`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                path: "ourfable:setMemberInviteKey",
-                args: { memberId: d.value, encryptedInviteKey: wrappedJson },
-                type: "mutation",
-              }),
-            });
             await fetch("/api/ourfable/store-invite-key-backup", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
