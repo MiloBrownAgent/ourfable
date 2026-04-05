@@ -88,7 +88,7 @@ function renderShell({
               <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
                 <tr>
                   <td style="background:#4A5E4C;border-radius:100px;padding:16px 36px;">
-                    <a href="${escapeHtml(ctaUrl)}" style="font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
+                    <a href="${escapeHtml(ctaUrl)}" style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:-0.01em;">
                       ${escapeHtml(ctaLabel)}
                     </a>
                   </td>

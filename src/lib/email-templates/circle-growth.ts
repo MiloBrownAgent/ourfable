@@ -1,6 +1,6 @@
 import { escapeHtml } from "./escape-html";
 
-const RESERVE_URL = "https://ourfable.ai/reserve";
+const RESERVE_URL = "https://ourfable.ai/for-your-family";
 
 export function circleGrowthHtml(options: {
   title?: string;
@@ -9,7 +9,7 @@ export function circleGrowthHtml(options: {
   reserveUrl?: string;
 }): string {
   const title = options.title ?? "For your own family";
-  const ctaLabel = options.ctaLabel ?? "Reserve your family's spot";
+  const ctaLabel = options.ctaLabel ?? "Start your family's vault";
   const reserveUrl = options.reserveUrl ?? RESERVE_URL;
 
   return `
@@ -32,5 +32,5 @@ export function circleGrowthHtml(options: {
 }
 
 export function circleGrowthText(body: string, reserveUrl: string = RESERVE_URL): string {
-  return `${body}\n\nReserve your family's spot: ${reserveUrl}`;
+  return `${body}\n\nStart your family's vault: ${reserveUrl}`;
 }
