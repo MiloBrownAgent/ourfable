@@ -33,7 +33,15 @@ export const FAQS = [
   },
   {
     q: "What does Our Fable cost?",
-    a: "Founding pricing is live now. Our Fable is $12/month or $99/year — it includes the Vault, unlimited circle members, monthly prompts, and 5 GB of storage. Our Fable+ is $19/month or $149/year — it includes everything in Our Fable, plus Dispatches, unlimited circle members, one additional child included, and 25 GB of storage. Additional children are $7/month or $59/year during founders, then $9/month or $79/year after founders. Each child gets their own vault and can share the same circle or have a completely separate one.",
+    a: "Founding pricing is live now. Our Fable is $12/month or $99/year — it includes the Vault, unlimited circle members, monthly prompts, and 5 GB of storage. Our Fable+ is $19/month or $149/year — it includes everything in Our Fable, plus Dispatches, unlimited circle members, and 25 GB of storage. Additional children cost the same on both plans: $7/month or $59/year during founders, then $9/month or $79/year after founders. Each child gets their own vault and can share the same circle or have a completely separate one.",
+  },
+  {
+    q: "How do additional children work?",
+    a: "Each additional child gets their own vault, milestones, and future delivery moments. When you add a child, you can choose to share the same circle or start a separate one. Most families will share a circle. If children have different family structures — for example half siblings, blended families, or different grandparents — you can keep circles separate.",
+  },
+  {
+    q: "Can siblings have different circles?",
+    a: "Yes. A child can share the same circle as their sibling or have a completely separate one. Shared circles are best for most siblings. Separate circles are there for situations like half siblings, blended families, or when different adults should be invited for each child.",
   },
   {
     q: "Is my family's content private?",
