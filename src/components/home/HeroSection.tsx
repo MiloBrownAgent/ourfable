@@ -143,16 +143,36 @@ export function HeroSection() {
           <p className="hero-sub-mobile" style={{ fontSize: 17, lineHeight: 1.7, color: "var(--text-2)", marginBottom: 24, maxWidth: 440, animation: "fadeUp 0.5s ease 0.7s both", opacity: 0 }}>
             A private vault for your child&apos;s letters, voice notes, photos, and videos. Every month, family can add something worth keeping.
           </p>
-          <div id="waitlist" style={{ maxWidth: 480, animation: "fadeUp 0.5s ease 0.85s both", opacity: 0 }}>
+          <div id="waitlist" style={{ maxWidth: 520, animation: "fadeUp 0.5s ease 0.85s both", opacity: 0 }}>
             <Link href="/reserve" className="btn-primary" style={{ display: "inline-flex", padding: "15px 32px", fontSize: 16, textDecoration: "none" }}>
               Reserve your spot →
             </Link>
             <p style={{ marginTop: 10, fontSize: 11, color: "var(--sage)", fontFamily: "var(--font-sans, Inter, sans-serif)" }}>
-              Free to reserve · No card required
+              Reserve now · No card required today · Keep your founding price
             </p>
             <p style={{ marginTop: 6, fontSize: 11, color: "var(--text-3)", fontFamily: "var(--font-sans, Inter, sans-serif)" }}>
               Built by a parent who wanted something better than group texts · Private by design · Export anytime
             </p>
+            <div style={{ marginTop: 22, display: "grid", gap: 12, padding: "16px 18px", borderRadius: 14, background: "var(--bg-2)", border: "1px solid var(--border)" }}>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)" }}>
+                How it works
+              </p>
+              {[
+                ["Create your child’s private vault", "Start with a simple reserve. We invite you in as onboarding opens."],
+                ["Invite the people who matter most", "Grandparents, aunts, uncles, family friends — whoever you want preserved."],
+                ["Our Fable prompts them over time", "Letters, voice notes, photos, and videos build quietly for your child’s future."],
+              ].map(([title, copy]) => (
+                <div key={title} style={{ display: "grid", gridTemplateColumns: "20px 1fr", gap: 10, alignItems: "start" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--green-light)", color: "var(--green)", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                    {title.startsWith("Create") ? "1" : title.startsWith("Invite") ? "2" : "3"}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{title}</p>
+                    <p style={{ margin: "3px 0 0", fontSize: 12, lineHeight: 1.6, color: "var(--text-3)" }}>{copy}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

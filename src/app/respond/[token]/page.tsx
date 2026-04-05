@@ -1,5 +1,6 @@
 "use client";
 import { use, useEffect, useState, useRef, useCallback } from "react";
+import Link from "next/link";
 import { Check, Upload, X, Mic, Video, Square, Pen, Camera, Lock } from "lucide-react";
 import Image from "next/image";
 import {
@@ -512,16 +513,24 @@ export default function RespondPage({ params }: { params: Promise<{ token: strin
   // ── Invalid token ──
   if (invalid) return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-      <div style={{ maxWidth: 360, textAlign: "center" }}>
+      <div style={{ maxWidth: 420, textAlign: "center" }}>
         <div style={{ width: 60, height: 60, borderRadius: "50%", background: "var(--surface)", border: "1.5px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
           <span style={{ fontSize: 26 }}>🍂</span>
         </div>
         <p style={{ fontFamily: "var(--font-playfair)", fontSize: 22, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>
-          This link has expired.
+          This response link has expired.
         </p>
-        <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.7 }}>
-          This link has expired or isn&apos;t valid. Ask the family for a fresh invite.
+        <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 18 }}>
+          Ask the family for a fresh prompt link, or head back to Our Fable and start from there.
         </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 18px", borderRadius: 999, background: "var(--green)", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
+            Back to homepage
+          </Link>
+          <Link href="/support" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 18px", borderRadius: 999, border: "1px solid var(--border)", color: "var(--text-2)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>
+            Get help
+          </Link>
+        </div>
       </div>
     </div>
   );

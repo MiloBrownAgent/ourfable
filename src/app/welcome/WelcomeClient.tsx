@@ -204,7 +204,7 @@ function VaultEntryCard({ entry, visible, dob }: { entry: SampleEntry; visible: 
 
 // ─── Main Welcome Experience ────────────────────────────────────────────────
 
-type Phase = "loading" | "reveal" | "vault" | "cta";
+type Phase = "loading" | "missing" | "reveal" | "vault" | "cta";
 const MAX_PROVISIONING_ATTEMPTS = 15;
 
 export default function WelcomeClient() {
@@ -265,7 +265,8 @@ export default function WelcomeClient() {
           setPhase("reveal");
           return;
         }
-        router.replace("/login");
+        setLoadingError("We couldn't find the setup session for this welcome page.");
+        setPhase("missing");
         return;
       }
 
@@ -385,6 +386,29 @@ export default function WelcomeClient() {
   const circlePath = familyId && familyId !== "demo" ? `/${familyId}/circle` : "/login";
 
   const BG = "linear-gradient(160deg, #1C2B1E 0%, #142016 100%)";
+
+  // ─── Missing context ─────────────────────────────────────────────────────
+
+  if (phase === "missing") {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG, padding: 24 }}>
+        <div style={{ maxWidth: 440, textAlign: "center" }}>
+          <p style={{ fontFamily: "var(--font-playfair)", fontSize: 30, color: "#FDFBF7", margin: 0 }}>We need one more step.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.75, color: "rgba(253,251,247,0.72)", fontFamily: "var(--font-body)", margin: "16px 0 22px" }}>
+            {loadingError || "This welcome page lost its setup context. You can log in if your account is ready, or go back to reserve and start again."}
+          </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+            <Link href="/login" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 18px", borderRadius: 999, background: "#4A5E4C", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
+              Go to login
+            </Link>
+            <Link href="/reserve" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 18px", borderRadius: 999, border: "1px solid rgba(253,251,247,0.16)", color: "rgba(253,251,247,0.86)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>
+              Back to reserve
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Loading ──────────────────────────────────────────────────────────────
 
