@@ -1254,6 +1254,16 @@ export const getPromptByToken = internalQuery({
         childName = child.childName;
         childDob = child.childDob;
       }
+    } else {
+      const primaryChild = await ctx.db
+        .query("ourfable_children")
+        .withIndex("by_familyId", (q) => q.eq("familyId", prompt.familyId))
+        .collect();
+      const activePrimary = primaryChild.find((child) => child.isActive !== false && child.isFirst) ?? primaryChild.find((child) => child.isActive !== false);
+      if (activePrimary) {
+        childName = activePrimary.childName;
+        childDob = activePrimary.childDob;
+      }
     }
 
     return { prompt, member, family, childId: prompt.childId, childName, childDob };
