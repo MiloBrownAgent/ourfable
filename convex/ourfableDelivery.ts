@@ -115,7 +115,8 @@ export const checkDeliveryMilestones = internalAction({
         } | null;
 
         if (!family) continue;
-        const childFirst = family.childName.split(" ")[0];
+        const activeChild = await ctx.runQuery(internal.ourfable.getActiveChildProfile, { familyId: family.familyId });
+        const childFirst = (activeChild?.childName ?? family.childName).split(" ")[0];
         const age = milestone.milestoneName.replace(" birthday", "");
 
         // 30 days before milestone
@@ -252,7 +253,8 @@ export const checkCircleReEngagement = internalAction({
       }> | null;
       if (!members) continue;
 
-      const childFirst = family.childName.split(" ")[0];
+      const activeChild = await ctx.runQuery(internal.ourfable.getActiveChildProfile, { familyId: family.familyId });
+      const childFirst = (activeChild?.childName ?? family.childName).split(" ")[0];
       for (const member of members) {
         if ((member.missedPrompts ?? 0) >= 2) {
           const html = emailWrapper(`
@@ -308,7 +310,8 @@ export const sendAnnualRecap = internalAction({
       const dob = new Date(family.birthDate + "T00:00:00");
       if (dob.getMonth() !== todayMonth || dob.getDate() !== todayDay) continue;
 
-      const childFirst = family.childName.split(" ")[0];
+      const activeChild = await ctx.runQuery(internal.ourfable.getActiveChildProfile, { familyId: family.familyId });
+      const childFirst = (activeChild?.childName ?? family.childName).split(" ")[0];
 
       // Get vault stats
       const entries = (await ctx.runQuery(internal.ourfable.listOurFableVaultEntries, { familyId: family.familyId })) as Array<{
@@ -612,7 +615,8 @@ export const sendDispatchEmails = internalAction({
     const family = await ctx.runQuery(internal.ourfableDelivery.getFamilyForDelivery, { familyId: args.familyId });
     if (!family) { console.error("[dispatch-email] Family not found"); return; }
 
-    const childFirst = family.childName?.split(" ")[0] ?? "your child";
+    const activeChild = await ctx.runQuery(internal.ourfable.getActiveChildProfile, { familyId: args.familyId });
+    const childFirst = activeChild?.childName?.split(" ")[0] ?? family.childName?.split(" ")[0] ?? "your child";
     const parentNames = family.parentNames ?? args.sentByName;
 
     // Get circle members

@@ -1019,6 +1019,7 @@ export const maybeSendInactivityCheckIn = internalAction({
 
     const family = await ctx.runQuery(internal.ourfable.getFamily, { familyId });
     if (!family?.parentEmail) return { sent: false, reason: "family_missing_parent_email" };
+    const activeChild = await ctx.runQuery(internal.ourfable.getActiveChildProfile, { familyId });
 
     const promptHistory = await ctx.runQuery(internal.ourfablePrompts.listPromptHistoryForMember, { memberId });
     const ordered = [...promptHistory]
@@ -1044,7 +1045,7 @@ export const maybeSendInactivityCheckIn = internalAction({
       return { sent: false, reason: "already_sent", cycleNumber: latestCycle };
     }
 
-    const childFirst = (family.childName ?? "your child").split(" ")[0];
+    const childFirst = (activeChild?.childName ?? family.childName ?? "your child").split(" ")[0];
     const dashboardUrl = `${getOurFableUrl()}/${familyId}/circle`;
     const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 24px;background:#F5F2ED;">
       <div style="text-align:center;padding-bottom:24px;">
