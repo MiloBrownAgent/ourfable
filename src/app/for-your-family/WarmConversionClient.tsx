@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, Lock, Mail, Users } from "lucide-react";
+import { ArrowRight, Check, HeartHandshake, Lock, Mail, Users } from "lucide-react";
 import { captureUtmParams, getUtmParams } from "@/lib/utm";
 import { generateEventId, trackLead } from "@/lib/analytics";
+import { LandingNav, LandingPageStyles, LandingSection } from "@/components/landing/LandingSystem";
 
 export default function WarmConversionClient() {
   const [email, setEmail] = useState("");
@@ -51,120 +52,150 @@ export default function WarmConversionClient() {
 
   if (success) {
     return (
-      <main style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
-        <div style={{ width: "100%", maxWidth: 520, textAlign: "center" }}>
-          <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 28px" }}>
+      <main className="of-landing-root" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
+        <LandingPageStyles />
+        <div style={{ maxWidth: 560, textAlign: "center" }}>
+          <div style={{ width: 74, height: 74, margin: "0 auto 26px", borderRadius: 999, background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Check size={34} color="#fff" strokeWidth={2.5} />
           </div>
-          <h1 style={{ fontFamily: "var(--font-playfair)", fontSize: 34, lineHeight: 1.15, color: "var(--text)", margin: "0 0 16px" }}>
-            You&apos;re on the list.
-          </h1>
-          <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--text-2)", margin: "0 0 12px" }}>
+          <h1 className="of-hero-display" style={{ fontSize: 42, marginBottom: 12 }}>You&apos;re on the list.</h1>
+          <p className="of-hero-copy" style={{ margin: "0 auto 12px", maxWidth: 520 }}>
             We&apos;ll reach out when your family&apos;s vault is ready and keep your founding rate reserved.
           </p>
-          <p style={{ fontSize: 14, lineHeight: 1.75, color: "var(--text-3)", margin: "0 0 28px" }}>
-            This is the same kind of private, compounding record you&apos;ve already seen firsthand — now for the people you love most.
+          <p className="of-muted-copy" style={{ marginBottom: 24 }}>
+            This is the same kind of private, compounding family record you&apos;ve already seen from the inside — now for your own child.
           </p>
-          <Link href="/" style={{ color: "var(--green)", textDecoration: "none", fontWeight: 600, fontSize: 14 }}>← Back to ourfable.ai</Link>
+          <Link href="/" className="of-secondary-link">← Back to ourfable.ai</Link>
         </div>
       </main>
     );
   }
 
   return (
-    <main style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px 96px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 48, gap: 16, flexWrap: "wrap" }}>
-          <Link href="/" style={{ textDecoration: "none", color: "var(--green)", fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: 24 }}>
-            Our Fable
-          </Link>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Link href="/gift" style={{ textDecoration: "none", color: "var(--text-2)", fontSize: 14 }}>Gift</Link>
-            <Link href="/reserve" style={{ textDecoration: "none", color: "var(--green)", fontSize: 14, fontWeight: 600 }}>Parent flow</Link>
-          </div>
-        </div>
+    <main className="of-landing-root">
+      <LandingPageStyles />
+      <div className="of-landing-shell">
+        <LandingNav links={[{ href: "/gift", label: "Gift" }, { href: "/reserve", label: "Parent flow" }, { href: "/login", label: "Sign in" }]} />
 
-        <section style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.1fr) minmax(320px, 0.9fr)", gap: 32, alignItems: "start" }}>
+        <section className="of-hero-grid">
           <div>
-            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)" }}>
-              For circle members, grandparents, and warm referrals
-            </p>
-            <h1 style={{ margin: "0 0 20px", fontFamily: "var(--font-playfair)", fontSize: "clamp(2.6rem, 5vw, 4.4rem)", lineHeight: 1.05, letterSpacing: "-0.03em" }}>
-              You&apos;ve already seen what this becomes.
+            <span className="of-pill"><Users size={12} strokeWidth={2.2} /> For people who have already seen Our Fable from the inside</span>
+            <h1 className="of-hero-display" style={{ marginTop: 18 }}>
+              You&apos;ve already seen what this becomes. Start it for your own child now.
             </h1>
-            <p style={{ margin: "0 0 16px", fontSize: 18, lineHeight: 1.85, color: "var(--text-2)", maxWidth: 640 }}>
-              If receiving prompts, updates, and little pieces of a child&apos;s story made you wish you had the same kind of place for your own family, this is where to begin.
+            <p className="of-hero-copy">
+              This page is for one warm audience: people who have already seen prompts, updates, or the growing archive through another family and now want the same thing for their own child.
             </p>
-            <p style={{ margin: "0 0 28px", fontSize: 16, lineHeight: 1.8, color: "var(--text-3)", maxWidth: 640 }}>
-              Our Fable is a private family vault where the people who matter most leave letters, voice notes, photos, and videos for a child&apos;s future — sealed until the right moment years from now.
+            <p className="of-muted-copy" style={{ maxWidth: 650 }}>
+              It should not feel like a softer reserve page. It should cash in the insider context directly.
             </p>
-
-            <div style={{ display: "grid", gap: 18, marginBottom: 32 }}>
+            <div className="of-mini-list" style={{ marginTop: 24 }}>
               {[
-                {
-                  icon: Users,
-                  title: "It starts with your circle",
-                  body: "Invite the few people whose voices would matter most years from now. Once they begin replying, the vault starts compounding.",
-                },
-                {
-                  icon: Mail,
-                  title: "The work happens quietly",
-                  body: "Monthly prompts help grandparents, aunts, uncles, and family friends contribute without you having to chase them.",
-                },
-                {
-                  icon: Lock,
-                  title: "Private, lasting, and family-first",
-                  body: "No social feed. No public posting. Just a calm private place your child will one day open.",
-                },
-              ].map(({ icon: Icon, title, body }) => (
-                <div key={title} style={{ display: "grid", gridTemplateColumns: "24px 1fr", gap: 14, alignItems: "start" }}>
-                  <Icon size={18} color="var(--green)" strokeWidth={2} style={{ marginTop: 5 }} />
-                  <div>
-                    <p style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 600, color: "var(--text)" }}>{title}</p>
-                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: "var(--text-3)" }}>{body}</p>
-                  </div>
-                </div>
+                "You already understand what the prompts feel like",
+                "You already know why the quiet accumulation matters",
+                "You do not need the whole category explained from scratch",
+              ].map((line) => (
+                <div key={line} className="of-mini-item"><Check size={14} color="var(--green)" style={{ marginTop: 4, flexShrink: 0 }} /> <span>{line}</span></div>
               ))}
             </div>
           </div>
 
-          <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 18, padding: 28, boxShadow: "0 10px 30px rgba(0,0,0,0.04)" }}>
-            <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)" }}>
-              Reserve your family&apos;s spot
-            </p>
-            <h2 style={{ margin: "0 0 12px", fontFamily: "var(--font-playfair)", fontSize: 30, lineHeight: 1.15, color: "var(--text)" }}>
-              Start the same kind of vault for your child.
-            </h2>
-            <p style={{ margin: "0 0 18px", fontSize: 14, lineHeight: 1.75, color: "var(--text-3)" }}>
+          <div className="of-card" style={{ padding: 28 }}>
+            <p className="of-section-label" style={{ marginBottom: 8 }}>Start it for your family</p>
+            <h2 style={{ margin: "0 0 12px", fontFamily: "var(--font-playfair)", fontSize: 34, lineHeight: 1.1 }}>Start the same kind of vault for your child.</h2>
+            <p className="of-section-copy" style={{ marginBottom: 18 }}>
               Reserve now, keep your founding price, and we&apos;ll invite you in as onboarding opens.
             </p>
-            <div style={{ padding: "14px 16px", background: "var(--bg-2)", borderRadius: 12, border: "1px solid var(--border)", marginBottom: 20 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)" }}>Founders pricing</p>
-              <p style={{ margin: "0 0 4px", fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>Our Fable: <strong>$12/mo or $99/yr</strong></p>
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>Our Fable+: <strong>$19/mo or $149/yr</strong></p>
+            <div style={{ padding: 16, borderRadius: 16, background: "var(--bg-2)", border: "1px solid var(--border)", marginBottom: 18 }}>
+              <p className="of-section-label" style={{ marginBottom: 6 }}>Founders pricing</p>
+              <p style={{ margin: "0 0 4px", fontSize: 14, lineHeight: 1.6 }}>Our Fable: <strong>$12/mo or $99/yr</strong></p>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>Our Fable+: <strong>$19/mo or $149/yr</strong></p>
             </div>
             <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
               <div>
-                <label htmlFor="warm-email" style={{ display: "block", marginBottom: 8, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-3)" }}>
-                  Your email
-                </label>
-                <input
-                  id="warm-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  style={{ width: "100%", padding: "13px 14px", borderRadius: 10, border: `1.5px solid ${error ? "#E07070" : "var(--border)"}`, fontSize: 15, boxSizing: "border-box" }}
-                />
+                <label htmlFor="warm-email" className="of-field-label">Your email</label>
+                <input id="warm-email" className="of-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
               </div>
-              {error ? <p style={{ margin: 0, fontSize: 13, color: "#E07070" }}>{error}</p> : null}
-              <button type="submit" disabled={!emailValid || loading} style={{ display: "inline-flex", justifyContent: "center", alignItems: "center", gap: 8, width: "100%", background: "var(--green)", color: "#fff", border: "none", borderRadius: 12, padding: "15px 20px", fontSize: 15, fontWeight: 600, cursor: !emailValid || loading ? "not-allowed" : "pointer", opacity: !emailValid || loading ? 0.6 : 1 }}>
-                {loading ? "Reserving…" : <>Reserve your spot <ArrowRight size={16} strokeWidth={2.4} /></>}
+              {error ? <p style={{ margin: 0, color: "#D46565", fontSize: 13 }}>{error}</p> : null}
+              <button type="submit" className="of-primary-btn" disabled={!emailValid || loading} style={{ width: "100%" }}>
+                {loading ? "Reserving…" : <>Reserve your spot <ArrowRight size={16} /></>}
               </button>
             </form>
-            <p style={{ margin: "14px 0 0", fontSize: 12, lineHeight: 1.7, color: "var(--text-3)" }}>
-              Free to reserve · No card required today · Private by design
-            </p>
+            <p className="of-muted-copy" style={{ fontSize: 12, marginTop: 14 }}>Free to reserve · No card required today · Private by design</p>
+          </div>
+        </section>
+
+        <LandingSection label="What you already know" title="You&apos;ve already seen the inside of the product, not just the pitch.">
+          <div className="of-feature-grid">
+            {[
+              [Mail, "The prompts feel human", "You have already seen how simple it is for contributors to receive a question and reply without friction."],
+              [Users, "The archive compounds quietly", "You already know this gets more meaningful as more family voices accumulate around a child over time."],
+              [Lock, "It feels private and family-first", "You have already seen that this is not a public feed or a noisy social product."],
+            ].map(([Icon, title, body]) => {
+              const Glyph = Icon as typeof Mail;
+              return (
+                <div key={title} className="of-feature-card">
+                  <Glyph size={18} color="var(--green)" style={{ marginBottom: 10 }} />
+                  <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
+                  <p className="of-muted-copy">{body}</p>
+                </div>
+              );
+            })}
+          </div>
+        </LandingSection>
+
+        <LandingSection label="Why it matters more for your child" title="Once you&apos;ve seen this from the inside, the emotional logic gets harder to ignore." copy="The same thing that felt powerful when it belonged to someone else becomes more urgent when you imagine your own child one day hearing those voices, reading those letters, and opening those memories." />
+
+        <LandingSection label="How simple it is to begin" title="A warm path should feel simpler, not mushier.">
+          <div className="of-step-grid">
+            {[
+              ["1", "Reserve", "Tell us where to reach you and lock your founding price."],
+              ["2", "We invite you in", "You get the parent setup flow and start your child’s vault."],
+              ["3", "Your circle starts answering", "The people who matter most begin leaving things your child will one day receive."],
+            ].map(([n, title, body]) => (
+              <div key={title} className="of-step-card">
+                <div className="of-step-number">{n}</div>
+                <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
+                <p className="of-muted-copy">{body}</p>
+              </div>
+            ))}
+          </div>
+        </LandingSection>
+
+        <LandingSection label="Trust" title="Still a serious family product, even on the warm page.">
+          <div className="of-trust-grid">
+            {[
+              [Lock, "Private by design", "No public posting. No social-feed incentives. No ad-driven family content."],
+              [HeartHandshake, "Built by Dave and Amanda for their own family first", "This should feel like a serious enduring family product, not a startup experiment."],
+              [Users, "Simple enough to begin without friction", "The point is not more setup. The point is getting to the archive and the contributor loop quickly."],
+            ].map(([Icon, title, body]) => {
+              const Glyph = Icon as typeof Lock;
+              return (
+                <div key={title} className="of-feature-card">
+                  <Glyph size={18} color="var(--green)" style={{ marginBottom: 10 }} />
+                  <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
+                  <p className="of-muted-copy">{body}</p>
+                </div>
+              );
+            })}
+          </div>
+        </LandingSection>
+
+        <LandingSection label="Warm proof" title="A place for lived-experience proof once assets exist." copy="This section is designed for contributor reactions, “seeing this from the inside” quotes, and real screenshots once approved.">
+          <div className="of-proof-placeholder">
+            <p className="of-muted-copy">Ready for contributor reactions, warm quotes, or real screenshots from people who already understood the product emotionally before buying.</p>
+          </div>
+        </LandingSection>
+
+        <section className="of-section">
+          <div className="of-close-cta">
+            <p className="of-section-label">Warm close</p>
+            <h2 className="of-section-title" style={{ marginBottom: 10 }}>If you already know what this becomes, start it for your own child.</h2>
+            <p className="of-section-copy" style={{ marginBottom: 18 }}>Reserve now, keep your founding price, and we&apos;ll invite you in as onboarding opens.</p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <button type="button" className="of-primary-btn" onClick={() => document.getElementById("warm-email")?.focus()}>Reserve your spot <ArrowRight size={16} /></button>
+              <Link href="/" className="of-secondary-link">Back to homepage context</Link>
+            </div>
           </div>
         </section>
       </div>

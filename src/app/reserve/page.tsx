@@ -1,13 +1,13 @@
 "use client";
-import { useState, useEffect, useRef, Suspense } from "react";
+
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Check, Lock, Gift, Loader2 } from "lucide-react";
+import { ArrowRight, Check, HeartHandshake, Lock, Shield, Sparkles } from "lucide-react";
 import { captureUtmParams, getUtmParams } from "../../lib/utm";
 import { trackLead, generateEventId } from "../../lib/analytics";
 import { ReserveProofModule } from "../../components/reserve/ReserveProofModule";
-
-type GiftTier = "standard" | "plus";
+import { LandingNav, LandingPageStyles, LandingSection } from "../../components/landing/LandingSystem";
 
 export default function ReservePage() {
   return (
@@ -19,9 +19,13 @@ export default function ReservePage() {
 
 function ReservePageInner() {
   const searchParams = useSearchParams();
-  const [isGift, setIsGift] = useState(false);
+  const [childBirthday, setChildBirthday] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [successEmail, setSuccessEmail] = useState("");
 
-  // Capture UTMs and route old gift links to the dedicated gift page
   useEffect(() => {
     if (searchParams.get("gift") === "true") {
       window.location.href = "/gift";
@@ -30,53 +34,16 @@ function ReservePageInner() {
     captureUtmParams();
   }, [searchParams]);
 
-  // — Waitlist state —
-  const [childBirthday, setChildBirthday] = useState("");
-  const [email, setEmail] = useState("");
-
-  // — Gift state —
-  const [gifterName, setGifterName] = useState("");
-  const [gifterEmail, setGifterEmail] = useState("");
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [gifterMessage, setGifterMessage] = useState("");
-  const [selectedTier, setSelectedTier] = useState<GiftTier>("standard");
-
-  // — Shared state —
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [successEmail, setSuccessEmail] = useState("");
-  const [successRecipientEmail, setSuccessRecipientEmail] = useState("");
-  const [successMode, setSuccessMode] = useState<"waitlist" | "gift">("waitlist");
-  const [error, setError] = useState("");
-
-  // — Validation —
-  const emailTouched = email.length > 0;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const showEmailError = emailTouched && !emailValid && email.length > 3;
-  const canSubmitWaitlist = emailValid;
 
-  const gifterEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gifterEmail.trim());
-  const recipientEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim());
-  const canSubmitGift = gifterName.trim().length > 0 && gifterEmailValid && recipientEmailValid;
-
-  // Height animation refs
-  const waitlistRef = useRef<HTMLDivElement>(null);
-  const giftRef = useRef<HTMLDivElement>(null);
-
-  const handleToggleGift = (val: boolean) => {
-    setIsGift(val);
-    setError("");
-  };
-
-  // — Waitlist submit —
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmitWaitlist || loading) return;
+    if (!emailValid || loading) return;
     setLoading(true);
     setError("");
     try {
       const utms = getUtmParams();
-      const eid = generateEventId();
+      const eventId = generateEventId();
       const res = await fetch("/api/ourfable/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -84,462 +51,214 @@ function ReservePageInner() {
           email: email.trim().toLowerCase(),
           childBirthday,
           source: "reserve",
-          eventId: eid,
+          eventId,
           referralCode: searchParams.get("ref") ?? undefined,
           ...utms,
         }),
       });
-      if (res.ok) {
-        setSuccessMode("waitlist");
-        setSuccessEmail(email.trim().toLowerCase());
-        setSuccessRecipientEmail("");
-        setSuccess(true);
-        trackLead(eid);
-      } else {
+      if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Something went wrong. Try again.");
+        throw new Error(data.error || "Something went wrong. Please try again.");
       }
-    } catch {
-      setError("Network error. Try again.");
+      trackLead(eventId);
+      setSuccessEmail(email.trim().toLowerCase());
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // — Gift submit — saves to waitlist (no payment yet)
-  const handleGiftSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmitGift || loading) return;
-    setLoading(true);
-    setError("");
-    try {
-      const utms = getUtmParams();
-      const eid = generateEventId();
-      const res = await fetch("/api/ourfable/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: recipientEmail.trim().toLowerCase(),
-          gifterName: gifterName.trim(),
-          gifterEmail: gifterEmail.trim().toLowerCase(),
-          recipientEmail: recipientEmail.trim().toLowerCase(),
-          source: "gift-waitlist",
-          eventId: eid,
-          referralCode: searchParams.get("ref") ?? undefined,
-          requestedPlanType: selectedTier,
-          ...utms,
-        }),
-      });
-      if (res.ok) {
-        setSuccessMode("gift");
-        setSuccessEmail(gifterEmail.trim().toLowerCase());
-        setSuccessRecipientEmail(recipientEmail.trim().toLowerCase());
-        setSuccess(true);
-        trackLead(eid);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || "Something went wrong. Try again.");
-      }
-    } catch {
-      setError("Network error. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ── Success state ──
   if (success) {
     return (
-      <div style={{
-        minHeight: "100vh", background: "var(--bg)",
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        padding: "40px 24px",
-      }}>
-        <div style={{ width: "100%", maxWidth: 440, textAlign: "center" }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: "50%",
-            background: "var(--green)", margin: "0 auto 28px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
-          }}>
-            <Check size={36} color="#fff" strokeWidth={2.5} />
+      <main className="of-landing-root" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
+        <LandingPageStyles />
+        <div style={{ maxWidth: 560, textAlign: "center" }}>
+          <div style={{ width: 74, height: 74, margin: "0 auto 26px", borderRadius: 999, background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Check size={34} color="#fff" strokeWidth={2.5} />
           </div>
-          <h1 style={{
-            fontFamily: "var(--font-playfair)", fontSize: 28, fontWeight: 700,
-            color: "var(--text)", marginBottom: 12,
-          }}>
-            {successMode === "gift" ? "Gift reserved." : "You locked in your spot."}
-          </h1>
-          <p style={{ fontSize: 15, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 12 }}>
-            {successMode === "gift"
-              ? "We emailed the recipient and sent your confirmation."
-              : "You’re on the founding-families list. We’ll follow up when your vault is ready, and your pricing is locked in for life."}
+          <h1 className="of-hero-display" style={{ fontSize: 42, marginBottom: 12 }}>You locked in your spot.</h1>
+          <p className="of-hero-copy" style={{ margin: "0 auto 14px", maxWidth: 520 }}>
+            You&apos;re on the founding-families list. We&apos;ll email you as your onboarding spot opens, and your founding price stays locked in.
           </p>
-          <p style={{ fontSize: 13, color: "var(--text-4)", lineHeight: 1.5, marginBottom: 36 }}>
-            {successMode === "gift" ? (
-              <>
-                Confirmation sent to{" "}
-                <strong style={{ color: "var(--text-3)" }}>{successEmail}</strong>
-                {" · "}
-                Recipient notified at{" "}
-                <strong style={{ color: "var(--text-3)" }}>{successRecipientEmail}</strong>
-              </>
-            ) : (
-              <>
-                Confirmation sent to{" "}
-                <strong style={{ color: "var(--text-3)" }}>{successEmail}</strong>
-              </>
-            )}
+          <p className="of-muted-copy" style={{ marginBottom: 28 }}>
+            Confirmation sent to <strong style={{ color: "var(--text)" }}>{successEmail}</strong>
           </p>
-          <Link href="/" style={{ fontSize: 14, color: "var(--green)", textDecoration: "none", fontWeight: 500 }}>
-            ← Back to ourfable.ai
-          </Link>
+          <Link href="/" className="of-secondary-link">← Back to ourfable.ai</Link>
         </div>
-        <style>{`
-          @keyframes scaleIn {
-            from { transform: scale(0); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-          }
-        `}</style>
-      </div>
+      </main>
     );
   }
 
+  const reserveReasons = [
+    "Lock founding pricing for life",
+    "Start before the people who love your child drift further into the future",
+    "Join before onboarding spots fill",
+    "No card required today",
+  ];
+
+  const reserving = [
+    {
+      title: "A private vault for your child",
+      body: "A calm, family-first place for letters, voice notes, photos, and videos that will matter later.",
+    },
+    {
+      title: "Monthly prompts to the right people",
+      body: "Grandparents, aunts, uncles, godparents, and family friends get simple invitations to leave something meaningful.",
+    },
+    {
+      title: "A record that compounds over time",
+      body: "The archive gets more precious as more voices, memories, and seasons of life accumulate around your child.",
+    },
+  ];
+
+  const trustCards = [
+    {
+      icon: Shield,
+      title: "Built by Dave and Amanda for their own family first",
+      body: "This was designed as a serious family product, not a growth-hack memory app.",
+    },
+    {
+      icon: Lock,
+      title: "Private by design",
+      body: "No public feed. No social posting. No family content used for advertising.",
+    },
+    {
+      icon: HeartHandshake,
+      title: "Export anytime · no app required",
+      body: "Families can own what they collect, and contributors can participate without installing anything.",
+    },
+  ];
+
   return (
-    <div style={{
-      minHeight: "100vh", background: "var(--bg)",
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      padding: "40px 24px",
-    }}>
-      <style>{`
-        @keyframes scaleIn {
-          from { transform: scale(0); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+    <main className="of-landing-root">
+      <LandingPageStyles />
+      <div className="of-landing-shell">
+        <LandingNav links={[{ href: "/gift", label: "Gift" }, { href: "/faq", label: "FAQ" }, { href: "/login", label: "Sign in" }]} />
 
-        .mode-panel {
-          overflow: hidden;
-          transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-                      opacity 0.3s ease;
-        }
-        .mode-panel.panel-visible {
-          max-height: 1200px;
-          opacity: 1;
-        }
-        .mode-panel.panel-hidden {
-          max-height: 0;
-          opacity: 0;
-          pointer-events: none;
-        }
+        <section className="of-hero-grid">
+          <div>
+            <span className="of-pill"><Sparkles size={12} strokeWidth={2.2} /> For parents starting this for their child</span>
+            <h1 className="of-hero-display" style={{ marginTop: 18 }}>
+              Start the private family vault your child will one day be grateful exists.
+            </h1>
+            <p className="of-hero-copy">
+              Our Fable gives the people who love your child a simple way to leave letters, voice notes, photos, and videos now — so your child can receive them later.
+            </p>
+            <p className="of-muted-copy" style={{ maxWidth: 660 }}>
+              This is the parent landing page. The decision should feel emotionally important, concrete, safe, and obvious — not like joining a polished waitlist.
+            </p>
+            <div className="of-mini-list" style={{ marginTop: 24 }}>
+              {reserveReasons.map((line) => (
+                <div key={line} className="of-mini-item"><Check size={14} color="var(--green)" style={{ marginTop: 4, flexShrink: 0 }} /> <span>{line}</span></div>
+              ))}
+            </div>
+            <div style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 18 }}>
+              <Link href="#reserve-form" className="of-primary-btn">Reserve your spot <ArrowRight size={16} /></Link>
+              <Link href="/gift" className="of-secondary-link">Looking for a gift instead?</Link>
+            </div>
+          </div>
 
-        /* Toggle switch */
-        .gift-toggle-track {
-          position: relative;
-          width: 44px;
-          height: 24px;
-          border-radius: 100px;
-          background: var(--border);
-          border: 1.5px solid var(--border);
-          cursor: pointer;
-          transition: background 0.2s, border-color 0.2s;
-          flex-shrink: 0;
-        }
-        .gift-toggle-track.on {
-          background: var(--green);
-          border-color: var(--green);
-        }
-        .gift-toggle-thumb {
-          position: absolute;
-          top: 2px;
-          left: 2px;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: #fff;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .gift-toggle-track.on .gift-toggle-thumb {
-          transform: translateX(20px);
-        }
-
-        /* Plan cards */
-        .plan-card {
-          padding: 18px 16px;
-          border-radius: 12px;
-          border: 2px solid var(--border);
-          background: var(--card, #fff);
-          cursor: pointer;
-          text-align: left;
-          position: relative;
-          transition: all 0.2s;
-          width: 100%;
-        }
-        .plan-card.selected {
-          border-color: var(--green);
-          background: var(--green-light);
-        }
-        .plan-card:hover:not(.selected) {
-          border-color: var(--green-border, #9db39e);
-        }
-        .plan-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-        @media (max-width: 500px) {
-          .plan-grid { grid-template-columns: 1fr; }
-        }
-
-        input, textarea {
-          width: 100%;
-          padding: 12px 14px;
-          border: 1.5px solid var(--border);
-          border-radius: 10px;
-          font-size: 15px;
-          font-family: inherit;
-          color: var(--text);
-          background: #fff;
-          transition: border-color 0.2s;
-          box-sizing: border-box;
-          outline: none;
-        }
-        input:focus, textarea:focus {
-          border-color: var(--green);
-        }
-        input::placeholder, textarea::placeholder {
-          color: var(--text-4, #C8C3BA);
-        }
-      `}</style>
-
-      {/* Logo */}
-      <Link href="/" style={{ textDecoration: "none", marginBottom: 32 }}>
-        <span style={{
-          fontFamily: "var(--font-playfair)", fontSize: 24, fontWeight: 700,
-          color: "var(--green)", letterSpacing: "0.02em",
-        }}>
-          Our Fable
-        </span>
-      </Link>
-
-      {/* Card */}
-      <div style={{
-        width: "100%", maxWidth: 460,
-        background: "#fff", borderRadius: 16,
-        boxShadow: "0 2px 24px rgba(0,0,0,0.07)",
-        padding: "36px 32px",
-      }}>
-        {/* Heading */}
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <h1 style={{
-            fontFamily: "var(--font-playfair)", fontSize: 25, fontWeight: 700,
-            color: "var(--text)", marginBottom: 8,
-          }}>
-            Reserve your family’s vault
-          </h1>
-          <p style={{ fontSize: 14, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 12 }}>
-            Reserve free now, lock in founding pricing for life, and we’ll invite you in as onboarding opens.
-          </p>
-          <div style={{
-              padding: "14px 16px",
-              background: "var(--bg-2, #F9F7F4)",
-              borderRadius: 12,
-              border: "1px solid var(--border)",
-              textAlign: "left",
-              display: "grid",
-              gap: 8,
-            }}>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
-                Why reserve now
-              </p>
-              <div style={{ display: "grid", gap: 6 }}>
-                {[
-                  "Lock founding pricing for life",
-                  "Join before founding-family spots fill",
-                  "We’ll email you as your onboarding spot opens",
-                  "No card required today",
-                ].map((line) => (
-                  <div key={line} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--text-2)", lineHeight: 1.55 }}>
-                    <Check size={12} color="var(--green)" style={{ marginTop: 3, flexShrink: 0 }} />
-                    <span>{line}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, marginTop: 2, display: "grid", gap: 2 }}>
-                <p style={{ margin: 0 }}>
-                  Our Fable: <strong>$12/mo or $99/yr</strong>
-                </p>
-                <p style={{ margin: 0 }}>
-                  Our Fable+: <strong>$19/mo or $149/yr</strong>
-                </p>
-              </div>
-              <details style={{ marginTop: 2 }}>
+          <div id="reserve-form" className="of-card" style={{ padding: 28 }}>
+            <p className="of-section-label" style={{ marginBottom: 8 }}>Reserve your family&apos;s spot</p>
+            <h2 style={{ margin: "0 0 12px", fontFamily: "var(--font-playfair)", fontSize: 34, lineHeight: 1.1 }}>Founders pricing is live now.</h2>
+            <p className="of-section-copy" style={{ marginBottom: 18 }}>
+              Reserve free now, keep your founding price, and we&apos;ll invite you in as onboarding opens.
+            </p>
+            <div style={{ padding: 16, borderRadius: 16, background: "var(--bg-2)", border: "1px solid var(--border)", marginBottom: 18 }}>
+              <p style={{ margin: "0 0 6px", fontSize: 14, lineHeight: 1.6 }}>Our Fable: <strong>$12/mo or $99/yr</strong></p>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>Our Fable+: <strong>$19/mo or $149/yr</strong></p>
+              <details style={{ marginTop: 10 }}>
                 <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--text-3)" }}>See later pricing and additional-child details</summary>
                 <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
-                  <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
-                    After founders, pricing becomes $16/mo or $149/yr for Our Fable and $25/mo or $199/yr for Our Fable+.
-                  </p>
-                  <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.55, margin: 0 }}>
-                    Additional children are $7/mo or $59/yr during founders, then $9/mo or $79/yr. Each child gets their own vault and can share the same circle or have a completely separate one.
-                  </p>
+                  <p className="of-muted-copy" style={{ fontSize: 13 }}>After founders, pricing becomes $16/mo or $149/yr for Our Fable and $25/mo or $199/yr for Our Fable+.</p>
+                  <p className="of-muted-copy" style={{ fontSize: 13 }}>Additional children are $7/mo or $59/yr during founders, then $9/mo or $79/yr. Each child gets their own vault and can share the same circle or have a completely separate one.</p>
                 </div>
               </details>
             </div>
-        </div>
-
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "14px 16px",
-          background: "var(--bg-2, #F9F7F4)",
-          borderRadius: 10,
-          border: "1.5px solid var(--border)",
-          marginBottom: 24,
-        }}>
-          <Gift size={15} color="var(--text-3)" strokeWidth={2} aria-hidden="true" />
-          <span style={{ fontSize: 14, color: "var(--text-2)" }}>
-            Looking for a gift instead?
-          </span>
-          <Link href="/gift" style={{ marginLeft: "auto", fontSize: 14, fontWeight: 600, color: "var(--green)", textDecoration: "none" }}>
-            Open gift page →
-          </Link>
-        </div>
-
-        {/* ── WAITLIST MODE ── */}
-        <div
-          ref={waitlistRef}
-          className={`mode-panel ${!isGift ? "panel-visible" : "panel-hidden"}`}
-        >
-          <div style={{
-            marginBottom: 18,
-            padding: "14px 16px",
-            background: "rgba(107,143,111,0.08)",
-            border: "1px solid rgba(107,143,111,0.18)",
-            borderRadius: 12,
-            display: "grid",
-            gap: 10,
-          }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
-              What you’re reserving
-            </p>
-            <div style={{ display: "grid", gap: 6 }}>
-              {[
-                "A private vault for your child’s future",
-                "Monthly prompts to the people who love them",
-                "Letters, voice notes, photos, and videos that grow over time",
-              ].map((line) => (
-                <div key={line} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--text-2)", lineHeight: 1.55 }}>
-                  <Check size={12} color="var(--green)" style={{ marginTop: 3, flexShrink: 0 }} />
-                  <span>{line}</span>
-                </div>
-              ))}
+            <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
+              <div>
+                <label htmlFor="reserve-birthday" className="of-field-label">Child&apos;s birthday (optional)</label>
+                <input id="reserve-birthday" className="of-input" type="date" value={childBirthday} onChange={(e) => setChildBirthday(e.target.value)} max={new Date().toISOString().slice(0, 10)} />
+              </div>
+              <div>
+                <label htmlFor="reserve-email" className="of-field-label">Your email</label>
+                <input id="reserve-email" className="of-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+              </div>
+              {error ? <p style={{ margin: 0, color: "#D46565", fontSize: 13 }}>{error}</p> : null}
+              <button type="submit" className="of-primary-btn" disabled={!emailValid || loading} style={{ width: "100%" }}>
+                {loading ? "Reserving…" : <>Reserve your spot <ArrowRight size={16} /></>}
+              </button>
+            </form>
+            <div className="of-mini-list" style={{ marginTop: 16 }}>
+              <div className="of-mini-item"><Check size={14} color="var(--green)" style={{ marginTop: 4, flexShrink: 0 }} /> Free to reserve</div>
+              <div className="of-mini-item"><Check size={14} color="var(--green)" style={{ marginTop: 4, flexShrink: 0 }} /> No card required today</div>
+              <div className="of-mini-item"><Check size={14} color="var(--green)" style={{ marginTop: 4, flexShrink: 0 }} /> Gift page available if you&apos;re buying for another family</div>
             </div>
-            <div style={{ width: "100%", height: 1, background: "rgba(107,143,111,0.16)" }} />
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
-              What happens next
-            </p>
-            <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6, margin: 0 }}>
-              We’re onboarding founding families in small groups. We’ll email you as your spot opens, and your founding price stays locked until then.
-            </p>
-            <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6, margin: 0 }}>
-              Built by Dave and Amanda in Minneapolis for their own family first. Private by design. Export anytime. No app required for family members.
-            </p>
           </div>
-          <form onSubmit={handleWaitlistSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            {/* Child birthday */}
-            <div>
-              <label htmlFor="reserve-child-birthday" style={labelStyle}>
-                Child&apos;s birthday <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10, color: "var(--text-4)" }}>(optional)</span>
-              </label>
-              <input
-                id="reserve-child-birthday"
-                type="date"
-                value={childBirthday}
-                onChange={(e) => setChildBirthday(e.target.value)}
-                max={new Date().toISOString().slice(0, 10)}
-                placeholder="You can add this later"
-              />
-            </div>
+        </section>
 
-            {/* Email */}
-            <div>
-              <label htmlFor="reserve-email" style={labelStyle}>
-                Your email
-              </label>
-              <input
-                id="reserve-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                style={showEmailError ? { borderColor: "#E07070" } : undefined}
-              />
-              {showEmailError && (
-                <p style={{ fontSize: 12, color: "#E07070", margin: "6px 0 0" }}>
-                  Please enter a valid email address.
-                </p>
-              )}
-            </div>
+        <LandingSection label="Why reserve now" title="Because the people who love your child are here now." copy="This is not just about storing memories. It is about asking the right people while their voices, stories, and perspective are still available in this season of life." />
 
-            {error && (
-              <p style={{ fontSize: 13, color: "#E07070", textAlign: "center", margin: 0 }}>
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={!canSubmitWaitlist || loading}
-              className="btn-primary"
-              style={{ width: "100%", justifyContent: "center", fontSize: 15, padding: "14px 24px", marginTop: 4 }}
-            >
-              {loading ? "Reserving…" : "Reserve your spot →"}
-            </button>
-          </form>
-
-          {/* Waitlist trust signals */}
-          <div style={{ marginTop: 18, textAlign: "center", display: "flex", flexDirection: "column", gap: 5 }}>
-            <p style={{ fontSize: 12, color: "var(--text-3)", margin: 0 }}>
-              Free to reserve · No card required · Child birthday optional
-            </p>
-            <p style={{
-              fontSize: 12, color: "var(--text-3)", margin: 0,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-            }}>
-              <Lock size={11} strokeWidth={2} aria-hidden="true" />
-              Private vault · Your data is never shared · Export anytime
-            </p>
+        <LandingSection label="What you&apos;re reserving" title="A more serious beginning than a waitlist form.">
+          <div className="of-feature-grid">
+            {reserving.map((item) => (
+              <div key={item.title} className="of-feature-card">
+                <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{item.title}</p>
+                <p className="of-muted-copy">{item.body}</p>
+              </div>
+            ))}
           </div>
+        </LandingSection>
 
-          <ReserveProofModule />
-        </div>
+        <LandingSection label="What happens next" title="A clear 3-step path, not a vague someday promise.">
+          <div className="of-step-grid">
+            {[
+              ["1", "Reserve now", "Tell us where to reach you. That locks your founding price and puts your family in line."],
+              ["2", "We invite you in", "We onboard founding families in small groups so the early experience feels personal and high-trust."],
+              ["3", "Your vault starts feeling alive", "You add the first pieces, invite your circle, and start seeing the archive become emotionally real fast."],
+            ].map(([num, title, body]) => (
+              <div key={title} className="of-step-card">
+                <div className="of-step-number">{num}</div>
+                <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
+                <p className="of-muted-copy">{body}</p>
+              </div>
+            ))}
+          </div>
+        </LandingSection>
 
+        <LandingSection label="Trust" title="Private, exportable, and built to feel worthy of family trust.">
+          <div className="of-trust-grid">
+            {trustCards.map(({ icon: Icon, title, body }) => (
+              <div key={title} className="of-feature-card">
+                <Icon size={18} color="var(--green)" style={{ marginBottom: 10 }} />
+                <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
+                <p className="of-muted-copy">{body}</p>
+              </div>
+            ))}
+          </div>
+        </LandingSection>
+
+        <LandingSection label="Proof" title="A real proof zone that can grow without breaking the page." copy="When approved quotes, screenshots, and parent reactions exist, they should land here near the decision moment — not jammed awkwardly into the form card.">
+          <div className="of-proof-placeholder">
+            <p className="of-muted-copy" style={{ marginBottom: 12 }}>Ready for: founder-backed trust note, short parent quotes, screenshot + quote, or a compact “why families are reserving” list.</p>
+            <ReserveProofModule />
+          </div>
+        </LandingSection>
+
+        <section className="of-section">
+          <div className="of-close-cta">
+            <p className="of-section-label">Start now</p>
+            <h2 className="of-section-title" style={{ marginBottom: 10 }}>Start your family&apos;s vault before this season becomes harder to retrieve.</h2>
+            <p className="of-section-copy" style={{ marginBottom: 18 }}>Reserve now, keep your founding price, and we&apos;ll reach out when your onboarding spot opens.</p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <Link href="#reserve-form" className="of-primary-btn">Reserve your spot <ArrowRight size={16} /></Link>
+              <Link href="/gift" className="of-secondary-link">Give this as a gift instead</Link>
+            </div>
+          </div>
+        </section>
       </div>
-
-      {/* Back link */}
-      <Link href="/" style={{
-        marginTop: 28, fontSize: 14, color: "var(--text-3)", textDecoration: "none",
-      }}>
-        ← Back to ourfable.ai
-      </Link>
-    </div>
+    </main>
   );
 }
-
-// Shared label style
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 10,
-  fontWeight: 700,
-  letterSpacing: "0.15em",
-  textTransform: "uppercase",
-  color: "var(--text-3)",
-  marginBottom: 8,
-};
