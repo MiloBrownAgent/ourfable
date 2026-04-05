@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Check, Lock, Gift, Loader2 } from "lucide-react";
 import { captureUtmParams, getUtmParams } from "../../lib/utm";
 import { trackLead, generateEventId } from "../../lib/analytics";
+import { ReserveProofModule } from "../../components/reserve/ReserveProofModule";
 
 type GiftTier = "standard" | "plus";
 
@@ -516,6 +517,8 @@ function ReservePageInner() {
               Private vault · Your data is never shared · Export anytime
             </p>
           </div>
+
+          <ReserveProofModule />
         </div>
 
       </div>
