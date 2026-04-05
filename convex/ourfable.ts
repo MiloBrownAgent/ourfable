@@ -862,6 +862,7 @@ export const submitVaultEntry = internalMutation({
   args: {
     familyId: v.string(),
     memberId: v.id("ourfable_vault_circle"),
+    childId: v.optional(v.string()),
     type: v.string(),
     subject: v.optional(v.string()),
     body: v.optional(v.string()),
