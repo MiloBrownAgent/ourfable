@@ -417,6 +417,9 @@ function ReservePageInner() {
             <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6, margin: 0 }}>
               Reserve now, then we’ll follow up as founding-family onboarding opens. No card required today. You’ll keep your founding price for life.
             </p>
+            <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6, margin: 0 }}>
+              Built by Dave and Amanda in Minneapolis for their own family first.
+            </p>
           </div>
           <form onSubmit={handleWaitlistSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             {/* Child birthday */}
