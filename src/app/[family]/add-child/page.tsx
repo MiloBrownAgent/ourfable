@@ -26,17 +26,6 @@ async function convexFetch(path: string, args: Record<string, unknown>) {
   return d.value ?? null;
 }
 
-async function convexMutate(path: string, args: Record<string, unknown>) {
-  const res = await fetch("/api/ourfable/data", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, type: "mutation" }),
-  });
-  if (!res.ok) return null;
-  const d = await res.json();
-  return d.value ?? null;
-}
-
 // ── Step indicator ───────────────────────────────────────────────────────────
 
 function StepIndicator({ step, total }: { step: number; total: number }) {
@@ -449,43 +438,33 @@ export default function AddChildPage({ params }: { params: Promise<{ family: str
     setSubmitting(true);
     setSubmitError("");
     try {
-      // Create the child via Convex
-      // addChild returns { _id, childId } — childId is the slug used for lookups
-      const result = await convexMutate("ourfable:addChild", {
-        familyId,
-        childName,
-        childDob,
-      }) as { _id: string; childId: string } | null;
+      const res = await fetch("/api/stripe/add-child", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childName,
+          childDob,
+          billingPeriod: "annual",
+          copyCircleFrom: copyCircle && existingChild ? existingChild.childId : undefined,
+          selectedMemberIds: copyCircle ? memberIds : [],
+          successUrl: `${window.location.origin}/${familyId}?child_added=true`,
+          cancelUrl: `${window.location.origin}/${familyId}/add-child?cancelled=true`,
+        }),
+      });
 
-      if (!result) throw new Error("Failed to create child record");
-      const newChildSlug = result.childId;
-
-      // Copy circle if requested — use childId slugs, not Convex _ids
-      if (copyCircle && memberIds.length > 0 && existingChild) {
-        await convexMutate("ourfable:copyCircleToChild", {
-          sourceChildId: existingChild.childId,
-          targetChildId: newChildSlug,
-          memberIds,
-        });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to add child");
       }
 
-      // If not free (i.e. paid add-on needed), hit Stripe
-      if (!isFirstAddon && planType === "plus") {
-        const res = await fetch("/api/stripe/add-child", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ familyId, childId: newChildSlug }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.url) { window.location.href = data.url; return; }
-        }
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
       }
 
-      // Redirect to the family dashboard
-      router.push(`/${familyId}`);
+      router.push(`/${familyId}?child_added=true`);
     } catch (e) {
-      setSubmitError(String(e));
+      setSubmitError(e instanceof Error ? e.message : String(e));
     } finally {
       setSubmitting(false);
     }
