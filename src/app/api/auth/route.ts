@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import { getAccount, verifyPassword, needsHashUpgrade, hashPassword } from "@/lib/accounts";
 import { internalConvexQuery, internalConvexMutation } from "@/lib/convex-internal";
+import { generateFamilyKey, generateSalt, deriveKeyEncryptionKey, wrapFamilyKey } from "@/lib/vault-encryption";
 
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
 
@@ -162,6 +163,20 @@ export async function POST(req: NextRequest) {
       } | null>("ourfable:getFamilyEncryptionKeys", { familyId: account.familyId });
       if (encData?.encryptedFamilyKey) {
         encryptionKeys = { encryptedFamilyKey: encData.encryptedFamilyKey, keySalt: encData.keySalt };
+      } else {
+        const familyKey = await generateFamilyKey();
+        const keySalt = generateSalt();
+        const kek = await deriveKeyEncryptionKey(password, keySalt);
+        const wrapped = await wrapFamilyKey(familyKey, kek);
+        const encryptedFamilyKey = JSON.stringify(wrapped);
+        await internalConvexMutation("ourfable:setupFamilyEncryption", {
+          familyId: account.familyId,
+          encryptedFamilyKey,
+          keySalt,
+          keyVersion: 1,
+        });
+        encryptionKeys = { encryptedFamilyKey, keySalt };
+        console.log(`[auth] Initialized family encryption for ${account.familyId}`);
       }
     }
   } catch {

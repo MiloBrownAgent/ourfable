@@ -244,34 +244,51 @@ function MemberCard({ member, familyId, activeChildId }: { member: CircleMember;
     }
   }, [familyId, familyKey, unlockFamilyKey]);
 
-  async function persistInviteKeyBackup(rawB64: string) {
+  async function persistInviteKeyBackup(rawB64: string, encryptedInviteKeyOverride?: string) {
     try {
       await fetch("/api/ourfable/store-invite-key-backup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId: member._id, rawKey: rawB64, encryptedInviteKey: member.encryptedInviteKey }),
+        body: JSON.stringify({ memberId: member._id, rawKey: rawB64, encryptedInviteKey: encryptedInviteKeyOverride ?? member.encryptedInviteKey }),
       });
     } catch (err) {
       console.error("[circle] Failed to store invite key backup for", member.name, err);
     }
   }
 
-  // Unwrap the invite key to build the full invite URL with fragment
+  // Ensure every member gets invite-key state once family encryption is available.
   useEffect(() => {
-    if (!familyKey || !member.encryptedInviteKey) return;
+    if (!familyKey) return;
     (async () => {
       try {
+        if (!member.encryptedInviteKey) {
+          const rawB64 = generateInviteKeyRaw();
+          const wrappedJson = await wrapInviteKey(rawB64, familyKey);
+          await fetch(`/api/ourfable/data`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              path: "ourfable:setMemberInviteKey",
+              args: { memberId: member._id, encryptedInviteKey: wrappedJson },
+              type: "mutation",
+            }),
+          });
+          await persistInviteKeyBackup(rawB64, wrappedJson);
+          setInviteKeyFragment(rawB64);
+          return;
+        }
+
         const inviteKey = await unwrapInviteKey(member.encryptedInviteKey!, familyKey);
         const rawB64 = await exportKey(inviteKey);
         setInviteKeyFragment(rawB64);
         if (!member.serverEncryptedInviteKey) {
-          void persistInviteKeyBackup(rawB64);
+          await persistInviteKeyBackup(rawB64);
         }
       } catch (err) {
-        console.error("[circle] Failed to unwrap invite key for", member.name, err);
+        console.error("[circle] Failed to prepare invite key for", member.name, err);
       }
     })();
-  }, [familyKey, member.encryptedInviteKey, member.name, member.serverEncryptedInviteKey]);
+  }, [familyKey, member._id, member.encryptedInviteKey, member.name, member.serverEncryptedInviteKey]);
 
   const inviteUrl = inviteKeyFragment
     ? `${origin}/join/${member.inviteToken}#key=${encodeURIComponent(inviteKeyFragment)}`
