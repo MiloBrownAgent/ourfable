@@ -52,7 +52,7 @@ export async function generateFamilyKey(): Promise<CryptoKey> {
   return getSubtleCrypto().generateKey(
     { name: "AES-GCM", length: 256 },
     true, // extractable — needed for wrapping
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
   );
 }
 
@@ -74,7 +74,7 @@ export async function importKey(b64Key: string): Promise<CryptoKey> {
     raw,
     { name: "AES-GCM", length: 256 },
     true,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
   );
 }
 
@@ -157,7 +157,7 @@ export async function unwrapFamilyKey(
     { name: "AES-GCM", iv: fromBase64(wrapped.iv) },
     { name: "AES-GCM", length: 256 },
     true,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
   );
 }
 
