@@ -356,9 +356,22 @@ function ReservePageInner() {
               gap: 8,
             }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
-                Founders pricing
+                Why reserve now
               </p>
-              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, margin: 0, display: "grid", gap: 2 }}>
+              <div style={{ display: "grid", gap: 6 }}>
+                {[
+                  "Lock founding pricing for life",
+                  "Join before founding-family spots fill",
+                  "We’ll email you as your onboarding spot opens",
+                  "No card required today",
+                ].map((line) => (
+                  <div key={line} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--text-2)", lineHeight: 1.55 }}>
+                    <Check size={12} color="var(--green)" style={{ marginTop: 3, flexShrink: 0 }} />
+                    <span>{line}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, marginTop: 2, display: "grid", gap: 2 }}>
                 <p style={{ margin: 0 }}>
                   Our Fable: <strong>$12/mo or $99/yr</strong>
                 </p>
@@ -409,16 +422,32 @@ function ReservePageInner() {
             border: "1px solid rgba(107,143,111,0.18)",
             borderRadius: 12,
             display: "grid",
-            gap: 6,
+            gap: 10,
           }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
+              What you’re reserving
+            </p>
+            <div style={{ display: "grid", gap: 6 }}>
+              {[
+                "A private vault for your child’s future",
+                "Monthly prompts to the people who love them",
+                "Letters, voice notes, photos, and videos that grow over time",
+              ].map((line) => (
+                <div key={line} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--text-2)", lineHeight: 1.55 }}>
+                  <Check size={12} color="var(--green)" style={{ marginTop: 3, flexShrink: 0 }} />
+                  <span>{line}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ width: "100%", height: 1, background: "rgba(107,143,111,0.16)" }} />
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green)", margin: 0 }}>
               What happens next
             </p>
             <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.6, margin: 0 }}>
-              Reserve now, then we’ll follow up as founding-family onboarding opens. No card required today. You’ll keep your founding price for life.
+              We’re onboarding founding families in small groups. We’ll email you as your spot opens, and your founding price stays locked until then.
             </p>
             <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.6, margin: 0 }}>
-              Built by Dave and Amanda in Minneapolis for their own family first.
+              Built by Dave and Amanda in Minneapolis for their own family first. Private by design. Export anytime. No app required for family members.
             </p>
           </div>
           <form onSubmit={handleWaitlistSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
