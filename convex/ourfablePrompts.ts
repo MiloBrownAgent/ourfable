@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
-import crypto from "node:crypto";
 
 const RESEND_API_KEY = process.env.RESEND_FULL_API_KEY;
 
@@ -42,28 +41,42 @@ function getOurFableUrl(): string {
   return process.env.OURFABLE_APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://ourfable.ai";
 }
 
-function getServerEncryptionKey(): Buffer {
-  const key = process.env.TOTP_ENCRYPTION_KEY;
-  if (!key) {
-    const fallback = process.env.SESSION_SECRET;
-    if (!fallback) throw new Error("TOTP_ENCRYPTION_KEY or SESSION_SECRET required");
-    return crypto.createHash("sha256").update(`invite-key-backup:${fallback}`).digest();
-  }
-  const buf = Buffer.from(key, "base64");
-  if (buf.length < 32) throw new Error("TOTP_ENCRYPTION_KEY must be at least 32 bytes");
-  return buf.subarray(0, 32);
+function utf8ToBytes(text: string): Uint8Array {
+  return new TextEncoder().encode(text);
 }
 
-function decryptInviteKeyBackup(stored?: string): string | null {
+function bytesToUtf8(bytes: Uint8Array): string {
+  return new TextDecoder().decode(bytes);
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function getServerEncryptionKey(): Promise<CryptoKey> {
+  const key = process.env.TOTP_ENCRYPTION_KEY;
+  if (key) {
+    const raw = base64ToBytes(key).slice(0, 32);
+    return crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["decrypt"]);
+  }
+  const fallback = process.env.SESSION_SECRET;
+  if (!fallback) throw new Error("TOTP_ENCRYPTION_KEY or SESSION_SECRET required");
+  const seed = await crypto.subtle.digest("SHA-256", utf8ToBytes(`invite-key-backup:${fallback}`));
+  return crypto.subtle.importKey("raw", seed, { name: "AES-GCM" }, false, ["decrypt"]);
+}
+
+async function decryptInviteKeyBackup(stored?: string): Promise<string | null> {
   if (!stored) return null;
   if (!stored.startsWith("enc:")) return stored;
-  const packed = Buffer.from(stored.slice(4), "base64");
-  const iv = packed.subarray(0, 12);
-  const tag = packed.subarray(packed.length - 16);
-  const ciphertext = packed.subarray(12, packed.length - 16);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", getServerEncryptionKey(), iv);
-  decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
+  const packed = base64ToBytes(stored.slice(4));
+  const iv = packed.slice(0, 12);
+  const ciphertext = packed.slice(12);
+  const key = await getServerEncryptionKey();
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  return bytesToUtf8(new Uint8Array(plain));
 }
 
 function generateToken(): string {
@@ -443,7 +456,7 @@ async function sendPromptEmail(args: {
 
   const childFirst = args.childName.split(" ")[0];
   const memberFirst = args.memberName.split(" ")[0];
-  const inviteKey = decryptInviteKeyBackup(args.serverEncryptedInviteKey);
+  const inviteKey = await decryptInviteKeyBackup(args.serverEncryptedInviteKey);
   const submitUrl = inviteKey
     ? `${getOurFableUrl()}/respond/${args.token}#key=${encodeURIComponent(inviteKey)}`
     : `${getOurFableUrl()}/respond/${args.token}`;
