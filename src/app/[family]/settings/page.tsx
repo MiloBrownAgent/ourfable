@@ -16,6 +16,7 @@ interface FamilyData {
   parentEmail?: string;
   familyName: string;
   childName: string;
+  childDob?: string;
 }
 
 interface AccountData {
@@ -243,7 +244,19 @@ export default function SettingsPage({ params }: { params: Promise<{ family: str
         setNotifyOnLapse((acct as Record<string, unknown>).notifyFacilitatorOnLapse as boolean);
       }
       setMilestones((ms as Milestone[]) ?? []);
-      setChildList((kids as ChildRecord[]) ?? []);
+      const fetchedChildren = (kids as ChildRecord[]) ?? [];
+      setChildList(
+        fetchedChildren.length > 0
+          ? fetchedChildren
+          : fam?.childName
+            ? [{
+                _id: `fallback-${familyId}`,
+                childName: fam.childName,
+                childDob: fam.childDob ?? "",
+                isFirst: true,
+              }]
+            : [],
+      );
       setFamilyMembers((members as FamilyMember[]) ?? []);
       if (me?.role) setCurrentUserRole(me.role);
       if (legacyData) {
