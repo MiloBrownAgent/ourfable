@@ -12,19 +12,13 @@ import {
 // Using dynamic imports keeps the initial JS bundle smaller.
 import dynamic from "next/dynamic";
 
-const VignettesSection    = dynamic(() => import("../components/home/VignettesSection").then(m => ({ default: m.VignettesSection })), { ssr: false });
-const LetterMomentSection = dynamic(() => import("../components/home/VignettesSection").then(m => ({ default: m.LetterMomentSection })), { ssr: false });
-const VideoMomentSection  = dynamic(() => import("../components/home/VignettesSection").then(m => ({ default: m.VideoMomentSection })), { ssr: false });
 const DispatchSection     = dynamic(() => import("../components/home/DispatchSection").then(m => ({ default: m.DispatchSection })), { ssr: false });
 const TrustSection        = dynamic(() => import("../components/home/TrustSection").then(m => ({ default: m.TrustSection })), { ssr: false });
 const CircleSection       = dynamic(() => import("../components/home/CircleSection").then(m => ({ default: m.CircleSection })), { ssr: false });
-const VaultOpeningSection = dynamic(() => import("../components/home/VaultOpeningSection").then(m => ({ default: m.VaultOpeningSection })), { ssr: false });
 const HowItWorksSection   = dynamic(() => import("../components/home/HowItWorksSection").then(m => ({ default: m.HowItWorksSection })), { ssr: false });
 const FeaturesSection     = dynamic(() => import("../components/home/FeaturesSection").then(m => ({ default: m.FeaturesSection })), { ssr: false });
 const MultiChildSection   = dynamic(() => import("../components/home/MultiChildSection").then(m => ({ default: m.MultiChildSection })), { ssr: false });
-const StatsSection        = dynamic(() => import("../components/home/StatsSection").then(m => ({ default: m.StatsSection })), { ssr: false });
 const FounderNote         = dynamic(() => import("../components/home/FounderNote").then(m => ({ default: m.FounderNote })), { ssr: false });
-const MidPageCapture      = dynamic(() => import("../components/home/MidPageCapture").then(m => ({ default: m.MidPageCapture })), { ssr: false });
 const PricingSection      = dynamic(() => import("../components/home/PricingSection").then(m => ({ default: m.PricingSection })), { ssr: false });
 const FooterSection       = dynamic(() => import("../components/home/FooterSection").then(m => ({ default: m.FooterSection })), { ssr: false });
 
@@ -112,18 +106,12 @@ export default function HomeClient() {
       <HeroSection />
       <ProofStrip />
       <HowItWorksSection />
-      <DispatchSection />
       <FeaturesSection />
-      <TrustSection />
-      <VignettesSection />
-      <LetterMomentSection />
-      <VideoMomentSection />
+      <DispatchSection />
       <CircleSection />
-      <VaultOpeningSection />
+      <TrustSection />
       <MultiChildSection />
-      <StatsSection />
       <FounderNote />
-      <MidPageCapture />
       <PricingSection />
       <FooterSection />
 
