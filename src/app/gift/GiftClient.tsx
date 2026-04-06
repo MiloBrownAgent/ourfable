@@ -88,7 +88,7 @@ export default function GiftClient() {
               This is not another baby gift that gets used once and disappears. It gives a family a private place where the people who love a child can leave letters, voice notes, photos, and videos for years to come.
             </p>
             <p className="of-muted-copy" style={{ maxWidth: 660 }}>
-              The job of this page is to make gifting feel emotionally strong, socially graceful, and easy to act on.
+              A graceful, lasting gift that feels meaningful now and keeps becoming more valuable to the family over time.
             </p>
             <div className="of-mini-list" style={{ marginTop: 24 }}>
               {[
@@ -103,7 +103,7 @@ export default function GiftClient() {
 
           <div className="of-card" style={{ padding: 28 }}>
             <p className="of-section-label" style={{ marginBottom: 8 }}>Gift Our Fable</p>
-            <h2 style={{ margin: "0 0 12px", fontFamily: "var(--font-playfair)", fontSize: 34, lineHeight: 1.1 }}>A serious gift for a child&apos;s future.</h2>
+            <h2 style={{ margin: "0 0 12px", fontFamily: "var(--font-playfair)", fontSize: 34, lineHeight: 1.1 }}>Give the family something they will still care about years from now.</h2>
             <p className="of-section-copy" style={{ marginBottom: 18 }}>
               Choose the plan, choose whether you want to gift the first year or sponsor it annually, and we&apos;ll take you to secure checkout.
             </p>
@@ -180,7 +180,7 @@ export default function GiftClient() {
           </div>
         </LandingSection>
 
-        <LandingSection label="What the family receives" title="A private Our Fable vault for their child.">
+        <LandingSection label="What the family receives" title="A private place for the child&apos;s story to keep growing.">
           <div className="of-feature-grid">
             {tier.features.map((feature) => (
               <div key={feature} className="of-feature-card">
@@ -214,7 +214,7 @@ export default function GiftClient() {
           <div className="of-trust-grid">
             {[
               [Lock, "Private by design", "No ads. No public posting. No social-feed energy."],
-              [Shield, "Built with long-term family trust in mind", "Founder-led, calm, premium, and designed to feel worthy of being kept for years."],
+              [Shield, "Built for long-term family trust", "Made to feel safe, lasting, and worthy of holding the people and memories a child may value most later."],
               [HeartHandshake, "Simple for non-technical families", "The family gets a clear email, can redeem when ready, and contributors do not need an app."],
             ].map(([Icon, title, body]) => {
               const Glyph = Icon as typeof Lock;

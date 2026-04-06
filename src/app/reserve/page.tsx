@@ -93,7 +93,7 @@ function ReservePageInner() {
 
   const reserveReasons = [
     "Lock founding pricing for life",
-    "Start before the people who love your child drift further into the future",
+    "Start collecting the voices and stories that will matter later",
     "Join before onboarding spots fill",
     "No card required today",
   ];
@@ -141,13 +141,13 @@ function ReservePageInner() {
           <div>
             <span className="of-pill"><Sparkles size={12} strokeWidth={2.2} /> For parents starting this for their child</span>
             <h1 className="of-hero-display" style={{ marginTop: 18 }}>
-              Start the private family vault your child will one day be grateful exists.
+              The people who love your child won’t always be here. Start preserving them now.
             </h1>
             <p className="of-hero-copy">
-              Our Fable gives the people who love your child a simple way to leave letters, voice notes, photos, and videos now — so your child can receive them later.
+              Our Fable gives grandparents, family, and close friends a simple way to leave letters, voice notes, photos, and videos now — so your child can hear them later.
             </p>
             <p className="of-muted-copy" style={{ maxWidth: 660 }}>
-              This is the parent landing page. The decision should feel emotionally important, concrete, safe, and obvious — not like joining a polished waitlist.
+              A private family vault that gets more meaningful over time, without becoming another app you have to manage every day.
             </p>
             <div className="of-mini-list" style={{ marginTop: 24 }}>
               {reserveReasons.map((line) => (
@@ -240,9 +240,9 @@ function ReservePageInner() {
           </div>
         </LandingSection>
 
-        <LandingSection label="Proof" title="A real proof zone that can grow without breaking the page." copy="When approved quotes, screenshots, and parent reactions exist, they should land here near the decision moment — not jammed awkwardly into the form card.">
+        <LandingSection label="Proof" title="What families will soon be able to see here." copy="As real reactions, screenshots, and parent proof come in, this section will hold them close to the decision moment.">
           <div className="of-proof-placeholder">
-            <p className="of-muted-copy" style={{ marginBottom: 12 }}>Ready for: founder-backed trust note, short parent quotes, screenshot + quote, or a compact “why families are reserving” list.</p>
+            <p className="of-muted-copy" style={{ marginBottom: 12 }}>Founder-backed trust notes, parent reactions, and real family proof will live here once approved.</p>
             <ReserveProofModule />
           </div>
         </LandingSection>
@@ -250,7 +250,7 @@ function ReservePageInner() {
         <section className="of-section">
           <div className="of-close-cta">
             <p className="of-section-label">Start now</p>
-            <h2 className="of-section-title" style={{ marginBottom: 10 }}>Start your family&apos;s vault before this season becomes harder to retrieve.</h2>
+            <h2 className="of-section-title" style={{ marginBottom: 10 }}>Start preserving the people your child will one day want to hear from most.</h2>
             <p className="of-section-copy" style={{ marginBottom: 18 }}>Reserve now, keep your founding price, and we&apos;ll reach out when your onboarding spot opens.</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <Link href="#reserve-form" className="of-primary-btn">Reserve your spot <ArrowRight size={16} /></Link>

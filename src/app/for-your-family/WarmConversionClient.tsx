@@ -81,13 +81,13 @@ export default function WarmConversionClient() {
           <div>
             <span className="of-pill"><Users size={12} strokeWidth={2.2} /> For people who have already seen Our Fable from the inside</span>
             <h1 className="of-hero-display" style={{ marginTop: 18 }}>
-              You&apos;ve already seen what this becomes. Start it for your own child now.
+              You&apos;ve already felt what this can become. Start it for your own child now.
             </h1>
             <p className="of-hero-copy">
-              This page is for one warm audience: people who have already seen prompts, updates, or the growing archive through another family and now want the same thing for their own child.
+              If another family&apos;s prompts, updates, and growing archive made you wish your own child had the same kind of private record waiting for them, this is where you begin.
             </p>
             <p className="of-muted-copy" style={{ maxWidth: 650 }}>
-              It should not feel like a softer reserve page. It should cash in the insider context directly.
+              The power of Our Fable is easier to feel once you&apos;ve already seen it working from the inside.
             </p>
             <div className="of-mini-list" style={{ marginTop: 24 }}>
               {[
@@ -146,7 +146,7 @@ export default function WarmConversionClient() {
 
         <LandingSection label="Why it matters more for your child" title="Once you&apos;ve seen this from the inside, the emotional logic gets harder to ignore." copy="The same thing that felt powerful when it belonged to someone else becomes more urgent when you imagine your own child one day hearing those voices, reading those letters, and opening those memories." />
 
-        <LandingSection label="How simple it is to begin" title="A warm path should feel simpler, not mushier.">
+        <LandingSection label="How simple it is to begin" title="Starting this for your own child should feel simple.">
           <div className="of-step-grid">
             {[
               ["1", "Reserve", "Tell us where to reach you and lock your founding price."],
@@ -181,9 +181,9 @@ export default function WarmConversionClient() {
           </div>
         </LandingSection>
 
-        <LandingSection label="Warm proof" title="A place for lived-experience proof once assets exist." copy="This section is designed for contributor reactions, “seeing this from the inside” quotes, and real screenshots once approved.">
+        <LandingSection label="Warm proof" title="What people who have already seen this from the inside will soon see here." copy="As warm reactions, contributor quotes, and real screenshots are approved, this is where they will help close the loop.">
           <div className="of-proof-placeholder">
-            <p className="of-muted-copy">Ready for contributor reactions, warm quotes, or real screenshots from people who already understood the product emotionally before buying.</p>
+            <p className="of-muted-copy">Real contributor reactions, lived-experience quotes, and approved screenshots will live here once ready.</p>
           </div>
         </LandingSection>
 
