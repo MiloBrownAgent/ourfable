@@ -35,6 +35,7 @@ const PUBLIC_PREFIXES = [
   "/invite/",
   "/demo",
   "/support",
+  "/landing-artifacts/",
   "/manifest.json",
   "/robots.txt",
   "/sitemap.xml",
