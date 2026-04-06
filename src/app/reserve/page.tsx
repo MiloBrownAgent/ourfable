@@ -6,8 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight, Check, HeartHandshake, Lock, Shield, Sparkles } from "lucide-react";
 import { captureUtmParams, getUtmParams } from "../../lib/utm";
 import { trackLead, generateEventId } from "../../lib/analytics";
-import { ReserveProofModule } from "../../components/reserve/ReserveProofModule";
-import { LandingNav, LandingPageStyles, LandingSection } from "../../components/landing/LandingSystem";
+import { LandingNav, LandingPageStyles, LandingSection, MobileStickyCTA } from "../../components/landing/LandingSystem";
 
 export default function ReservePage() {
   return (
@@ -155,7 +154,6 @@ function ReservePageInner() {
               ))}
             </div>
             <div style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 18 }}>
-              <Link href="#reserve-form" className="of-primary-btn">Reserve your spot <ArrowRight size={16} /></Link>
               <Link href="/gift" className="of-secondary-link">Looking for a gift instead?</Link>
             </div>
           </div>
@@ -202,13 +200,21 @@ function ReservePageInner() {
         <LandingSection label="Why reserve now" title="Because the people who love your child are here now." copy="This is not just about storing memories. It is about asking the right people while their voices, stories, and perspective are still available in this season of life." />
 
         <LandingSection label="What you&apos;re reserving" title="A more serious beginning than a waitlist form.">
-          <div className="of-feature-grid">
-            {reserving.map((item) => (
-              <div key={item.title} className="of-feature-card">
-                <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{item.title}</p>
-                <p className="of-muted-copy">{item.body}</p>
-              </div>
-            ))}
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.05fr) minmax(0, 0.95fr)", gap: 20, marginTop: 24, alignItems: "start" }}>
+            <div className="of-feature-grid" style={{ marginTop: 0, gridTemplateColumns: "1fr" }}>
+              {reserving.map((item) => (
+                <div key={item.title} className="of-feature-card">
+                  <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{item.title}</p>
+                  <p className="of-muted-copy">{item.body}</p>
+                </div>
+              ))}
+            </div>
+            <div className="of-card" style={{ padding: 18 }}>
+              <p className="of-section-label" style={{ marginBottom: 8 }}>Inside the product</p>
+              <img src="/landing-artifacts/reserve-prompt.png" alt="Real Our Fable prompt screen" style={{ width: "100%", borderRadius: 14, border: "1px solid var(--border)", display: "block", marginBottom: 12 }} />
+              <img src="/landing-artifacts/warm-contributor.png" alt="Real contribution preview from Our Fable" style={{ width: "100%", borderRadius: 14, border: "1px solid var(--border)", display: "block", marginBottom: 12 }} />
+              <p className="of-muted-copy" style={{ fontSize: 13 }}>A real prompt screen and a real contribution screen from the live product. The archive starts with one clear ask and one meaningful response.</p>
+            </div>
           </div>
         </LandingSection>
 
@@ -229,21 +235,21 @@ function ReservePageInner() {
         </LandingSection>
 
         <LandingSection label="Trust" title="Private, exportable, and built to feel worthy of family trust.">
-          <div className="of-trust-grid">
-            {trustCards.map(({ icon: Icon, title, body }) => (
-              <div key={title} className="of-feature-card">
-                <Icon size={18} color="var(--green)" style={{ marginBottom: 10 }} />
-                <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
-                <p className="of-muted-copy">{body}</p>
-              </div>
-            ))}
-          </div>
-        </LandingSection>
-
-        <LandingSection label="Proof" title="What families will soon be able to see here." copy="As real reactions, screenshots, and parent proof come in, this section will hold them close to the decision moment.">
-          <div className="of-proof-placeholder">
-            <p className="of-muted-copy" style={{ marginBottom: 12 }}>Founder-backed trust notes, parent reactions, and real family proof will live here once approved.</p>
-            <ReserveProofModule />
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.95fr)", gap: 20, marginTop: 24, alignItems: "start" }}>
+            <div className="of-trust-grid" style={{ marginTop: 0, gridTemplateColumns: "1fr" }}>
+              {trustCards.map(({ icon: Icon, title, body }) => (
+                <div key={title} className="of-feature-card">
+                  <Icon size={18} color="var(--green)" style={{ marginBottom: 10 }} />
+                  <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
+                  <p className="of-muted-copy">{body}</p>
+                </div>
+              ))}
+            </div>
+            <div className="of-card" style={{ padding: 18 }}>
+              <p className="of-section-label" style={{ marginBottom: 8 }}>Vault preview</p>
+              <img src="/landing-artifacts/vault-preview.png" alt="Real Our Fable vault preview" style={{ width: "100%", borderRadius: 14, border: "1px solid var(--border)", display: "block", marginBottom: 12 }} />
+              <p className="of-muted-copy" style={{ fontSize: 13 }}>A real vault view from the live product. The point is not just capture — it is helping a child have these voices waiting later.</p>
+            </div>
           </div>
         </LandingSection>
 
@@ -258,6 +264,7 @@ function ReservePageInner() {
             </div>
           </div>
         </section>
+        <MobileStickyCTA label="Reserve my family’s spot" href="#reserve-form" />
       </div>
     </main>
   );

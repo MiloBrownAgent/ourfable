@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Check, HeartHandshake, Lock, Mail, Users } from "lucide-react";
 import { captureUtmParams, getUtmParams } from "@/lib/utm";
 import { generateEventId, trackLead } from "@/lib/analytics";
-import { LandingNav, LandingPageStyles, LandingSection } from "@/components/landing/LandingSystem";
+import { LandingNav, LandingPageStyles, LandingSection, MobileStickyCTA } from "@/components/landing/LandingSystem";
 
 export default function WarmConversionClient() {
   const [email, setEmail] = useState("");
@@ -125,49 +125,68 @@ export default function WarmConversionClient() {
           </div>
         </section>
 
-        <LandingSection label="What you already know" title="You&apos;ve already seen the inside of the product, not just the pitch.">
-          <div className="of-feature-grid">
-            {[
-              [Mail, "The prompts feel human", "You have already seen how simple it is for contributors to receive a question and reply without friction."],
-              [Users, "The archive compounds quietly", "You already know this gets more meaningful as more family voices accumulate around a child over time."],
-              [Lock, "It feels private and family-first", "You have already seen that this is not a public feed or a noisy social product."],
-            ].map(([Icon, title, body]) => {
-              const Glyph = Icon as typeof Mail;
-              return (
-                <div key={title} className="of-feature-card">
-                  <Glyph size={18} color="var(--green)" style={{ marginBottom: 10 }} />
+        <LandingSection label="What you already know" title="You&apos;ve seen the prompts, the replies, and the emotional logic already working.">
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 0.95fr) minmax(0, 1fr)", gap: 20, marginTop: 24, alignItems: "start" }}>
+            <div className="of-card" style={{ padding: 18 }}>
+              <p className="of-section-label" style={{ marginBottom: 8 }}>Inside the product</p>
+              <img src="/landing-artifacts/warm-contributor.png" alt="Real contributor response screen from Our Fable" style={{ width: "100%", borderRadius: 14, border: "1px solid var(--border)", display: "block", marginBottom: 12 }} />
+              <p className="of-muted-copy" style={{ fontSize: 13 }}>A real contributor screen from the live product. If you&apos;ve already felt the emotional pull of this from another family, you do not need much more explanation.</p>
+            </div>
+            <div className="of-feature-grid" style={{ marginTop: 0, gridTemplateColumns: "1fr" }}>
+              {[
+                [Mail, "The prompts feel human", "You have already seen how simple it is for contributors to receive a question and reply without friction."],
+                [Users, "The archive compounds", "What feels small in the moment becomes more moving as more family voices collect around a child."],
+                [Lock, "It feels private and family-first", "You have already seen that this is not a public feed or a noisy social product."],
+              ].map(([Icon, title, body]) => {
+                const Glyph = Icon as typeof Mail;
+                return (
+                  <div key={title} className="of-feature-card">
+                    <Glyph size={18} color="var(--green)" style={{ marginBottom: 10 }} />
+                    <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
+                    <p className="of-muted-copy">{body}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </LandingSection>
+
+        <LandingSection label="Start your own" title="Getting your own family started should feel simple.">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 24, alignItems: "start" }}>
+            <div className="of-step-grid" style={{ marginTop: 0, gridTemplateColumns: "1fr" }}>
+              {[
+                ["1", "Reserve", "Tell us where to reach you and lock your founding price."],
+                ["2", "We invite you in", "You get the parent setup flow and start your child’s vault."],
+                ["3", "Your circle starts answering", "The people who matter most begin leaving things your child will one day receive."],
+              ].map(([n, title, body]) => (
+                <div key={title} className="of-step-card">
+                  <div className="of-step-number">{n}</div>
                   <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
                   <p className="of-muted-copy">{body}</p>
                 </div>
-              );
-            })}
-          </div>
-        </LandingSection>
-
-        <LandingSection label="Why it matters more for your child" title="Once you&apos;ve seen this from the inside, the emotional logic gets harder to ignore." copy="The same thing that felt powerful when it belonged to someone else becomes more urgent when you imagine your own child one day hearing those voices, reading those letters, and opening those memories." />
-
-        <LandingSection label="How simple it is to begin" title="Starting this for your own child should feel simple.">
-          <div className="of-step-grid">
-            {[
-              ["1", "Reserve", "Tell us where to reach you and lock your founding price."],
-              ["2", "We invite you in", "You get the parent setup flow and start your child’s vault."],
-              ["3", "Your circle starts answering", "The people who matter most begin leaving things your child will one day receive."],
-            ].map(([n, title, body]) => (
-              <div key={title} className="of-step-card">
-                <div className="of-step-number">{n}</div>
-                <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{title}</p>
-                <p className="of-muted-copy">{body}</p>
+              ))}
+            </div>
+            <div className="of-card" style={{ padding: 22 }}>
+              <p className="of-section-label" style={{ marginBottom: 8 }}>Why this matters for your child</p>
+              <p className="of-muted-copy" style={{ fontSize: 15 }}>The same thing that felt powerful when it belonged to someone else becomes more urgent when you imagine your own child one day hearing those voices, reading those letters, and opening those memories.</p>
+              <div className="of-mini-list">
+                {[
+                  "Hear grandma’s voice years later",
+                  "Read a note from an uncle at the right moment",
+                  "Keep something now that cannot be recreated later",
+                ].map((line) => (
+                  <div key={line} className="of-mini-item"><Check size={14} color="var(--green)" style={{ marginTop: 4, flexShrink: 0 }} /> <span>{line}</span></div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </LandingSection>
 
-        <LandingSection label="Trust" title="Still a serious family product, even on the warm page.">
-          <div className="of-trust-grid">
+        <LandingSection label="Trust" title="Still private, serious, and family-first.">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 24 }}>
             {[
               [Lock, "Private by design", "No public posting. No social-feed incentives. No ad-driven family content."],
-              [HeartHandshake, "Built by Dave and Amanda for their own family first", "This should feel like a serious enduring family product, not a startup experiment."],
-              [Users, "Simple enough to begin without friction", "The point is not more setup. The point is getting to the archive and the contributor loop quickly."],
+              [HeartHandshake, "Built by Dave and Amanda for their own family first", "A product meant to feel enduring enough for the families who decide to trust it."],
             ].map(([Icon, title, body]) => {
               const Glyph = Icon as typeof Lock;
               return (
@@ -181,23 +200,18 @@ export default function WarmConversionClient() {
           </div>
         </LandingSection>
 
-        <LandingSection label="Warm proof" title="What people who have already seen this from the inside will soon see here." copy="As warm reactions, contributor quotes, and real screenshots are approved, this is where they will help close the loop.">
-          <div className="of-proof-placeholder">
-            <p className="of-muted-copy">Real contributor reactions, lived-experience quotes, and approved screenshots will live here once ready.</p>
-          </div>
-        </LandingSection>
-
         <section className="of-section">
           <div className="of-close-cta">
             <p className="of-section-label">Warm close</p>
             <h2 className="of-section-title" style={{ marginBottom: 10 }}>If you already know what this becomes, start it for your own child.</h2>
             <p className="of-section-copy" style={{ marginBottom: 18 }}>Reserve now, keep your founding price, and we&apos;ll invite you in as onboarding opens.</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-              <button type="button" className="of-primary-btn" onClick={() => document.getElementById("warm-email")?.focus()}>Reserve your spot <ArrowRight size={16} /></button>
+              <button type="button" className="of-primary-btn" onClick={() => document.getElementById("warm-email")?.focus()}>Start your family’s vault <ArrowRight size={16} /></button>
               <Link href="/" className="of-secondary-link">Back to homepage context</Link>
             </div>
           </div>
         </section>
+        <MobileStickyCTA label="Start your family’s vault" href="#warm-email" />
       </div>
     </main>
   );

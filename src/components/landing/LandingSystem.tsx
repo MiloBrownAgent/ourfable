@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
 
 export function LandingPageStyles() {
   return (
@@ -241,10 +242,25 @@ export function LandingPageStyles() {
       @media (max-width: 980px) {
         .of-hero-grid, .of-feature-grid, .of-step-grid, .of-trust-grid { grid-template-columns: 1fr; }
       }
+      .of-mobile-sticky-cta {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        z-index: 120;
+        display: none;
+        padding: 12px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid var(--border);
+        box-shadow: 0 14px 34px rgba(18, 18, 16, 0.12);
+        backdrop-filter: blur(12px);
+      }
       @media (max-width: 680px) {
-        .of-landing-shell { padding: 0 18px 72px; }
+        .of-landing-shell { padding: 0 18px 110px; }
         .of-landing-nav { padding: 20px 0 12px; }
         .of-landing-nav-links { gap: 14px; }
+        .of-mobile-sticky-cta { display: block; }
       }
     `}</style>
   );
@@ -273,5 +289,15 @@ export function LandingSection({ label, title, copy, children }: { label: string
       {copy ? <p className="of-section-copy">{copy}</p> : null}
       {children}
     </section>
+  );
+}
+
+export function MobileStickyCTA({ label, href }: { label: string; href: string }) {
+  return (
+    <div className="of-mobile-sticky-cta">
+      <Link href={href} className="of-primary-btn" style={{ width: "100%" }}>
+        {label} <ArrowRight size={16} />
+      </Link>
+    </div>
   );
 }
