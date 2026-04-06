@@ -15,14 +15,14 @@ const TIERS = {
     annualPrice: 99,
     originalPrice: 149,
     tagline: "The private family vault for one child",
-    features: ["The Vault", "Unlimited circle members", "Monthly prompts", "5GB storage"],
+    features: ["The Vault", "Unlimited circle members", "Monthly prompts"],
   },
   plus: {
     name: "Our Fable+",
     annualPrice: 149,
     originalPrice: 199,
     tagline: "Everything in Our Fable, plus Dispatches",
-    features: ["Everything in Our Fable", "Dispatches", "Unlimited circle members", "1 additional child included", "25GB storage"],
+    features: ["Everything in Our Fable", "Dispatches", "Unlimited circle members", "1 additional child included"],
   },
 };
 
@@ -174,9 +174,14 @@ export default function GiftClient() {
                 {loading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Redirecting to checkout…</> : <>{giftMode === "annual_sponsorship" ? `Sponsor this annually — $${tier.annualPrice}/year` : `Gift this year — $${tier.annualPrice}`} <ArrowRight size={16} /></>}
               </button>
             </form>
-            <p className="of-muted-copy" style={{ fontSize: 12, marginTop: 14 }}>
-              Secure checkout via Stripe · The family gets a beautiful email with their gift code and redemption link.
-            </p>
+            <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "var(--bg-2)", border: "1px solid var(--border)" }}>
+              <p className="of-muted-copy" style={{ fontSize: 12 }}>
+                Secure checkout via Stripe · The family gets a beautiful email with their gift code and redemption link.
+              </p>
+              <p className="of-muted-copy" style={{ fontSize: 12, marginTop: 6 }}>
+                Private by design · They pay nothing today · Easy to redeem when ready.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -204,7 +209,11 @@ export default function GiftClient() {
 
         <LandingSection label="What the family receives" title="A private place for the child&apos;s story to keep growing.">
           <div className="of-feature-grid">
-            {tier.features.map((feature) => (
+            {[
+              "A private vault for letters, voice notes, photos, and video",
+              "Gentle prompts that help family respond without being chased",
+              selectedTier === "plus" ? "Dispatches and one additional child included" : "Unlimited circle members and a simple first year to begin",
+            ].map((feature) => (
               <div key={feature} className="of-feature-card">
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>{feature}</p>
               </div>
@@ -212,7 +221,7 @@ export default function GiftClient() {
           </div>
         </LandingSection>
 
-        <LandingSection label="Why this is better than a normal baby gift" title="Because it holds value long after the wrapping is gone.">
+        <LandingSection label="Why this is better than a normal baby gift" title="Because years later, the family can still care about it.">
           <p className="of-section-copy">The family receives something that keeps compounding: voices, stories, photos, letters, and perspective that can become deeply important later.</p>
         </LandingSection>
 

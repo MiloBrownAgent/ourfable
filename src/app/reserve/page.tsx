@@ -107,8 +107,8 @@ function ReservePageInner() {
       body: "Grandparents, aunts, uncles, godparents, and family friends get simple invitations to leave something meaningful.",
     },
     {
-      title: "A record that compounds over time",
-      body: "The archive gets more precious as more voices, memories, and seasons of life accumulate around your child.",
+      title: "A record that deepens year by year",
+      body: "The archive becomes richer as more voices, notes, photos, and family seasons gather around your child.",
     },
   ];
 
@@ -146,7 +146,7 @@ function ReservePageInner() {
               Our Fable gives grandparents, family, and close friends a simple way to leave letters, voice notes, photos, and videos now — so your child can hear them later.
             </p>
             <p className="of-muted-copy" style={{ maxWidth: 660 }}>
-              A private family vault that gets more meaningful over time, without becoming another app you have to manage every day.
+              A private place for grandparents, family, and close friends to leave things your child can return to years from now.
             </p>
             <div className="of-mini-list" style={{ marginTop: 24 }}>
               {reserveReasons.map((line) => (
@@ -177,12 +177,13 @@ function ReservePageInner() {
             </div>
             <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
               <div>
-                <label htmlFor="reserve-birthday" className="of-field-label">Child&apos;s birthday (optional)</label>
-                <input id="reserve-birthday" className="of-input" type="date" value={childBirthday} onChange={(e) => setChildBirthday(e.target.value)} max={new Date().toISOString().slice(0, 10)} />
-              </div>
-              <div>
                 <label htmlFor="reserve-email" className="of-field-label">Your email</label>
                 <input id="reserve-email" className="of-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+              </div>
+              <div>
+                <label htmlFor="reserve-birthday" className="of-field-label">Child&apos;s birthday (optional)</label>
+                <input id="reserve-birthday" className="of-input" type="date" value={childBirthday} onChange={(e) => setChildBirthday(e.target.value)} max={new Date().toISOString().slice(0, 10)} />
+                <p className="of-muted-copy" style={{ fontSize: 12, marginTop: 6 }}>Used only to tailor prompts and milestones later. Nothing public.</p>
               </div>
               {error ? <p style={{ margin: 0, color: "#D46565", fontSize: 13 }}>{error}</p> : null}
               <button type="submit" className="of-primary-btn" disabled={!emailValid || loading} style={{ width: "100%" }}>
@@ -199,7 +200,7 @@ function ReservePageInner() {
 
         <LandingSection label="Why reserve now" title="Because the people who love your child are here now." copy="This is not just about storing memories. It is about asking the right people while their voices, stories, and perspective are still available in this season of life." />
 
-        <LandingSection label="What you&apos;re reserving" title="A more serious beginning than a waitlist form.">
+        <LandingSection label="What you&apos;re reserving" title="What your family is starting.">
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.05fr) minmax(0, 0.95fr)", gap: 20, marginTop: 24, alignItems: "start" }}>
             <div className="of-feature-grid" style={{ marginTop: 0, gridTemplateColumns: "1fr" }}>
               {reserving.map((item) => (
@@ -218,12 +219,12 @@ function ReservePageInner() {
           </div>
         </LandingSection>
 
-        <LandingSection label="What happens next" title="A clear 3-step path, not a vague someday promise.">
+        <LandingSection label="What happens next" title="How your family gets started.">
           <div className="of-step-grid">
             {[
               ["1", "Reserve now", "Tell us where to reach you. That locks your founding price and puts your family in line."],
               ["2", "We invite you in", "We onboard founding families in small groups so the early experience feels personal and high-trust."],
-              ["3", "Your vault starts feeling alive", "You add the first pieces, invite your circle, and start seeing the archive become emotionally real fast."],
+              ["3", "Your vault starts feeling alive", "You add the first pieces, invite your circle, and begin seeing real notes, voices, and family contributions gather for your child."],
             ].map(([num, title, body]) => (
               <div key={title} className="of-step-card">
                 <div className="of-step-number">{num}</div>
@@ -234,7 +235,7 @@ function ReservePageInner() {
           </div>
         </LandingSection>
 
-        <LandingSection label="Trust" title="Private, exportable, and built to feel worthy of family trust.">
+        <LandingSection label="Trust" title="Private, exportable, and built for family trust.">
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.95fr)", gap: 20, marginTop: 24, alignItems: "start" }}>
             <div className="of-trust-grid" style={{ marginTop: 0, gridTemplateColumns: "1fr" }}>
               {trustCards.map(({ icon: Icon, title, body }) => (

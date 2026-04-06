@@ -104,7 +104,7 @@ export default function WarmConversionClient() {
             <p className="of-section-label" style={{ marginBottom: 8 }}>Start it for your family</p>
             <h2 style={{ margin: "0 0 12px", fontFamily: "var(--font-playfair)", fontSize: 34, lineHeight: 1.1 }}>Start the same kind of vault for your child.</h2>
             <p className="of-section-copy" style={{ marginBottom: 18 }}>
-              Reserve now, keep your founding price, and we&apos;ll invite you in as onboarding opens.
+              Reserve now, keep your founding price, and choose your plan later when you&apos;re invited in.
             </p>
             <div style={{ padding: 16, borderRadius: 16, background: "var(--bg-2)", border: "1px solid var(--border)", marginBottom: 18 }}>
               <p className="of-section-label" style={{ marginBottom: 6 }}>Founders pricing</p>
@@ -207,7 +207,7 @@ export default function WarmConversionClient() {
             <p className="of-section-copy" style={{ marginBottom: 18 }}>Reserve now, keep your founding price, and we&apos;ll invite you in as onboarding opens.</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <button type="button" className="of-primary-btn" onClick={() => document.getElementById("warm-email")?.focus()}>Start your family’s vault <ArrowRight size={16} /></button>
-              <Link href="/" className="of-secondary-link">Back to homepage context</Link>
+              <Link href="/" className="of-secondary-link">Back to Our Fable</Link>
             </div>
           </div>
         </section>
